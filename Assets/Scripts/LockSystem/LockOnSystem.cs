@@ -3,16 +3,17 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
 
-[RequireComponent(typeof(PlayerControllerSystem))]
+// Não precisa mais do RequireComponent
 public class LockOnSystem : MonoBehaviour
 {
     [Header("Refs")]
-    public Camera cam;                                   // Main Camera (com CinemachineBrain)
-    public PlayerControllerSystem player;                // Controller do Player
-    public PlayerInput playerInput;                      // PlayerInput do Player
-    [Tooltip("Transform que deve girar para encarar o alvo enquanto lockado (normalmente o root do Player). Se vazio, usa player.transform.")]
+    public Camera cam;                                   
+    // public PlayerControllerSystem player; // <-- Removido, não precisamos mais
+    // public PlayerInput playerInput;      // <-- Removido, pegamos do InputManager
+    [Tooltip("Transform que deve girar para encarar o alvo...")]
     public Transform rotateRoot;
 
+    // ... (O resto dos seus [Header] continua igual) ...
     [Header("Detection")]
     public float searchRadius = 20f;
     [Range(0f, 1f)] public float minDot = 0.2f;
@@ -21,99 +22,101 @@ public class LockOnSystem : MonoBehaviour
     public bool drawDebug = false;
 
     [Header("Switch Target (Right Stick)")]
-    [Tooltip("Tempo mínimo entre trocas de alvo.")]
     public float switchCooldown = 0.25f;
-
-    [Tooltip("Deadzone horizontal do LOOK para trocar de alvo (R Stick X).")]
     public float lookSwitchDeadzone = 0.5f;
 
     [Header("Camera Lock")]
-    [Tooltip("Se true, desabilita provedores de input da câmera (ex.: CinemachineInputProvider) enquanto estiver lockado. A ação 'Look' permanece ativa para lermos o Right Stick e trocar alvos.")]
     public bool lockCameraWhileLocked = true;
-
-    [Tooltip("Se marcado, encontra automaticamente componentes Cinemachine de input para desabilitar durante o lock (em toda a cena).")]
     public bool autoFindCinemachineProviders = true;
-
-    [Tooltip("Componentes extras a desabilitar durante o lock (ex.: CinemachineInputProvider). Pode ser preenchido automaticamente.")]
     public Behaviour[] disableWhileLocked;
 
     [Header("Player Facing While Locked")]
-    [Tooltip("Se true, o Player gira automaticamente (yaw) para encarar o alvo durante o lock.")]
     public bool rotatePlayerTowardTargetWhileLocked = true;
-
-    [Tooltip("Velocidade de rotação ao encarar o alvo (graus/seg).")] 
     public float rotateSpeedDegPerSec = 540f;
 
+
     // runtime (Input)
-    private PlayerInputActions inputAssetFallback;   // fallback caso não haja PlayerInput
-    private InputAction lockOnAction;                // Botão para ligar/desligar lock (ex.: R3 click)
-    private InputAction lookAction;                  // Vector2 (Right Stick) — usamos o X para trocar alvo
+    // private PlayerInputActions inputAssetFallback; // <-- REMOVIDO
+    private PlayerInputActions input; // <-- AGORA VEM DO MANAGER
+    private InputAction lockOnAction;                
+    private InputAction lookAction;                  
 
     // runtime (state)
     public LockOnTarget current;
     private float nextSwitchTime = 0f;
 
-    // API pública usada por outros sistemas
+    // API pública
     public bool IsLockedOn => current != null;
     public Transform CurrentAimPoint => current ? current.Pivot : null;
 
     void Reset()
     {
         if (!cam) cam = Camera.main;
-        if (!player) player = GetComponent<PlayerControllerSystem>();
+        // if (!player) player = GetComponent<PlayerControllerSystem>(); // <-- Removido
     }
 
+    // --- MUDANÇA (INÍCIO) ---
+    // Awake() é só para pegar refs internas
     void Awake()
     {
-        if (!player) player = GetComponent<PlayerControllerSystem>();
         if (!cam) cam = Camera.main;
-        if (!rotateRoot) rotateRoot = player ? player.transform : transform;
+        // O rotateRoot agora pega 'transform' se o player não existir mais como ref
+        if (!rotateRoot) rotateRoot = transform; 
 
-        // Pega ações a partir do PlayerInput (recomendado) ou do asset gerado (fallback)
-        if (playerInput && playerInput.actions != null)
-        {
-            lockOnAction = playerInput.actions.FindAction("LockOn", false);
-            lookAction   = playerInput.actions.FindAction("Look",   false);
-        }
-        if (lockOnAction == null || lookAction == null)
-        {
-            // Fallback seguro — apenas se a classe gerada existir no projeto
-            try
-            {
-                inputAssetFallback = new PlayerInputActions();
-                if (lockOnAction == null) lockOnAction = inputAssetFallback.FindAction("LockOn", false);
-                if (lookAction    == null) lookAction    = inputAssetFallback.FindAction("Look",   false);
-            }
-            catch { /* se não existir, seguimos apenas com as que acharmos */ }
-        }
-
-        if (lockOnAction != null && !lockOnAction.enabled) lockOnAction.Enable();
-        if (lookAction    != null && !lookAction.enabled)    lookAction.Enable();
-
-        // Popular automaticamente provedores de input de câmera
+        // Popular automaticamente provedores de input de câmera (isso estava certo)
         if (autoFindCinemachineProviders)
         {
-            var providers = Object.FindObjectsByType<Behaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                .Where(b => b != null && b.GetType().Name.Contains("CinemachineInput")) // cobre CinemachineInputProvider e variações
+            // ... (seu código de autoFind continua igual) ...
+             var providers = Object.FindObjectsByType<Behaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Where(b => b != null && b.GetType().Name.Contains("CinemachineInput")) 
                 .ToArray();
             if (providers.Length > 0) disableWhileLocked = providers;
         }
     }
 
+    // A lógica de Input vai para o Start()
+    void Start()
+    {
+        // Pega o Input do Manager central
+        if (InputManager.Instance == null)
+        {
+             Debug.LogError("InputManager.Instance é NULO. O LockOnSystem não consegue pegar os inputs.");
+             return; // Sai se o manager não existir
+        }
+        input = InputManager.Instance.InputActions;
+
+        // Pega as ações (agora do 'input' que veio do manager)
+        lockOnAction = input.FindAction("LockOn", false);
+        lookAction   = input.FindAction("Look",   false);
+
+        // Não precisamos mais do Enable() aqui, o InputManager controla isso.
+    }
+    // --- MUDANÇA (FIM) ---
+
     void OnDisable()
     {
-        // segurança: se for desabilitado ainda em lock, devolve o controle
         if (IsLockedOn) SetCameraLock(false);
     }
 
     void Update()
     {
-        // alterna lock on/off
-        if (lockOnAction != null && lockOnAction.WasPressedThisFrame())
+        if (input == null) return;
+        // --- MUDANÇA (FIM) ---
+
+        // Sua cláusula de guarda do Pause já estava aqui e correta
+        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused)
+        {
+            if (IsLockedOn) ClearTarget();
+            return;
+        }
+
+        // alterna lock on/off (usa 'lockOnAction' que pegamos no Start)
+        if (lockOnAction != null && lockOnAction.WasPressedThisFrame()) 
         {
             if (!IsLockedOn) AcquireTarget();
             else ClearTarget();
         }
+        
 
         if (IsLockedOn)
         {
@@ -123,16 +126,16 @@ public class LockOnSystem : MonoBehaviour
                 return;
             }
 
-            // 1) Faz o player encarar o alvo (yaw only)
             if (rotatePlayerTowardTargetWhileLocked)
             {
                 FaceTargetYawOnly(current.Pivot.position);
             }
 
-            // 2) Troca de alvo pelo eixo X do LOOK (Right Stick) — L3 livre para movimento
+            // Troca de alvo (usa 'lookAction' que pegamos no Start)
             if (lookAction != null && Time.time >= nextSwitchTime)
             {
                 Vector2 look = lookAction.ReadValue<Vector2>();
+                // ... (resto da lógica de switch continua igual) ...
                 float x = look.x;
                 if (Mathf.Abs(x) >= lookSwitchDeadzone)
                 {
@@ -142,8 +145,8 @@ public class LockOnSystem : MonoBehaviour
             }
         }
     }
-
-    // ===== Core =====
+    
+    
     void AcquireTarget()
     {
         LockOnTarget best = FindBestTarget();
@@ -161,8 +164,6 @@ public class LockOnSystem : MonoBehaviour
     {
         if (!lockCameraWhileLocked) return;
 
-        // Desabilita provedores de input da CÂMERA (ex.: CinemachineInputProvider),
-        // mas mantém a ação LOOK ativa para lermos o Right Stick e trocar alvos.
         if (disableWhileLocked != null)
         {
             for (int i = 0; i < disableWhileLocked.Length; i++)
@@ -174,7 +175,6 @@ public class LockOnSystem : MonoBehaviour
         }
     }
 
-    // Seleção
     LockOnTarget FindBestTarget()
     {
         var list = OverlapTargets();
@@ -205,12 +205,11 @@ public class LockOnSystem : MonoBehaviour
         return best;
     }
 
-    void TrySwitchTarget(float direction)
+     void TrySwitchTarget(float direction)
     {
         var list = OverlapTargets();
         if (list.Count == 0 || !cam) return;
 
-        // escolhe o vizinho mais à esquerda/direita do alvo atual, na tela
         LockOnTarget candidate = null;
         float best = float.NegativeInfinity;
 
@@ -223,13 +222,13 @@ public class LockOnSystem : MonoBehaviour
             if (t == current || !TargetIsValid(t)) continue;
 
             Vector3 to = (t.Pivot.position - cam.transform.position).normalized;
-            float lateral = Vector3.Dot(camRight, to); // < 0 = esquerda, > 0 = direita
-            float facing  = Mathf.Max(0f, Vector3.Dot(camForward, to)); // quanto está à frente da câmera
+            float lateral = Vector3.Dot(camRight, to); 
+            float facing  = Mathf.Max(0f, Vector3.Dot(camForward, to)); 
 
             // filtra por lado
             if (Mathf.Sign(lateral) != Mathf.Sign(direction)) continue;
 
-            float score = Mathf.Abs(lateral) + facing; // prioriza lateral + estar à frente
+            float score = Mathf.Abs(lateral) + facing; 
             if (score > best && HasLineOfSight(t.Pivot.position))
             {
                 best = score;
@@ -240,12 +239,10 @@ public class LockOnSystem : MonoBehaviour
         if (candidate != null)
         {
             current = candidate;
-            // já estamos lockados, apenas mantém a câmera travada
             SetCameraLock(true);
         }
     }
 
-    // === Rotação do Player para o alvo (apenas yaw) ===
     void FaceTargetYawOnly(Vector3 targetPos)
     {
         if (!rotateRoot) return;
@@ -280,7 +277,7 @@ public class LockOnSystem : MonoBehaviour
         return true;
     }
 
-    bool HasLineOfSight(Vector3 worldPos)
+     bool HasLineOfSight(Vector3 worldPos)
     {
         if (!cam) return true;
         Vector3 origin = cam.transform.position;
@@ -302,4 +299,5 @@ public class LockOnSystem : MonoBehaviour
             Gizmos.DrawWireSphere(current.Pivot.position, 0.2f);
         }
     }
-}
+
+} 

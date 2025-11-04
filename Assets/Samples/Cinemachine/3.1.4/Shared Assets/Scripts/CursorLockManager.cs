@@ -25,22 +25,17 @@ namespace Unity.Cinemachine.Samples
         void OnEnable() => UnlockCursor();
         void OnDisable() => UnlockCursor();
 
-        void Update()
+        void Update() // ou LateUpdate
+        {   
+            if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused)
         {
-            if (CursorLock.Value == 0)
-                m_IsTriggered = false;
-            else if (!m_IsTriggered)
-            {
-                m_IsTriggered = true;
-                if (Cursor.lockState == CursorLockMode.None)
-                    LockCursor();
-                else
-                    UnlockCursor();
-            }
+        return; 
         }
 
+        }
         public void LockCursor()
         {
+            Debug.LogError($"!!! SCRIPT {this.GetType().Name} ESTÁ TENTANDO TRAVAR O CURSOR AGORA (Pausado={PauseMenuManager.Instance?.IsPaused}) !!!");
             if (enabled)
             {
                 Cursor.lockState = CursorLockMode.Locked;

@@ -1,15 +1,8 @@
 fileFormatVersion: 2
-guid: 0a3493a84faf7a64ba93f872075b55ce
-timeCreated: 1445595201
-licenseType: Store
+guid: cc68a5856eb73044f8d9ee2ef21d40d3
 NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 58289
-  packageName: lowpoly medieval buildings
-  packageVersion: 1.0
-  assetPath: Assets/low poly medieval buildings/Materials/beam.mat
-  uploadId: 107751
