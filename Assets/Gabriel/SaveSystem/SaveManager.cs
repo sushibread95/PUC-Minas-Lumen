@@ -2,19 +2,18 @@ using UnityEngine;
 using System.IO;
 using UnityEngine.InputSystem;
 using System;
-using System.Collections; // <-- NECESSÁRIO PARA COROUTINE
+using System.Collections;
+using System.Collections.Generic;
 
 public class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance { get; private set; }
     public static event Action OnGameSaved;
-
-    // --- A "TRAVA" DE SALVAMENTO ---
     public bool IsSaving { get; private set; }
-    // ---------------------------------
 
     private GameData gameData;
     private string saveFilePath;
+    private Transform playerTransform;
 
     void Awake()
     {
@@ -27,87 +26,97 @@ public class SaveManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-
         saveFilePath = Path.Combine(Application.persistentDataPath, "savegame.json");
         this.gameData = new GameData();
-        IsSaving = false; // Garante que a trava começa desligada
+        IsSaving = false;
     }
 
-    void Start()
+    public void ResetGameData()
     {
-        // (LoadGame() é chamado pelo MainMenu)
+        this.gameData = new GameData();
+        Debug.Log("GameData (no SaveManager) foi resetado.");
     }
+
+    void Start() { /* LoadGame é chamado pelo MainMenu */ }
 
     void Update()
     {
-        // Teclas de debug (F5/F9)
-        if (Keyboard.current.f5Key.wasPressedThisFrame)
-        {
-            SaveGame();
-        }
-        if (Keyboard.current.f9Key.wasPressedThisFrame)
-        {
-            LoadGame();
-        }
+        if (Keyboard.current.f5Key.wasPressedThisFrame) SaveGame();
+        if (Keyboard.current.f9Key.wasPressedThisFrame) LoadGame();
     }
 
-    // A FUNÇÃO PÚBLICA CHAMA A "TRAVA"
     public void SaveGame()
     {
-        if (IsSaving)
-        {
-            Debug.LogWarning("Tentativa de salvar enquanto já estava salvando. Ignorado.");
-            return;
-        }
+        if (IsSaving) return;
         StartCoroutine(SaveGameRoutine());
     }
 
-    // O PROCESSO DE SALVAR É UMA COROUTINE
     private IEnumerator SaveGameRoutine()
     {
         IsSaving = true;
         Debug.Log("SALVANDO JOGO...");
 
-        // Coleta os dados
-        this.gameData.npcStates = WorldStateManager.Instance.GetSaveData();
-        this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) 
+        {
+            playerTransform = playerObj.transform;
+        }
+        else
+        {
+            // Garante que a referência seja limpa se não encontrar o player
+            playerTransform = null; 
+            Debug.LogWarning("SaveManager não encontrou o Player para salvar a posição.");
+        }
 
-        // Converte para JSON
+        // --- COLETA DE DADOS ATUALIZADA ---
+        if (WorldStateManager.Instance != null)
+        {
+            this.gameData.npcStates = WorldStateManager.Instance.GetSaveData();
+            this.gameData.collectedItemIDs = WorldStateManager.Instance.GetItemSaveData();
+        }
+        if (InventoryManager.Instance != null)
+        {
+            this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
+        }
+        if (playerTransform != null)
+        {
+            this.gameData.playerPosX = playerTransform.position.x;
+            this.gameData.playerPosY = playerTransform.position.y;
+            this.gameData.playerPosZ = playerTransform.position.z;
+        }
+        // --- FIM DA COLETA ---
+
         string json = JsonUtility.ToJson(this.gameData, true); 
-
-        // Escreve no disco
         File.WriteAllText(saveFilePath, json);
-        
-        yield return null; // Espera um frame
-
+        yield return null; 
         Debug.Log("JOGO SALVO EM: " + saveFilePath);
-
-        OnGameSaved?.Invoke(); // Dispara o evento (avisa a UI)
-
-        yield return new WaitForSecondsRealtime(1f); // Espera 1s antes de destravar
-
+        OnGameSaved?.Invoke(); 
+        yield return new WaitForSecondsRealtime(1f); 
         IsSaving = false;
         Debug.Log("Trava de salvamento liberada.");
     }
 
-
-    // --- FUNÇÃO CORRIGIDA ---
     public void LoadGame()
     {
         if (File.Exists(saveFilePath))
         {
             Debug.Log("CARREGANDO JOGO...");
-
-            // 1. Lê o arquivo
             string json = File.ReadAllText(saveFilePath);
-            
-            // 2. Converte o json (DENTRO DO IF)
-            this.gameData = JsonUtility.FromJson<GameData>(json); 
+            this.gameData = JsonUtility.FromJson<GameData>(json);
 
-            // 3. Entrega os dados
-            WorldStateManager.Instance.LoadSaveData(this.gameData.npcStates);
-            InventoryManager.Instance.LoadSaveData(this.gameData.inventoryItems);
+            // --- ENTREGA DE DADOS ATUALIZADA ---
+            if (WorldStateManager.Instance != null)
+            {
+                WorldStateManager.Instance.LoadSaveData(this.gameData.npcStates);
+                WorldStateManager.Instance.LoadItemSaveData(this.gameData.collectedItemIDs);
+            }
+            if (InventoryManager.Instance != null)
+            {
+                InventoryManager.Instance.LoadSaveData(this.gameData.inventoryItems);
+            }
+            // --- FIM DA ENTREGA ---
 
+            StartCoroutine(TeleportPlayerAfterSceneLoad());
             Debug.Log("JOGO CARREGADO!");
         }
         else
@@ -115,5 +124,19 @@ public class SaveManager : MonoBehaviour
             Debug.Log("Nenhum arquivo de save encontrado. Começando jogo novo.");
         }
     }
-    // --- FIM DA CORREÇÃO ---
+    
+    private IEnumerator TeleportPlayerAfterSceneLoad()
+    {
+        yield return null; 
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            PlayerControllerSystem pc = playerObj.GetComponent<PlayerControllerSystem>();
+            if (pc != null)
+            {
+                Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
+                pc.TeleportToPosition(pos);
+            }
+        }
+    }
 }

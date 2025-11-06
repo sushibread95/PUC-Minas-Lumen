@@ -360,12 +360,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d480c155b283a540bf097651222b718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  iconImage: {fileID: 3543007382887890995}
-  quantityText: {fileID: 6612748885418197456}
-  itemNameText: {fileID: 608191436203943137}
-  actionPanel: {fileID: 323792740128926397}
   item: {fileID: 0}
   quantity: 0
+  icon: {fileID: 3543007382887890995}
+  quantityText: {fileID: 6612748885418197456}
 --- !u!1 &1143356235277428408
 GameObject:
   m_ObjectHideFlags: 0

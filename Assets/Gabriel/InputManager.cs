@@ -9,8 +9,8 @@ public class InputManager : MonoBehaviour
     public PlayerInputActions InputActions { get; private set; }
 
     // Nomes dos mapas (para evitar erros de digitação)
-    private string MAP_PLAYER = "Player";
-    private string MAP_UI = "UI";
+    //private string MAP_PLAYER = "Player";
+    //private string MAP_UI = "UI";
 
     void Awake()
     {

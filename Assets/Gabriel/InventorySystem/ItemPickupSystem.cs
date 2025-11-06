@@ -8,11 +8,11 @@ public class ItemPickupSystem : MonoBehaviour
 {
     [Header("Inventory Settings")]
     public int inventorySize = 8;
-    public Transform inventoryUIParent;
-    public GameObject slotPrefab;
+    public Transform inventoryUIParent; // Arraste o GridPanel aqui
+    public GameObject slotPrefab;       // Arraste o Prefab do Slot1 aqui
 
     private List<InventorySlot> slots = new List<InventorySlot>();
-    private PlayerInputActions input; // <-- Será preenchido pelo InputManager
+    private PlayerInputActions input;
     private Transform currentTarget;
 
     [Header("Pickup Settings")]
@@ -24,15 +24,22 @@ public class ItemPickupSystem : MonoBehaviour
 
     void Start()
     {
+        // Integração com InputManager
         if (InputManager.Instance == null)
         {
             Debug.LogError("ItemPickupSystem não encontrou o InputManager!");
-            this.enabled = false; // Desabilita o script se não houver InputManager
+            this.enabled = false;
             return;
         }
         input = InputManager.Instance.InputActions;
-        
         input.Player.Interact.performed += OnInteractPressed;
+        
+        // Lógica original de UI
+        if (slotPrefab == null || inventoryUIParent == null)
+        {
+            Debug.LogError("ItemPickupSystem: 'Slot Prefab' ou 'Inventory UI Parent' não estão configurados no Inspector!");
+            return;
+        }
 
         if (slotPrefab.activeSelf)
             slotPrefab.SetActive(false);
@@ -40,8 +47,12 @@ public class ItemPickupSystem : MonoBehaviour
         for (int i = 0; i < inventorySize; i++)
         {
             GameObject slotObj = Instantiate(slotPrefab, inventoryUIParent);
-            slots.Add(slotObj.GetComponent<InventorySlot>());
-            slotObj.SetActive(false);
+            InventorySlot slot = slotObj.GetComponent<InventorySlot>();
+            if (slot != null)
+            {
+                slots.Add(slot);
+                slotObj.SetActive(false);
+            }
         }
 
         if (InventoryManager.Instance != null)
@@ -50,8 +61,7 @@ public class ItemPickupSystem : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se desinscreve para evitar erros
-        if (input != null)
+        if (input != null && InputManager.Instance != null)
         {
             input.Player.Interact.performed -= OnInteractPressed;
         }
@@ -59,22 +69,26 @@ public class ItemPickupSystem : MonoBehaviour
 
     void Update()
     {
-        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused)
+        // "Guarda Mestra" para todos os menus
+        // CORREÇÃO: (Erro CS0103) 'StealthUI' não existe. Comentado e removido o '||' da linha anterior.
+        if (input == null ||
+           (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+           (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) ||
+           (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy)) // Guarda futura
+           // (StealthUI.Instance != null && StealthUI.Instance.gameObject.activeInHierarchy)) // Guarda futura
         {
-            ClearHighlight(); // Limpa o highlight se pausar
-            currentTarget = null;
+            ClearHighlight(); // Limpa o highlight se o jogo pausar
             return;
         }
-
+        
         DetectItemInFront();
     }
 
-   
     private void DetectItemInFront()
     {
+        // Lógica original
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
-
         if (Physics.Raycast(ray, out hit, pickupRange, itemLayer))
         {
             if (hit.collider.CompareTag(itemTag))
@@ -88,52 +102,41 @@ public class ItemPickupSystem : MonoBehaviour
                 return;
             }
         }
-
         ClearHighlight();
-        currentTarget = null;
     }
 
     private void OnInteractPressed(InputAction.CallbackContext ctx)
     {
-        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return;
-        if (currentTarget == null) return;
+        // Guarda extra
+        if (currentTarget == null || 
+           (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+           (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
+        {
+            return;
+        }
 
         ObjectType objType = currentTarget.GetComponent<ObjectType>();
         if (objType == null || objType.TypeObjec == null) return;
 
+        // 1. Adiciona ao "cérebro"
         InventoryManager.Instance.AddItem(objType.TypeObjec);
+
+        // 2. Registra no "Save" se for um item de cena (MODIFICAÇÃO NECESSÁRIA)
+        if (!string.IsNullOrEmpty(objType.itemInstanceID))
+        {
+            if(WorldStateManager.Instance != null)
+                WorldStateManager.Instance.RegisterCollectedItem(objType.itemInstanceID);
+        }
+
+        // 3. Atualiza UI
         UpdateUIFromManager();
 
+        // 4. Destrói o objeto
         Destroy(currentTarget.gameObject);
         ClearHighlight();
-        currentTarget = null;
     }
-
-    private void AddItem(Objects newItem)
-    {
-        foreach (var slot in slots)
-        {
-            if (slot.item != null && slot.item.objectName == newItem.objectName)
-            {
-                if (slot.quantity < newItem.maxStack)
-                {
-                    slot.quantity++;
-                    slot.UpdateUI();
-                    return;
-                }
-            }
-        }
-        foreach (var slot in slots)
-        {
-            if (slot.item == null)
-            {
-                slot.SetItem(newItem, 1);
-                return;
-            }
-        }
-        Debug.Log("Inventário cheio!");
-    }
-
+    
+    // --- LÓGICA ORIGINAL DO SEU COLEGA (SEM MUDANÇAS) ---
     private void HighlightItem(Transform item)
     {
         Renderer rend = item.GetComponentInChildren<Renderer>();
@@ -143,7 +146,6 @@ public class ItemPickupSystem : MonoBehaviour
             rend.material = highlightMaterial;
         }
     }
-
     private void ClearHighlight()
     {
         if (currentTarget == null) return;
@@ -151,23 +153,31 @@ public class ItemPickupSystem : MonoBehaviour
         if (rend != null && originalMaterial != null)
         {
             rend.material = originalMaterial;
+            originalMaterial = null;
         }
+        currentTarget = null;
     }
+    
     private void UpdateUIFromManager()
     {
-        foreach (var slot in slots)
-        {
-            slot.item = null;
-            slot.quantity = 0;
-            slot.UpdateUI();
-            slot.gameObject.SetActive(false);
-        }
-
+        // Preenche os slots com base no InventoryManager
         if (InventoryManager.Instance == null) return;
-        for (int i = 0; i < InventoryManager.Instance.items.Count && i < slots.Count; i++)
+
+        for (int i = 0; i < slots.Count; i++)
         {
-            var entry = InventoryManager.Instance.items[i];
-            slots[i].SetItem(entry.item, entry.quantity);
+            if (i < InventoryManager.Instance.items.Count)
+            {
+                // Se temos um item para este slot
+                var entry = InventoryManager.Instance.items[i];
+                slots[i].SetItem(entry.item, entry.quantity);
+            }
+            else
+            {
+                // Se não temos item, limpa o slot
+                slots[i].item = null;
+                slots[i].quantity = 0;
+                slots[i].UpdateUI();
+            }
         }
     }
 }

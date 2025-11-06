@@ -5,18 +5,12 @@ public class WorldStateManager : MonoBehaviour
 {
     public static WorldStateManager Instance { get; private set; }
 
-    // O "caderno" mestre de todas as decisões sobre NPCs.
     public Dictionary<string, NPCState> npcWorldStates = new Dictionary<string, NPCState>();
-
-    // (Adicionar outros Dictionaries aqui para outros estados do mundo, se necessário,
-    //  ex: Dictionary<string, bool> doorsUnlocked = new Dictionary<string, bool>(); )
+    public HashSet<string> collectedItemIDs = new HashSet<string>();
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
+        if (Instance != null && Instance != this) Destroy(gameObject);
         else
         {
             Instance = this;
@@ -24,96 +18,65 @@ public class WorldStateManager : MonoBehaviour
         }
     }
 
-    // --- NOVA FUNÇÃO DE RESET ---
     public void ResetState()
     {
-        npcWorldStates.Clear(); 
+        npcWorldStates.Clear();
+        collectedItemIDs.Clear(); 
         
+        // --- MODIFICAÇÃO NECESSÁRIA ---
+        // Também reseta o inventário
         if (InventoryManager.Instance != null)
-    {
-        InventoryManager.Instance.ResetState();
-    }
-
+        {
+            InventoryManager.Instance.ResetState();
+        }
+        // --- FIM DA MODIFICAÇÃO ---
+        
         Debug.Log("WorldStateManager RESETADO para Novo Jogo.");
     }
-    // ----------------------------
-
+    
     public void SetNPCState(string npcID, NPCState state)
     {
-        if (string.IsNullOrEmpty(npcID))
-        {
-             Debug.LogWarning("Tentativa de salvar estado de NPC com ID vazio!");
-             return;
-        }
-
-        if (npcWorldStates.ContainsKey(npcID))
-        {
-            npcWorldStates[npcID] = state; // Atualiza o estado
-        }
-        else
-        {
-            npcWorldStates.Add(npcID, state); // Adiciona pela primeira vez
-        }
+        if (string.IsNullOrEmpty(npcID)) return;
+        npcWorldStates[npcID] = state;
         Debug.Log("Estado do Mundo Salvo: " + npcID + " agora é " + state);
     }
-
-    // (Adicionar funções Set... para outros estados do mundo aqui, se necessário)
-    // public void SetDoorState(string doorID, bool unlocked) { ... }
-
-
-    // --- FUNÇÕES DE SAVE/LOAD ---
-    // (Note que você tinha duas versões de GetSaveData/LoadSaveData.
-    //  O SaveManager.cs atual usa a versão com List<NPCStateSaveData>.
-    //  Removi as versões com Dictionary para evitar confusão.)
-
-    // O SaveManager chama isso para PEGAR os dados
+    public void RegisterCollectedItem(string id)
+    {
+        if (!collectedItemIDs.Contains(id))
+            collectedItemIDs.Add(id);
+    }
+    public bool IsItemCollected(string id)
+    {
+        return collectedItemIDs.Contains(id);
+    }
     public List<NPCStateSaveData> GetSaveData()
     {
         List<NPCStateSaveData> dataParaSalvar = new List<NPCStateSaveData>();
-
-        // Converte nosso Dictionary (rápido) para uma Lista (salvável)
         foreach (var par in npcWorldStates)
         {
-            dataParaSalvar.Add(new NPCStateSaveData
-            {
-                npcID = par.Key,
-                state = par.Value
-            });
+            dataParaSalvar.Add(new NPCStateSaveData { npcID = par.Key, state = par.Value });
         }
-        // (Adicionar conversão de outros Dictionaries para Listas aqui no futuro)
         return dataParaSalvar;
     }
-
-    // O SaveManager chama isso para ENTREGAR os dados
     public void LoadSaveData(List<NPCStateSaveData> dadosCarregados)
     {
-        // Limpa o Dictionary atual
         npcWorldStates.Clear();
-        // (Limpar outros Dictionaries aqui também)
-
-        if (dadosCarregados == null) return; // Segurança
-
-        // Converte a Lista (salvável) de volta para nosso Dictionary (rápido)
+        if (dadosCarregados == null) return;
         foreach (var item in dadosCarregados)
         {
-             if (!string.IsNullOrEmpty(item.npcID)) // Segurança extra
-             {
+             if (!string.IsNullOrEmpty(item.npcID))
                  npcWorldStates[item.npcID] = item.state;
-             }
         }
-        // (Adicionar conversão de outras Listas para Dictionaries aqui no futuro)
-
         Debug.Log("WorldStateManager carregou " + npcWorldStates.Count + " estados de NPC.");
     }
+    public List<string> GetItemSaveData()
+    {
+        return new List<string>(collectedItemIDs); 
+    }
+    public void LoadItemSaveData(List<string> data)
+    {
+        if (data != null) collectedItemIDs = new HashSet<string>(data); 
+        else collectedItemIDs = new HashSet<string>();
+        Debug.Log("WorldStateManager carregou " + collectedItemIDs.Count + " itens de cena coletados.");
+    }
 }
-
-// Classe auxiliar para salvar/carregar estados de NPC (precisa estar fora ou em outro arquivo)
-// Certifique-se que esta struct/classe está definida (provavelmente no GameData.cs)
-/*
-[System.Serializable]
-public class NPCStateSaveData
-{
-    public string npcID;
-    public NPCState state; // Assume que NPCState é um enum definido em GameEnums.cs
-}
-*/

@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.EventSystems; 
-using UnityEngine.UI; 
-using System.Collections; 
+using UnityEngine.EventSystems; // Necessário para EventSystem
+using UnityEngine.UI; // Necessário para Button
+using System.Collections; // Necessário para IEnumerator
 
 public class InventoryController : MonoBehaviour
 {
@@ -10,7 +10,7 @@ public class InventoryController : MonoBehaviour
 
     [Header("References")]
     public GameObject inventoryPanel;
-    public Button defaultSelectedButton; 
+    public Button defaultSelectedButton; // Arraste o primeiro botão do inventário aqui
 
     private PlayerInputActions input;
     public bool IsInventoryOpen { get; private set; }
@@ -32,11 +32,23 @@ public class InventoryController : MonoBehaviour
             this.enabled = false;
             return;
         }
+        
+        // Pega o input do "Chefe"
         input = InputManager.Instance.InputActions;
-
-        input.Player.Inventory.performed += OnInventoryPressed;
-        input.UI.Cancel.performed += OnCancelPressed;
-
+        
+        // Se inscreve em DUAS ações:
+        input.Player.Inventory.performed += OnInventoryPressed; // Para ABRIR
+        input.UI.Cancel.performed += OnCancelPressed; // Para FECHAR com 'Esc'
+        
+        // Ouve a tecla 'I' (Inventory) mesmo no mapa "UI" para fechar
+        // (Assumindo que você adicionou 'I' ao seu UI/Cancel ou uma ação 'Inventory' ao mapa 'UI')
+        
+        // CORREÇÃO: (Erro CS1061) A chamada FindAction deve ser na raiz (input), não no mapa (input.UI)
+        // Ação "Inventory" do Mapa "UI"
+        InputAction inventoryUIAction = input.FindAction("UI/Inventory");
+        if (inventoryUIAction != null)
+            inventoryUIAction.performed += OnCancelPressed;
+        
         if (inventoryPanel != null)
             inventoryPanel.SetActive(false);
     }
@@ -47,15 +59,23 @@ public class InventoryController : MonoBehaviour
         {
             input.Player.Inventory.performed -= OnInventoryPressed;
             input.UI.Cancel.performed -= OnCancelPressed;
+            
+            // CORREÇÃO: (Erro CS1061) Mesma correção do Start()
+            InputAction inventoryUIAction = input.FindAction("UI/Inventory");
+            if (inventoryUIAction != null)
+                inventoryUIAction.performed -= OnCancelPressed;
         }
     }
 
     void Update()
     {
+        // Lógica para restaurar seleção do controle (igual ao PauseMenu)
         if (!IsInventoryOpen || inventoryPanel == null || !inventoryPanel.activeSelf) return;
+
         if (EventSystem.current != null)
         {
-             if (EventSystem.current.currentSelectedGameObject == null && (Mouse.current != null && !Mouse.current.delta.IsActuated(0.1f)))
+             if (EventSystem.current.currentSelectedGameObject == null &&
+                (Mouse.current != null && !Mouse.current.delta.IsActuated(0.1f)))
              {
                  if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy)
                  {
@@ -74,6 +94,7 @@ public class InventoryController : MonoBehaviour
         }
     }
 
+    // Chamada pelo 'Esc' ou 'I' (do mapa UI)
     private void OnCancelPressed(InputAction.CallbackContext ctx)
     {
         if (IsInventoryOpen)
@@ -81,13 +102,15 @@ public class InventoryController : MonoBehaviour
             ToggleInventory();
         }
     }
+
+    // Chamada pelo 'I' (do mapa Player)
     private void OnInventoryPressed(InputAction.CallbackContext ctx)
     {
-        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused)
-        {
-            return;
-        }
-        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy)
+        // Exclusão Mútua
+        // CORREÇÃO: (Erro CS0103) 'StealthUI' não existe. Comentado e removido o '||' da linha anterior.
+        if ((PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+            (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy)) // Guarda para o sistema de Nocaute (se ele existir)
+            // (StealthUI.Instance != null && StealthUI.Instance.gameObject.activeInHierarchy)) // Guarda para o sistema de Stealth (futuro)
         {
             return;
         }
@@ -98,6 +121,7 @@ public class InventoryController : MonoBehaviour
         }
     }
 
+    // Lógica de Pausa
     private void ToggleInventory()
     {
         IsInventoryOpen = !IsInventoryOpen;

@@ -10,7 +10,6 @@ public class InventoryManager : MonoBehaviour
     {
         public Objects item;
         public int quantity;
-
         public InventoryItem(Objects newItem, int newQuantity)
         {
             item = newItem;
@@ -22,6 +21,7 @@ public class InventoryManager : MonoBehaviour
 
     void Awake()
     {
+        // Lógica original do seu colega (está perfeita)
         if (Instance == null)
         {
             Instance = this;
@@ -32,7 +32,8 @@ public class InventoryManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
+    
+    // --- LÓGICA ORIGINAL DO SEU COLEGA ---
     public void AddItem(Objects newItem)
     {
         foreach (var entry in items)
@@ -44,10 +45,7 @@ public class InventoryManager : MonoBehaviour
                     entry.quantity++;
                     return;
                 }
-                else
-                {
-                    return; 
-                }
+                else { return; }
             }
         }
         items.Add(new InventoryItem(newItem, 1));
@@ -69,12 +67,16 @@ public class InventoryManager : MonoBehaviour
         items.Clear();
     }
 
+    // --- MODIFICAÇÕES NECESSÁRIAS (INTEGRAÇÃO COM SAVE/LOAD) ---
+    
+    // 1. Chamado pelo WorldStateManager ao Iniciar Novo Jogo
     public void ResetState()
     {
         items.Clear();
         Debug.Log("InventoryManager RESETADO para Novo Jogo.");
     }
 
+    // 2. Chamado pelo SaveManager para pegar os dados
     public List<InventoryItemSaveData> GetSaveData()
     {
         List<InventoryItemSaveData> dataToSave = new List<InventoryItemSaveData>();
@@ -82,14 +84,14 @@ public class InventoryManager : MonoBehaviour
         {
             dataToSave.Add(new InventoryItemSaveData
             {
-                itemID = entry.item.objectName,
+                itemID = entry.item.objectName, // Salva o NOME (ID) do ScriptableObject
                 quantity = entry.quantity
             });
         }
         return dataToSave;
     }
 
-    // 4. Carrega os dados do save
+    // 3. Chamado pelo SaveManager para carregar os dados
     public void LoadSaveData(List<InventoryItemSaveData> dataToLoad)
     {
         items.Clear();
@@ -97,8 +99,8 @@ public class InventoryManager : MonoBehaviour
 
         foreach (var entry in dataToLoad)
         {
-            
-            
+            // IMPORTANTE: Isso exige que todos os ScriptableObjects de Itens
+            // estejam na pasta "Assets/Resources/Items"
             Objects itemAsset = Resources.Load<Objects>("Items/" + entry.itemID);
             if (itemAsset != null)
             {
@@ -111,4 +113,5 @@ public class InventoryManager : MonoBehaviour
         }
         Debug.Log($"InventoryManager carregou {items.Count} itens.");
     }
+    // --- FIM DAS MODIFICAÇÕES NECESSÁRIAS ---
 }

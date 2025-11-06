@@ -4,43 +4,30 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
-
+using TMPro; 
+using System.Collections.Generic;
+using System.Linq; 
+// using Cinemachine; // Removido
 
 public class PauseMenuManager : MonoBehaviour
 {
     public static PauseMenuManager Instance { get; private set; }
-
-    [Header("Panel (CanvasGroup)")]
     public CanvasGroup pausePanel;
-
-    [Header("Buttons")]
     public Button resumeButton;
     public Button saveButton;
     public Button mainMenuButton;
     public Button restartButton;
     public Button quitButton;
-
-    [Header("Behavior")]
     public bool lockCursorInGameplay = true;
     public bool selectFirstButtonOnOpen = true;
-
-    [Header("Scene Names")]
     public string mainMenuSceneName = "MainMenu";
-
     public bool IsPaused { get; private set; }
-
     private GameObject lastSelectedGameObject;
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-
-        // Liga os botões
+        if (Instance != null && Instance != this) Destroy(gameObject);
+        else Instance = this;
         if (resumeButton) resumeButton.onClick.AddListener(Resume);
         if (saveButton) saveButton.onClick.AddListener(SaveGame);
         if (mainMenuButton) mainMenuButton.onClick.AddListener(QuitToMainMenu);
@@ -55,11 +42,8 @@ public class PauseMenuManager : MonoBehaviour
             InputManager.Instance.InputActions.Player.Pause.performed += OnPausePerformed;
             InputManager.Instance.InputActions.UI.Cancel.performed += OnCancelPressed;
         }
-        else
-        {
-            Debug.LogError("PauseMenuManager não conseguiu encontrar o InputManager. O Pause não vai funcionar.");
-        }
-
+        else Debug.LogError("PauseMenuManager não conseguiu encontrar o InputManager.");
+        
         Show(false);
         EnsureTimescale(1f);
         SetCursorLocked(true);
@@ -78,25 +62,23 @@ public class PauseMenuManager : MonoBehaviour
     void Update()
     {
         if (!IsPaused || !pausePanel || pausePanel.alpha < 0.9f) return;
-
         if (EventSystem.current != null)
         {
              if (EventSystem.current.currentSelectedGameObject == null)
              {
                  bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
-
                  if (!isMouseMoving) 
                  {
                      if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy && lastSelectedGameObject.GetComponent<Selectable>()?.IsInteractable() == true)
                      {
                          EventSystem.current.SetSelectedGameObject(lastSelectedGameObject);
                      }
-                     else if (resumeButton != null && resumeButton.IsInteractable()) 
+                     else if (resumeButton != null && resumeButton.IsInteractable())
                      {
                          EventSystem.current.SetSelectedGameObject(resumeButton.gameObject);
                          lastSelectedGameObject = resumeButton.gameObject;
                      }
-                      else 
+                      else
                      {
                          Selectable firstInteractable = pausePanel.GetComponentInChildren<Selectable>(false);
                          if (firstInteractable != null && firstInteractable.IsInteractable())
@@ -104,10 +86,7 @@ public class PauseMenuManager : MonoBehaviour
                             EventSystem.current.SetSelectedGameObject(firstInteractable.gameObject);
                             lastSelectedGameObject = firstInteractable.gameObject;
                          }
-                         else 
-                         {
-                            lastSelectedGameObject = null; 
-                         }
+                         else lastSelectedGameObject = null;
                      }
                  }
              }
@@ -117,34 +96,30 @@ public class PauseMenuManager : MonoBehaviour
              }
         }
     }
+
     private void OnCancelPressed(InputAction.CallbackContext context)
     {
+        // --- MODIFICAÇÃO NECESSÁRIA ---
         if (IsPaused && (InventoryController.Instance == null || !InventoryController.Instance.IsInventoryOpen))
         {
             Resume();
         }
+        // --- FIM DA MODIFICAÇÃO ---
     }
-
+    
     void OnPausePerformed(InputAction.CallbackContext context)
     {
-        if (SaveManager.Instance != null && SaveManager.Instance.IsSaving)
-        {
-            Debug.LogWarning("PAUSE BLOQUEADO! O jogo está salvando.");
-            return;
-        }
-        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy)
-        {
-            return;
-        }
+        if (SaveManager.Instance != null && SaveManager.Instance.IsSaving) return;
+        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy) return; // (Guarda para sistema de nocaute)
+        
+        // --- MODIFICAÇÃO NECESSÁRIA ---
         if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
         {
-            return; 
+            return; // Não abra o Pause se o Inventário estiver aberto
         }
+        // --- FIM DA MODIFICAÇÃO ---
 
-        if (!IsPaused)
-        {
-            Pause();
-        }
+        if (!IsPaused) Pause();
     }
 
     public void Pause()
@@ -154,9 +129,7 @@ public class PauseMenuManager : MonoBehaviour
         Show(true);
         EnsureTimescale(0f);
         SetCursorLocked(false); 
-
         if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
-
         if (selectFirstButtonOnOpen && resumeButton)
         {
             StartCoroutine(SelectButtonLater(resumeButton));
@@ -167,8 +140,6 @@ public class PauseMenuManager : MonoBehaviour
              lastSelectedGameObject = null;
              if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         }
-
-        Debug.Log("Jogo pausado - UI Input habilitado");
     }
 
     public void Resume()
@@ -177,20 +148,16 @@ public class PauseMenuManager : MonoBehaviour
         IsPaused = false;
         Show(false);
         EnsureTimescale(1f);
-        SetCursorLocked(lockCursorInGameplay);
-
+        SetCursorLocked(lockCursorInGameplay); 
         if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
-
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         lastSelectedGameObject = null;
-
-        Debug.Log("Jogo retomado - Gameplay Input habilitado");
     }
 
     private IEnumerator SelectButtonLater(Button button)
     {
         yield return null;
-        if (button != null && EventSystem.current != null && button.interactable) // Garante que é interativo
+        if (button != null && EventSystem.current != null && button.interactable)
         {
             EventSystem.current.SetSelectedGameObject(null);
             EventSystem.current.SetSelectedGameObject(button.gameObject);
@@ -217,23 +184,21 @@ public class PauseMenuManager : MonoBehaviour
         var scene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(scene.buildIndex);
     }
-
+    
     private void ResumeCleanup()
     {
          if (WorldStateManager.Instance != null)
          {
              WorldStateManager.Instance.ResetState(); 
          }
-         
          if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap(); 
          EnsureTimescale(1f); 
          SetCursorLocked(lockCursorInGameplay); 
          IsPaused = false; 
          if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null); 
          lastSelectedGameObject = null;
-         Show(false);
+         Show(false); 
     }
-
 
     public void QuitGame()
     {
@@ -244,7 +209,7 @@ public class PauseMenuManager : MonoBehaviour
         Application.Quit();
     #endif
     }
-
+    
     void Show(bool visible)
     {
         if (!pausePanel) return;

@@ -1,88 +1,66 @@
-﻿using UnityEngine;
+﻿using UnityEngine.EventSystems;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class InventorySlot : MonoBehaviour
+public class InventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [Header("UI References")]
-    public Image iconImage;
-    public TextMeshProUGUI quantityText;
-    public TextMeshProUGUI itemNameText;
-    public GameObject actionPanel;
+    [Header("Data (Do not set in prefab)")]
+    public Objects item;
+    public int quantity;
 
-    [HideInInspector] public Objects item;
-    [HideInInspector] public int quantity;
+    [Header("UI References (Set in prefab)")]
+    public Image icon;
+    public TextMeshProUGUI quantityText;
 
     public void SetItem(Objects newItem, int newQuantity)
     {
         item = newItem;
         quantity = newQuantity;
-        gameObject.SetActive(true);
         UpdateUI();
     }
 
     public void UpdateUI()
     {
-        if (item == null)
-        {
-            gameObject.SetActive(false);
-        }
         if (item != null)
         {
-
-          
-            if (iconImage != null && item.icon != null)
+            gameObject.SetActive(true);
+            icon.sprite = item.icon;
+            icon.enabled = true;
+            
+            if (quantity > 1 && item.maxStack > 1)
             {
-                iconImage.enabled = true;
-                iconImage.sprite = item.icon;
-                iconImage.preserveAspect = true;
+                quantityText.text = quantity.ToString();
+                quantityText.enabled = true;
             }
-
-            if (itemNameText != null)
-                itemNameText.text = item.objectName;
-
-            quantityText.text = quantity > 1 ? quantity.ToString() : "";
+            else
+            {
+                quantityText.enabled = false;
+            }
         }
         else
         {
-            if (iconImage != null)
-                iconImage.enabled = false;
-
-            if (itemNameText != null)
-                itemNameText.text = "";
-
-            quantityText.text = "";
-            actionPanel.SetActive(false);
-        }
-    }
-
-    public void OnSlotClicked()
-    {
-        if (item == null) return;
-        actionPanel.SetActive(!actionPanel.activeSelf);
-    }
-
-    public void OnUseClicked()
-    {
-        Debug.Log($"Usou: {item.objectName}");
-        actionPanel.SetActive(false);
-    }
-
-    public void OnEquipClicked()
-    {
-        Debug.Log($"Equipou: {item.objectName}");
-        actionPanel.SetActive(false);
-    }
-
-    public void OnDropClicked()
-    {
-        Debug.Log($"Descartou: {item.objectName}");
-        quantity--;
-        if (quantity <= 0)
-        {
+            gameObject.SetActive(false);
             item = null;
+            quantity = 0;
+            icon.enabled = false;
+            quantityText.enabled = false;
         }
-        UpdateUI();
-        actionPanel.SetActive(false);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (item != null && ItemDescriptionUI.Instance != null)
+        {
+            ItemDescriptionUI.Instance.ShowDescription(item);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (ItemDescriptionUI.Instance != null)
+        {
+            ItemDescriptionUI.Instance.HideDescription();
+        }
     }
 }
