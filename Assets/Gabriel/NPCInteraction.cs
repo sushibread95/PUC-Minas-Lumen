@@ -1,5 +1,5 @@
 // Nome do arquivo: NPCInteraction.cs
-// COLOQUE ESTE SCRIPT NO 'Enemy1' (no lugar do FinishableNPC)
+// CÓDIGO COMPLETO E LIMPO (COM A CORREÇÃO DE RE-ENTRADA)
 
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -43,11 +43,19 @@ public class NPCInteraction : MonoBehaviour
         {
             isPlayerClose = true;
             
-            // Só aplica o highlight se o NPC ainda estiver "normal"
+            // --- CORREÇÃO DE RE-ENTRADA ---
+            // Reavalia o estado CADA VEZ que o player entra no trigger.
             if (npcData.currentState == NPCState.Corrompido && meshToHighlight != null && highlightMaterial != null)
             {
+                // Se corrompido, mostra o highlight
                 meshToHighlight.material = highlightMaterial;
             }
+            else if (npcData.currentState == NPCState.Nocauteado)
+            {
+                // Se já estiver nocauteado, mostra o menu de decisão
+                promptUI?.Show();
+            }
+            // --- FIM DA CORREÇÃO ---
         }
     }
 
@@ -57,7 +65,7 @@ public class NPCInteraction : MonoBehaviour
         {
             isPlayerClose = false;
             
-            // Esconde a UI E o highlight
+            // Esconde TUDO ao sair: a UI e o highlight
             promptUI?.Hide();
             if (meshToHighlight != null && originalMaterial != null)
             {
@@ -85,7 +93,7 @@ public class NPCInteraction : MonoBehaviour
                 // 2. Mostra as opções (Matar/Purificar)
                 promptUI?.Show();
                 
-                // 3. Tira o highlight (opcional, mas limpo)
+                // 3. Tira o highlight
                 if (meshToHighlight != null && originalMaterial != null)
                 {
                     meshToHighlight.material = originalMaterial;

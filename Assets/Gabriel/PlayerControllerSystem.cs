@@ -6,6 +6,9 @@ using UnityEngine.InputSystem.Controls;   // KeyControl
 [RequireComponent(typeof(CharacterController))]
 public class PlayerControllerSystem : MonoBehaviour
 {
+    // ... (todo o seu código de Header/variáveis permanece o mesmo) ...
+    // ... (animator, speed, refs, move, toggles, crouch, etc) ...
+
     [Header("Animation")]
     public Animator animator;
     public float animDampTime = 0.1f;
@@ -91,14 +94,14 @@ public class PlayerControllerSystem : MonoBehaviour
     private int currentAttackSlot = 0;
     private float nextSpellTime = 0f;
 
+
     void Awake()
     {
-        // Pega componentes locais
+        // ... (seu código do Awake() permanece o mesmo) ...
         cc = GetComponent<CharacterController>();
         if (!animator) animator = GetComponentInChildren<Animator>();
         if (cannon == null) cannon = GetComponentInChildren<Cannon>();
 
-        // Gera hashes de animação
         if (!string.IsNullOrEmpty(speedParam))      speedHash = Animator.StringToHash(speedParam);
         if (!string.IsNullOrEmpty(groundedParam))   groundedHash = Animator.StringToHash(groundedParam);
         if (!string.IsNullOrEmpty(crouchBoolParam)) crouchHash = Animator.StringToHash(crouchBoolParam);
@@ -134,6 +137,15 @@ public class PlayerControllerSystem : MonoBehaviour
         }
 
         if (!playerCamera) playerCamera = Camera.main;
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.RegisterPlayer(this.transform);
+        }
+        else
+        {
+            Debug.LogWarning("PlayerController tentou se registrar, mas o SaveManager.Instance ainda não existe.");
+        }
     }
     
     private void OnDestroy()
