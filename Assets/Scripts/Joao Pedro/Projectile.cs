@@ -2,6 +2,12 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
+    [HideInInspector] public ProjectileOwner owner = ProjectileOwner.None;
+
+    // --- 1. A LINHA QUE FALTAVA ---
+    [HideInInspector] public int ignoredLayer = -1; // -1 significa "nenhuma"
+    // --- FIM DA LINHA QUE FALTAVA ---
+
     public Rigidbody body;
     public float timeToLive = 5f;
     public float minSpeed = 0.1f;
@@ -9,12 +15,26 @@ public class Projectile : MonoBehaviour
 
     private void OnEnable()
     {
+        owner = ProjectileOwner.None;
+
+        // --- 2. A LINHA QUE CAUSA O ERRO (Linha 20) ---
+        ignoredLayer = -1; // Reseta a layer ignorada
+        // --- FIM DA LINHA ---
+
         CancelInvoke();
         Invoke(nameof(Disable), timeToLive);
     }
 
     private void OnDisable()
     {
+        // --- 3. AS LINHAS QUE CAUSAM O ERRO (Linha 24, 25) ---
+        if (ignoredLayer != -1)
+        {
+            Physics.IgnoreLayerCollision(this.gameObject.layer, ignoredLayer, false);
+            ignoredLayer = -1; // Limpa o "cache"
+        }
+        // --- FIM DAS LINHAS ---
+
         this.transform.rotation = Quaternion.identity;
     }
 

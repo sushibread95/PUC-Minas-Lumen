@@ -212,6 +212,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61602d4d02590c74392020d391d5b138, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  owner: 0
+  ignoredLayer: -1
   body: {fileID: 7409980590206287130}
   timeToLive: 2
   minSpeed: 0.1

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class HealthSystem : MonoBehaviour
@@ -11,6 +12,10 @@ public class HealthSystem : MonoBehaviour
     [SerializeField] private Slider bleedOutSlider;
     [Header("Health Atributes")]
     public int health = 1;
+    [Header("Identity")]
+    [Tooltip("Defina quem é o 'dono' deste HealthSystem (Player ou Enemy)")]
+    public ProjectileOwner ownerType = ProjectileOwner.None;
+    [HideInInspector] public bool justTookDamage = false;
     [Header("Recovery Atributes")]
     [SerializeField] private float recoveryDelay;
     private float recoveryDelayTimer = 0f;
@@ -23,12 +28,14 @@ public class HealthSystem : MonoBehaviour
     public bool isDead = false;
     [SerializeField] private float bleedOutDuration;
     [HideInInspector] public float bleedOutTimer = 0f;
+    private CorruptedNPC corruptedNPC;
     private void OnEnable()
     {
         bleedOutTimer = 0f;
         recoveryDelayTimer = 0f;
         maximumHealthBar.value = health;
         hurtHealthBar.value = 0f;
+        TryGetComponent(out corruptedNPC);
         staminaBar.maxValue = maximumHealthBar.value;
         oneShotProtectionSlider.value = ospRange;
     }
@@ -36,19 +43,31 @@ public class HealthSystem : MonoBehaviour
     {
         if (!isDead)
         {
-            if (maximumHealthBar.value == 0f)
+            if (maximumHealthBar.value <= 0f)
+
             {
-                bleedOutSlider.GetComponentInChildren<RawImage>().enabled = true;
-                if (bleedOutTimer < bleedOutDuration)
+                if (corruptedNPC != null)
                 {
-                    bleedOutTimer += Time.deltaTime;
-                    bleedOutSlider.value = bleedOutSlider.maxValue - bleedOutTimer / bleedOutDuration;
+                    if (corruptedNPC.currentState == NPCState.Corrompido)
+                    {
+                        corruptedNPC.EntrarEmNocaute();
+                    }
                 }
                 else
                 {
-                    bleedOutTimer = 0f;
-                    isDead = true;
-                    Kill();
+
+                    bleedOutSlider.GetComponentInChildren<RawImage>().enabled = true;
+                    if (bleedOutTimer < bleedOutDuration)
+                    {
+                        bleedOutTimer += Time.deltaTime;
+                        bleedOutSlider.value = bleedOutSlider.maxValue - bleedOutTimer / bleedOutDuration;
+                    }
+                    else
+                    {
+                        bleedOutTimer = 0f;
+                        isDead = true;
+                        Kill();
+                    }
                 }
             }
             else bleedOutSlider.GetComponentInChildren<RawImage>().enabled = false;
@@ -80,10 +99,30 @@ public class HealthSystem : MonoBehaviour
             }
         }
     }
-    private void OnTriggerEnter(Collider other)
+    private void OnCollisionEnter(Collision collision)
     {
-        if (other.GetComponent<EffectsLibrary>())
-            ApplyEffect(other.GetComponent<EffectsLibrary>().effects);
+        // Pega o GameObject que nos acertou
+        GameObject objectThatHitUs = collision.gameObject;
+
+        // Tenta pegar os componentes desse objeto
+        EffectsLibrary effects = objectThatHitUs.GetComponent<EffectsLibrary>();
+        Projectile projectile = objectThatHitUs.GetComponent<Projectile>();
+
+        // Se o objeto não tem "Efeitos" (dano), não faz nada.
+        if (effects == null) return;
+
+        // Checagem de Fogo Amigo (que implementamos antes)
+        if (projectile != null)
+        {
+            // Se o dono do projétil é o MESMO dono deste HealthSystem, é fogo amigo.
+            if (projectile.owner == this.ownerType)
+            {
+                return; // Para a execução, não aplica dano.
+            }
+        }
+
+        // Se chegou aqui, é um ataque inimigo. Aplica o dano.
+        ApplyEffect(effects.effects);
     }
     public bool CheckEffect(Effect[] effectToApply)
     {
@@ -107,11 +146,13 @@ public class HealthSystem : MonoBehaviour
     }
     public bool ApplyEffect(Effect[] effectToApply)
     {
+
         for (int i = 0; i < effectToApply.Length; i++)
         {
             switch (effectToApply[i].effectType)
             {
                 case Effect.EffectType.physical:
+                    justTookDamage = true;
                     recoveryDelayTimer = 0f;
                     if (effectToApply[i].power >= health && maximumHealthBar.value >= health * ospRange)
                     {
@@ -127,6 +168,7 @@ public class HealthSystem : MonoBehaviour
                     }
                     break;
                 case Effect.EffectType.magic:
+                    justTookDamage = true;
                     if (effectToApply[i].power < maximumHealthBar.value)
                     {
                         recoveryDelayTimer = 0f;
@@ -145,6 +187,22 @@ public class HealthSystem : MonoBehaviour
     }
     private void Kill()
     {
-        ObjectPoolingSystem.ReturnObjectToPool(this.gameObject);
+        if (ownerType == ProjectileOwner.Player)
+        {
+            Debug.Log("JOGADOR MORREU!");
+
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToUIMap();
+            }
+
+            Time.timeScale = 1f;
+
+            SceneManager.LoadScene("MainMenu");
+        }
+        else
+        {
+            ObjectPoolingSystem.ReturnObjectToPool(this.gameObject);
+        }
     }
 }

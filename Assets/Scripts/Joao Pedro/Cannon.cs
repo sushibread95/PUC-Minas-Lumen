@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [System.Serializable]
+
 public struct Spell
 {
     [Header("Components")]
@@ -23,6 +24,7 @@ public struct Spell
     [Header("Mana Atributes")]
     public Effect[] castEffects;
 
+
     [Header("Barrel Atributes")]
     public int   projectilePerShot;
     public float spreadAngle;
@@ -30,8 +32,12 @@ public struct Spell
     public float recoilForce;
 }
 
+
 public class Cannon : MonoBehaviour
 {
+    [Tooltip("Defina quem é o 'dono' deste canhão (Player ou Enemy)")]
+    public ProjectileOwner ownerType = ProjectileOwner.None;
+
     [Header("Components")]
     [SerializeField] private HealthSystem health;
 
@@ -153,7 +159,14 @@ public class Cannon : MonoBehaviour
     private void SpawnAndPush(GameObject projectilePrefab, Vector3 pos, Quaternion rot, Vector3 dir)
     {
         var go = ObjectPoolingSystem.SpawnObject(projectilePrefab, pos, rot);
+        int projectileLayer = go.layer;
 
+        // 2. Pega a Layer (número) do dono deste canhão (o Atirador)
+        int ownerLayer = this.gameObject.layer;
+
+        // 3. Diz à Física da Unity: "Comece a ignorar colisões entre estas duas layers"
+        // (O 'true' significa "ignorar")
+        Physics.IgnoreLayerCollision(projectileLayer, ownerLayer, true);
         // Força rotação/posição e forward do projétil (alguns pools mantêm rotação antiga)
         go.transform.SetPositionAndRotation(pos, rot);
         go.transform.forward = dir;
@@ -162,6 +175,7 @@ public class Cannon : MonoBehaviour
         var proj = go.GetComponent<Projectile>();
         if (proj != null && proj.body != null)
         {
+            proj.ignoredLayer = ownerLayer;
             proj.body.linearVelocity = dir.normalized * projectileSpeed;
             proj.body.angularVelocity = Vector3.zero;
         }
