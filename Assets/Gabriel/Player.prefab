@@ -644,7 +644,6 @@ GameObject:
   - component: {fileID: 7535975365116833707}
   - component: {fileID: 4606078702203739541}
   - component: {fileID: 3837386625472449721}
-  - component: {fileID: 3030055320606506915}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -806,6 +805,8 @@ MonoBehaviour:
   oneShotProtectionSlider: {fileID: 0}
   bleedOutSlider: {fileID: 0}
   health: 1
+  ownerType: 0
+  justTookDamage: 0
   recoveryDelay: 1
   recoveryRate: 0.5
   recoveryPercent: 0.1
@@ -876,27 +877,6 @@ MonoBehaviour:
   m_DefaultActionMap: UI
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &3030055320606506915
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1319811500491671466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df7b0a0d3880ea7459cffcb1bb9f6757, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  inventorySize: 8
-  inventoryUIParent: {fileID: 0}
-  slotPrefab: {fileID: 728447433978834246, guid: 282b787aa8cdeea4a81779af640a1f51, type: 3}
-  pickupRange: 5
-  itemTag: Item
-  itemLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  highlightMaterial: {fileID: 2100000, guid: 22caeaf5739b41b4684815273a21d9bf, type: 2}
 --- !u!1 &1432190983206264965
 GameObject:
   m_ObjectHideFlags: 0
@@ -2862,6 +2842,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d7b7838601b3db4da12c1df9cb543c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ownerType: 0
   health: {fileID: 7535975365116833707}
   projectileSpeed: 9
   lockOn: {fileID: 4606078702203739541}

@@ -231,7 +231,7 @@ public class PlayerControllerSystem : MonoBehaviour
     }
 
     // Função de travar o cursor (o "Vilão" anterior, agora controlado)
-    private void LockCursor(bool locked)
+    public void LockCursor(bool locked)
     {
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible   = !locked;

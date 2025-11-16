@@ -74,7 +74,7 @@ public class SaveManager : MonoBehaviour
         }
         if (InventoryManager.Instance != null)
         {
-            this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
+            InventoryManager.Instance.LoadSaveData((List<InventoryItemSaveData>)this.gameData.inventoryItems);
         }
         
         // Usamos a referência registrada

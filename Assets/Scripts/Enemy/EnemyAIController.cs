@@ -69,17 +69,14 @@ public class EnemyAIController : MonoBehaviour
 
     void Update()
     {
-        // Botão de Debug para forçar estado
         if (Keyboard.current.fKey.wasPressedThisFrame)
         {
             if (currentStateID == EnemyStateID.Patrol || currentStateID == EnemyStateID.Alert)
             {
-                Debug.LogWarning("DEBUG: Forçando estado de COMBATE!");
                 ChangeState(EnemyStateID.Combat);
             }
             else
             {
-                Debug.LogWarning("DEBUG: Forçando estado de PATRULHA!");
                 ChangeState(EnemyStateID.Patrol);
             }
         }
@@ -156,11 +153,9 @@ public class EnemyAIController : MonoBehaviour
             ))
         {
 
-            Debug.LogWarning("IA: Falha na visão (3): Visão bloqueada por: " + hit.collider.name);
             return false;
         }
 
-        Debug.Log("<color=green>IA: EU VEJO O PLAYER! (Caminho livre)</color>");
         lastSeenLocation = playerTarget.position;
         return true;
     }
