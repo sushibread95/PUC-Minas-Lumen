@@ -116,12 +116,9 @@ public class InventoryController : MonoBehaviour
             Time.timeScale = 0f;
             SetCursorLocked(false);
             InputManager.Instance.SwitchToUIMap();
-            StartCoroutine(SelectFirstSlotLater());
 
-            if (InventoryActionPanel.Instance != null)
-            {
-                InventoryActionPanel.Instance.ShowPanel(null);
-            }
+            // Esta corrotina agora faz todo o trabalho
+            StartCoroutine(SelectFirstSlotLater());
         }
         else
         {
@@ -133,6 +130,7 @@ public class InventoryController : MonoBehaviour
             {
                 InventoryActionPanel.Instance.HidePanel();
             }
+
             if (QuickSlotAssignmentUI.Instance != null)
             {
                 QuickSlotAssignmentUI.Instance.HidePanel();
@@ -145,16 +143,24 @@ public class InventoryController : MonoBehaviour
 
     private IEnumerator SelectFirstSlotLater()
     {
+        // Espera 1 frame. Isso dá tempo para o IventoryCanva
+        // ligar e rodar o Awake() do ActionPanel.
         yield return null;
+
+        // Agora que o ActionPanel.Instance existe,
+        // esta função pode chamá-lo.
         SelectFirstAvailableSlot();
     }
 
+    // --- FUNÇÃO MODIFICADA ---
     private void SelectFirstAvailableSlot()
     {
         if (EventSystem.current == null || inventorySlotParent == null)
             return;
 
         Button firstButton = null;
+        InventorySlot firstSlot = null; // --- LINHA ADICIONADA ---
+
         if (inventorySlotParent.childCount > 0)
         {
             for (int i = 0; i < inventorySlotParent.childCount; i++)
@@ -163,11 +169,15 @@ public class InventoryController : MonoBehaviour
                 if (child != null && child.gameObject.activeSelf)
                 {
                     firstButton = child.GetComponent<Button>();
-                    if (firstButton != null) break;
+                    firstSlot = child.GetComponent<InventorySlot>(); // --- LINHA ADICIONADA ---
+
+                    if (firstButton != null && firstSlot != null)
+                        break;
                 }
             }
         }
 
+        // 1. Seleciona o slot para o Gamepad
         if (firstButton != null && firstButton.interactable)
         {
             EventSystem.current.SetSelectedGameObject(null);
@@ -178,6 +188,20 @@ public class InventoryController : MonoBehaviour
         {
             lastSelectedGameObject = null;
         }
+
+        // 2. ATIVA O ACTION PANEL com as infos do primeiro slot
+        // --- BLOCO ADICIONADO ---
+        if (InventoryActionPanel.Instance != null)
+        {
+            // Se firstSlot for null (inventário vazio), 
+            // o painel vai abrir com a msg "Selecione um item".
+            InventoryActionPanel.Instance.ShowPanel(firstSlot);
+        }
+        else
+        {
+            Debug.LogError("InventoryActionPanel.Instance ainda é NULO! Verifique a hierarquia.");
+        }
+        // --- FIM DO BLOCO ---
     }
 
     private void SetCursorLocked(bool locked)

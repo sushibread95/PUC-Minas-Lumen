@@ -289,6 +289,24 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Purify"",
+                    ""type"": ""Button"",
+                    ""id"": ""c9d5d61f-ff43-4b50-b506-ac60a2ae63e5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Kill"",
+                    ""type"": ""Button"",
+                    ""id"": ""fddafe37-edcd-4ea7-a1cb-42204b5af413"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -797,6 +815,28 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""ToggleQuickSlots"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bb99672b-1f14-4aae-a747-6a91f07c09dc"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Purify"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d5e377bc-1655-4b41-a0a9-f05c09db5afe"",
+                    ""path"": ""<Keyboard>/k"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Kill"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1138,6 +1178,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_QuickSlot3 = m_Player.FindAction("QuickSlot3", throwIfNotFound: true);
         m_Player_QuickSlot4 = m_Player.FindAction("QuickSlot4", throwIfNotFound: true);
         m_Player_ToggleQuickSlots = m_Player.FindAction("ToggleQuickSlots", throwIfNotFound: true);
+        m_Player_Purify = m_Player.FindAction("Purify", throwIfNotFound: true);
+        m_Player_Kill = m_Player.FindAction("Kill", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Point = m_UI.FindAction("Point", throwIfNotFound: true);
@@ -1251,6 +1293,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_QuickSlot3;
     private readonly InputAction m_Player_QuickSlot4;
     private readonly InputAction m_Player_ToggleQuickSlots;
+    private readonly InputAction m_Player_Purify;
+    private readonly InputAction m_Player_Kill;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1351,6 +1395,14 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @ToggleQuickSlots => m_Wrapper.m_Player_ToggleQuickSlots;
         /// <summary>
+        /// Provides access to the underlying input action "Player/Purify".
+        /// </summary>
+        public InputAction @Purify => m_Wrapper.m_Player_Purify;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Kill".
+        /// </summary>
+        public InputAction @Kill => m_Wrapper.m_Player_Kill;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_Player; }
@@ -1442,6 +1494,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @ToggleQuickSlots.started += instance.OnToggleQuickSlots;
             @ToggleQuickSlots.performed += instance.OnToggleQuickSlots;
             @ToggleQuickSlots.canceled += instance.OnToggleQuickSlots;
+            @Purify.started += instance.OnPurify;
+            @Purify.performed += instance.OnPurify;
+            @Purify.canceled += instance.OnPurify;
+            @Kill.started += instance.OnKill;
+            @Kill.performed += instance.OnKill;
+            @Kill.canceled += instance.OnKill;
         }
 
         /// <summary>
@@ -1519,6 +1577,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @ToggleQuickSlots.started -= instance.OnToggleQuickSlots;
             @ToggleQuickSlots.performed -= instance.OnToggleQuickSlots;
             @ToggleQuickSlots.canceled -= instance.OnToggleQuickSlots;
+            @Purify.started -= instance.OnPurify;
+            @Purify.performed -= instance.OnPurify;
+            @Purify.canceled -= instance.OnPurify;
+            @Kill.started -= instance.OnKill;
+            @Kill.performed -= instance.OnKill;
+            @Kill.canceled -= instance.OnKill;
         }
 
         /// <summary>
@@ -1886,6 +1950,20 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnToggleQuickSlots(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Purify" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPurify(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Kill" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnKill(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

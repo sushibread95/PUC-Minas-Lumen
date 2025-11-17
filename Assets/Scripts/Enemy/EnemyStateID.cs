@@ -4,6 +4,6 @@ public enum EnemyStateID
     Patrol,
     Alert,
     Combat,
-    KnockedOut,
+    Fallen,
     Dead
 }

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 493833808347774876}
   m_Layer: 7
   m_Name: Sphere
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9875a245ac49007498213638a307faa1, type: 2}
+  - {fileID: 2100000, guid: 9f6cb58a4ca1c104b8e5929384987c4b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -185,8 +185,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effects:
   - effectType: 1
-    power: 0.1
-    isPercentual: 1
+    power: 10
+    isPercentual: 0
 --- !u!114 &6831613685651403253
 MonoBehaviour:
   m_ObjectHideFlags: 0

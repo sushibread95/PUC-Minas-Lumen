@@ -106,9 +106,10 @@ public class InventoryActionPanel : MonoBehaviour
     private void OnUse()
     {
         if (currentSlot == null || currentSlot.item == null) return;
-        InventoryManager.Instance.UseItem(currentSlot.item, PlayerStats.Instance.gameObject);
 
-        // CORREÇÃO: Limpa o painel, mas não o fecha.
+        // Mude de PlayerStats.Instance para HealthSystem.Instance
+        InventoryManager.Instance.UseItem(currentSlot.item, HealthSystem.Instance.gameObject);
+
         ShowPanel(null);
     }
 

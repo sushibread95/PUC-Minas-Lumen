@@ -66,8 +66,8 @@ public class QuickSlotInput : MonoBehaviour
         Objects item = InventoryManager.Instance.quickSlots[index];
         if (item != null)
         {
-            // CORREÇÃO: Passa o GameObject do Player
-            InventoryManager.Instance.UseItem(item, PlayerStats.Instance.gameObject);
+            // Mude de PlayerStats.Instance para HealthSystem.Instance
+            InventoryManager.Instance.UseItem(item, HealthSystem.Instance.gameObject);
         }
     }
 

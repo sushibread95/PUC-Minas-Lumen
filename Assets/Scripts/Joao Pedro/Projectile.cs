@@ -25,19 +25,6 @@ public class Projectile : MonoBehaviour
         Invoke(nameof(Disable), timeToLive);
     }
 
-    private void OnDisable()
-    {
-        // --- 3. AS LINHAS QUE CAUSAM O ERRO (Linha 24, 25) ---
-        if (ignoredLayer != -1)
-        {
-            Physics.IgnoreLayerCollision(this.gameObject.layer, ignoredLayer, false);
-            ignoredLayer = -1; // Limpa o "cache"
-        }
-        // --- FIM DAS LINHAS ---
-
-        this.transform.rotation = Quaternion.identity;
-    }
-
     private void Disable()
     {
         gameObject.SetActive(false);

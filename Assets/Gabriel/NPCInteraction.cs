@@ -1,9 +1,7 @@
-// Nome do arquivo: NPCInteraction.cs
-// CÓDIGO COMPLETO E LIMPO (COM A CORREÇÃO DE RE-ENTRADA)
-
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // Importa o novo sistema
 
+// CÓDIGO ATUALIZADO
 public class NPCInteraction : MonoBehaviour
 {
     [Header("Feedback Visual")]
@@ -12,26 +10,27 @@ public class NPCInteraction : MonoBehaviour
     [Tooltip("A mesh do NPC que deve brilhar. Ex: Beta_Surface")]
     public Renderer meshToHighlight;
 
-    // Referências internas (Auto-configuradas)
     private CorruptedNPC npcData;
     private ContextualPromptUI promptUI;
     private Material originalMaterial;
-    
+
     private bool isPlayerClose = false;
+
+    // --- INÍCIO DAS MUDANÇAS ---
+    private PlayerInputActions input;
+    private bool inputInitialized = false;
+    // --- FIM DAS MUDANÇAS ---
 
     void Awake()
     {
-        // 1. Pega os componentes "irmãos"
         npcData = GetComponent<CorruptedNPC>();
         promptUI = GetComponentInChildren<ContextualPromptUI>(true);
 
-        // 2. Salva o material original
         if (meshToHighlight != null)
         {
             originalMaterial = meshToHighlight.material;
         }
 
-        // 3. Garante que a UI de prompt esteja escondida
         promptUI?.Hide();
     }
 
@@ -41,21 +40,25 @@ public class NPCInteraction : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+            // --- INÍCIO DAS MUDANÇAS ---
+            // Pega o InputManager na primeira vez que o player se aproxima
+            if (!inputInitialized && InputManager.Instance != null)
+            {
+                input = InputManager.Instance.InputActions;
+                inputInitialized = true;
+            }
+            // --- FIM DAS MUDANÇAS ---
+
             isPlayerClose = true;
-            
-            // --- CORREÇÃO DE RE-ENTRADA ---
-            // Reavalia o estado CADA VEZ que o player entra no trigger.
+
             if (npcData.currentState == NPCState.Corrompido && meshToHighlight != null && highlightMaterial != null)
             {
-                // Se corrompido, mostra o highlight
                 meshToHighlight.material = highlightMaterial;
             }
             else if (npcData.currentState == NPCState.Nocauteado)
             {
-                // Se já estiver nocauteado, mostra o menu de decisão
                 promptUI?.Show();
             }
-            // --- FIM DA CORREÇÃO ---
         }
     }
 
@@ -64,8 +67,7 @@ public class NPCInteraction : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerClose = false;
-            
-            // Esconde TUDO ao sair: a UI e o highlight
+
             promptUI?.Hide();
             if (meshToHighlight != null && originalMaterial != null)
             {
@@ -79,44 +81,34 @@ public class NPCInteraction : MonoBehaviour
     void Update()
     {
         // Cláusula de guarda: não faz nada se o player não estiver perto
-        if (!isPlayerClose) return;
+        // OU se o input não foi pego (porque o InputManager não existe)
+        if (!isPlayerClose || !inputInitialized) return;
 
         // ESTADO 1: CORROMPIDO (Player pode Nocautear)
         if (npcData.currentState == NPCState.Corrompido)
         {
-            // Checa o input de 'N' (Nocaute)
-            if (Keyboard.current.nKey.wasPressedThisFrame)
-            {
-                // 1. Nocauteia o NPC
-                npcData.EntrarEmNocaute();
-                
-                // 2. Mostra as opções (Matar/Purificar)
-                promptUI?.Show();
-                
-                // 3. Tira o highlight
-                if (meshToHighlight != null && originalMaterial != null)
-                {
-                    meshToHighlight.material = originalMaterial;
-                }
-            }
+            // (Input de Nocaute 'N' removido para focar no 'Fallen')
+            // (O dano normal agora vai derrubar o inimigo)
         }
-        
+
         // ESTADO 2: NOCAUTEADO (Player pode Finalizar)
         else if (npcData.currentState == NPCState.Nocauteado)
         {
-            // Checa o input de 'P' (Purificar)
-            if (Keyboard.current.pKey.wasPressedThisFrame)
+            // --- INÍCIO DAS MUDANÇAS ---
+            // Checa o input de 'Purify' (P) do PlayerInputActions
+            if (input.Player.Purify.WasPressedThisFrame())
             {
                 npcData.SerPurificado();
                 promptUI?.Hide();
             }
-            
-            // Checa o input de 'K' (Matar)
-            if (Keyboard.current.kKey.wasPressedThisFrame)
+
+            // Checa o input de 'Kill' (K) do PlayerInputActions
+            if (input.Player.Kill.WasPressedThisFrame())
             {
                 npcData.SerMorto();
                 promptUI?.Hide();
             }
+            // --- FIM DAS MUDANÇAS ---
         }
     }
 }

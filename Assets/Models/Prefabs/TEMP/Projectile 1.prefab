@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 7362961343822794814}
   - component: {fileID: 6626032514231404518}
   - component: {fileID: 9028127162977299145}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Projectile 1
-  m_TagString: Enemy
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -99,7 +99,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effects:
   - effectType: 0
-    power: 2
+    power: 15
     isPercentual: 0
 --- !u!114 &6626032514231404518
 MonoBehaviour:
@@ -143,7 +143,7 @@ GameObject:
   - component: {fileID: 1582888542118744670}
   - component: {fileID: 5094089073002940022}
   - component: {fileID: 1995656370259331887}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}

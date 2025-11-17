@@ -203,6 +203,24 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Purify",
+                    "type": "Button",
+                    "id": "c9d5d61f-ff43-4b50-b506-ac60a2ae63e5",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Kill",
+                    "type": "Button",
+                    "id": "fddafe37-edcd-4ea7-a1cb-42204b5af413",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -709,6 +727,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "ToggleQuickSlots",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bb99672b-1f14-4aae-a747-6a91f07c09dc",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Purify",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d5e377bc-1655-4b41-a0a9-f05c09db5afe",
+                    "path": "<Keyboard>/k",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Kill",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
