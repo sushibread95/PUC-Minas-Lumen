@@ -1,10 +1,16 @@
+// Nome do arquivo: EquipmentUI.cs
+// CÓDIGO COMPLETO (MODIFICADO PARA ENCONTRAR O PLAYER DINAMICAMENTE)
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class EquipmentUI : MonoBehaviour
 {
     public GameObject equipmentPanel;
-    public PlayerControllerSystem playerController; // Assumindo que voc� tem este script
+    // --- MODIFICAÇÃO (REMOÇÃO DA ATRIBUIÇÃO POR INSPECTOR) ---
+    // A referência ao Player será encontrada dinamicamente.
+    private PlayerControllerSystem playerController; 
+    // --- FIM DA MODIFICAÇÃO ---
 
     private PlayerInputActions input;
     private bool equipmentActive = false;
@@ -17,8 +23,6 @@ public class EquipmentUI : MonoBehaviour
     void OnEnable()
     {
         input.Enable();
-        // !! IMPORTANTE !!
-        // Voc� precisa criar esta A��o "Equipment" no seu Asset PlayerInputActions
         input.Player.Equipment.performed += OnEquipmentPressed;
     }
 
@@ -31,7 +35,11 @@ public class EquipmentUI : MonoBehaviour
     void Start()
     {
         equipmentPanel.SetActive(false);
-        // (Opcional: pegue o playerController se n�o estiver atribu�do)
+        // --- ADIÇÃO: ENCONTRA O PLAYER APÓS A CENA CARREGAR ---
+        // Agora que este script é persistente, ele procura o Player que
+        // é criado (spawnado) na cena de jogo.
+        playerController = FindFirstObjectByType<PlayerControllerSystem>();
+        // --- FIM DA ADIÇÃO ---
     }
 
     private void OnEquipmentPressed(InputAction.CallbackContext ctx)
@@ -44,9 +52,9 @@ public class EquipmentUI : MonoBehaviour
         equipmentActive = !equipmentActive;
         equipmentPanel.SetActive(equipmentActive);
 
+        // O LockCursor é chamado aqui
         if (playerController != null)
         {
-            // Trava o cursor se o menu fechar, destrava se abrir
             playerController.LockCursor(!equipmentActive);
         }
     }

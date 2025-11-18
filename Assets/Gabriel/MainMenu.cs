@@ -2,17 +2,17 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.IO;
-using UnityEngine.EventSystems; // Necessário para EventSystem
-using UnityEngine.InputSystem; // <<< NECESSÁRIO para Mouse.current
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem; 
 
 public class MainMenu : MonoBehaviour
 {
+    // ... (todas as suas variáveis de Header/Referências permanecem as mesmas) ...
     [Header("Referências da UI")]
     public Button continueButton;
-    public Button defaultSelectedButton; // Arraste o BtnStart aqui
-
+    public Button defaultSelectedButton; 
     [Header("Nomes das Cenas")]
-    public string gameSceneName = "Vilarejo"; // Verifique se este é o nome correto
+    public string gameSceneName = "Vilarejo"; 
 
     private string saveFilePath;
     private GameObject lastSelectedGameObject;
@@ -20,14 +20,11 @@ public class MainMenu : MonoBehaviour
     void Start()
     {
         saveFilePath = Path.Combine(Application.persistentDataPath, "savegame.json");
-
-        // Habilita/Desabilita botão Continuar
         if (continueButton != null)
         {
             continueButton.interactable = File.Exists(saveFilePath);
         }
 
-        // Garante que o InputManager está no modo UI
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToUIMap();
@@ -37,103 +34,108 @@ public class MainMenu : MonoBehaviour
              Debug.LogError("[MainMenu] InputManager.Instance não encontrado no Start!");
         }
 
-        // Garante a seleção inicial para o controle/teclado
         SelectDefaultButton();
     }
 
     void Update()
     {
-        // Só executa se o EventSystem existir
+        // ... (todo o seu código Update() e lógica de seleção permanece o mesmo) ...
         if (EventSystem.current == null) return;
 
-        // Lógica para restaurar seleção do controle após interação do mouse
         if (EventSystem.current.currentSelectedGameObject == null)
         {
-            // Verifica se o mouse está parado usando o NOVO Input System
-            bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f); // 0.1f = pequena tolerância
-
-            if (!isMouseMoving) // Se o mouse está parado
+            bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
+            if (!isMouseMoving) 
             {
-                // Re-seleciona o último botão que estava selecionado antes do mouse interferir,
-                // ou o botão padrão se for a primeira vez.
                 if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy && lastSelectedGameObject.GetComponent<Selectable>()?.IsInteractable() == true)
                 {
                     EventSystem.current.SetSelectedGameObject(lastSelectedGameObject);
                 }
                 else
                 {
-                    SelectDefaultButton(); // Tenta selecionar o botão padrão novamente
+                    SelectDefaultButton();
                 }
             }
         }
         else if (EventSystem.current.currentSelectedGameObject != null)
         {
-            // Atualiza o último objeto selecionado (quando usando controle/teclado)
             lastSelectedGameObject = EventSystem.current.currentSelectedGameObject;
         }
     }
 
-    // Função helper para selecionar o botão padrão
     private void SelectDefaultButton()
     {
-        // Só executa se o EventSystem existir
         if (EventSystem.current == null) return;
 
-        if (defaultSelectedButton != null && defaultSelectedButton.interactable) // Verifica se é interativo
+        if (defaultSelectedButton != null && defaultSelectedButton.interactable)
         {
             EventSystem.current.SetSelectedGameObject(defaultSelectedButton.gameObject);
             lastSelectedGameObject = defaultSelectedButton.gameObject;
         }
-        else // Fallback se não configurado ou não interativo (ex: Continue desabilitado)
+        else
         {
-             // Tenta selecionar o primeiro botão interativo filho do Canvas
-            Button firstInteractableButton = GetComponentInChildren<Button>(false); // false = não incluir inativos
+            Button firstInteractableButton = GetComponentInChildren<Button>(false);
             if (firstInteractableButton != null && firstInteractableButton.interactable)
             {
                 EventSystem.current.SetSelectedGameObject(firstInteractableButton.gameObject);
                 lastSelectedGameObject = firstInteractableButton.gameObject;
             }
-             else // Se nenhum botão for encontrado/interativo
+             else 
              {
-                 EventSystem.current.SetSelectedGameObject(null); // Garante que nada esteja selecionado
+                 EventSystem.current.SetSelectedGameObject(null);
                  lastSelectedGameObject = null;
              }
         }
     }
 
+    // --- MODIFICAÇÃO CHAVE ---
     public void StartNewGame()
     {
-        // --- LIMPA O ESTADO DOS MANAGERS ---
+        // Limpa o estado e garante que a cena carregue com o Player no spawn inicial
         if (WorldStateManager.Instance != null)
         {
             WorldStateManager.Instance.ResetState();
         }
-        // (Adicionar chamada para InventoryManager.Instance.ResetState(); aqui no futuro)
-        // -----------------------------------
-
-        // Troca para o mapa Gameplay ANTES de carregar a cena
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.ResetGameData();
+        }
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToGameplayMap();
         }
+        
         Debug.Log("INICIANDO NOVO JOGO...");
-        SceneManager.LoadScene(gameSceneName);
+
+        // Usamos o TransitionManager para definir o spawn inicial
+        if (TransitionManager.Instance != null)
+        {
+            // O ID "fase1_spawn" é o que você configurou para o seu SceneEntrance!
+            TransitionManager.Instance.TransitionToScene(gameSceneName, "fase1_spawn");
+        }
+        else
+        {
+             // Fallback caso o TransitionManager não exista
+            SceneManager.LoadScene(gameSceneName);
+        }
     }
+    // --- FIM DA MODIFICAÇÃO ---
 
     public void ContinueGame()
     {
-        // Troca para o mapa Gameplay ANTES de carregar a cena
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToGameplayMap();
         }
         Debug.Log("CONTINUANDO JOGO...");
 
-        // Carrega os dados ANTES de carregar a cena
         if (SaveManager.Instance != null)
         {
             SaveManager.Instance.LoadGame();
         }
+        
+        // Aqui, NÃO precisamos do TransitionManager, pois a cena já
+        // é carregada pelo SaveManager, e a rotina de teleporte já funciona.
         SceneManager.LoadScene(gameSceneName);
     }
 
@@ -141,8 +143,8 @@ public class MainMenu : MonoBehaviour
     {
         Debug.Log("Fechando o jogo...");
         Application.Quit();
-    #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-    #endif
+        #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+        #endif
     }
 }

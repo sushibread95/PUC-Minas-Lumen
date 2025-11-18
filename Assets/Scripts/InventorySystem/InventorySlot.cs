@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿// Nome do arquivo: InventorySlot.cs
+// CÓDIGO COMPLETO (MODIFICADO PARA NÃO DESAPARECER QUANDO VAZIO)
+
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
@@ -24,36 +27,45 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         }
     }
 
+    // --- MODIFICAÇÃO: Lógica de Exibição ---
     public void SetItem(Objects newItem, int newQuantity)
     {
         item = newItem;
         quantity = newQuantity;
-        if (item == null) gameObject.SetActive(false);
-        else
-        {
-            gameObject.SetActive(true);
-            UpdateUI();
-        }
+
+        // ANTES: Se item == null, desativava o objeto (gameObject.SetActive(false))
+        // AGORA: Mantemos o objeto ATIVO sempre, para ele ocupar espaço na grade.
+        gameObject.SetActive(true); 
+        
+        UpdateUI();
     }
 
     public void UpdateUI()
     {
         if (item != null)
         {
+            // Tem item: Mostra ícone e texto
             iconImage.enabled = true;
             iconImage.sprite = item.icon;
             iconImage.preserveAspect = true;
+            
             if (itemNameText != null) itemNameText.text = item.objectName;
-            quantityText.text = quantity > 1 ? quantity.ToString() : "";
+            
+            // Só mostra número se for pilha > 1
+            if (quantityText != null) 
+                quantityText.text = quantity > 1 ? quantity.ToString() : "";
         }
         else
         {
-            iconImage.enabled = false;
+            // Não tem item (Vazio): Esconde ícone, mas o SLOT continua visível (fundo)
+            iconImage.enabled = false; 
             iconImage.sprite = null;
+            
             if (itemNameText != null) itemNameText.text = "";
-            quantityText.text = "";
+            if (quantityText != null) quantityText.text = "";
         }
     }
+    // --- FIM DA MODIFICAÇÃO ---
 
     public void OnSlotClicked()
     {
@@ -71,8 +83,12 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             return;
         }
         draggedSlot = this;
-        DragDropIcon.Instance.ShowIcon(item.icon);
-        iconImage.color = new Color(1, 1, 1, 0.5f);
+        
+        if (DragDropIcon.Instance != null)
+            DragDropIcon.Instance.ShowIcon(item.icon);
+            
+        if (iconImage != null)
+            iconImage.color = new Color(1, 1, 1, 0.5f);
     }
 
     public void OnDrag(PointerEventData eventData) { }
@@ -80,7 +96,11 @@ public class InventorySlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     public void OnEndDrag(PointerEventData eventData)
     {
         draggedSlot = null;
-        DragDropIcon.Instance.HideIcon();
-        iconImage.color = new Color(1, 1, 1, 1f);
+        
+        if (DragDropIcon.Instance != null)
+            DragDropIcon.Instance.HideIcon();
+            
+        if (iconImage != null)
+            iconImage.color = new Color(1, 1, 1, 1f);
     }
 }

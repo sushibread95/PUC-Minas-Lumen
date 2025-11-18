@@ -1,3 +1,6 @@
+// Nome do arquivo: PlayerControllerSystem.cs
+// CÓDIGO COMPLETO (CORRIGIDO PARA SPAWN DE CÂMERA)
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
@@ -23,7 +26,10 @@ public class PlayerControllerSystem : MonoBehaviour
     private int speedHash, groundedHash, crouchHash, moveXHash, moveYHash;
 
     [Header("Refs")]
-    public Camera playerCamera;
+    // --- MODIFICAÇÃO DE CÓDIGO ---
+    // Removida a dependência do Inspector para a câmera.
+    private Camera playerCamera;
+    // --- FIM DA MODIFICAÇÃO ---
     public LockOnSystem lockOn;
 
     [Header("Move")]
@@ -114,10 +120,19 @@ public class PlayerControllerSystem : MonoBehaviour
         // Pega a referência do InputManager (que rodou no Awake da cena Boot)
         if (InputManager.Instance == null)
         {
-            Debug.LogError("InputManager.Instance é NULO. O PlayerController não consegue pegar os inputs. O InputManager está na cena Boot?");
+            Debug.LogError("InputManager.Instance é NULO. O PlayerController não consegue pegar os inputs.");
             this.enabled = false;
             return; 
         }
+        
+        // --- MODIFICAÇÃO DE CÓDIGO ---
+        // A Câmera é procurada no filho do Prefab
+        playerCamera = GetComponentInChildren<Camera>();
+        if (!playerCamera) 
+        {
+            Debug.LogError("PlayerControllerSystem: Câmera não encontrada como filha do Player Prefab. O jogo não vai renderizar.");
+        }
+        // --- FIM DA MODIFICAÇÃO ---
         
         // Pega a "Fonte da Verdade" do Input
         input = InputManager.Instance.InputActions;
@@ -136,7 +151,7 @@ public class PlayerControllerSystem : MonoBehaviour
             cc.center = standCenter;
         }
 
-        if (!playerCamera) playerCamera = Camera.main;
+        // if (!playerCamera) playerCamera = Camera.main; // LINHA OBSOLETA REMOVIDA
 
         if (SaveManager.Instance != null)
         {
@@ -255,12 +270,16 @@ public class PlayerControllerSystem : MonoBehaviour
     private Vector3 GetInputDirection(Vector2 moveInput)
     {
         Vector3 camForward, camRight;
+        // --- MODIFICAÇÃO DE CÓDIGO ---
+        // Agora usa a variável local 'playerCamera' que foi procurada no Start()
         if (playerCamera)
         {
             Vector3 f = playerCamera.transform.forward; f.y = 0f; camForward = f.normalized;
             Vector3 r = playerCamera.transform.right;   r.y = 0f; camRight   = r.normalized;
         }
         else { camForward = transform.forward; camRight = transform.right; }
+        // --- FIM DA MODIFICAÇÃO ---
+
         Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
         return inputDir;
     }
@@ -345,12 +364,16 @@ public class PlayerControllerSystem : MonoBehaviour
             moveInput = Vector2.zero;
         }
         Vector3 camForward, camRight;
+        // --- MODIFICAÇÃO DE CÓDIGO ---
+        // Agora usa a variável local 'playerCamera' que foi procurada no Start()
         if (playerCamera)
         {
             Vector3 f = playerCamera.transform.forward; f.y = 0f; camForward = f.normalized;
             Vector3 r = playerCamera.transform.right;   r.y = 0f; camRight   = r.normalized;
         }
         else { camForward = transform.forward; camRight = transform.right; }
+        // --- FIM DA MODIFICAÇÃO ---
+
         Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
         float inputMag = Mathf.Clamp01(inputDir.magnitude);
         float targetSpeed = walkSpeed;

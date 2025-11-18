@@ -1,180 +1,183 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using TMPro;
-using System.Collections.Generic;
+using TMPro; // Precisamos disso para a UI de "dica"
 
-public class ItemPickupSystem : MonoBehaviour
+public class InteractionManager : MonoBehaviour
 {
-    [Header("Inventory Settings")]
-    public int inventorySize = 8;
-    public Transform inventoryUIParent;
-    public GameObject slotPrefab;
+    // --- AVISO DE MODIFICAÇÃO ---
+    // A lógica de "Inventory Settings" (slots, inventoryUIParent) foi REMOVIDA
+    // pois seu novo script InventoryController.cs já cuida disso.
+    // --- FIM DO AVISO ---
 
-    private List<InventorySlot> slots = new List<InventorySlot>();
     private PlayerInputActions input;
-    private Transform currentTarget;
+    private IInteractable currentTarget; // O que estamos olhando (agora é genérico)
 
     [Header("Pickup Settings")]
     public float pickupRange = 5f;
-    public string itemTag = "Item";
-    public LayerMask itemLayer = ~0;
-    public Material highlightMaterial;
-    private Material originalMaterial;
+    // --- AVISO DE MODIFICAÇÃO ---
+    // 'itemTag' e 'itemLayer' foram substituídos por 'interactionMask'
+    // para que o Raycast possa acertar Portas, Placas, etc.
+    public LayerMask interactionMask;
+    // --- FIM DO AVISO ---
+    public Material highlightMaterial; // Mantido do seu script
+    private Material originalMaterial;  // Mantido do seu script
+    private Renderer currentTargetRenderer; // Para guardar o Renderer
+
+    // --- ADIÇÃO ---
+    [Header("UI de Feedback")]
+    [Tooltip("O 'prompt' de texto (ex: [E] Pegar Chave)")]
+    public TextMeshProUGUI interactionText; // Arraste sua UI de texto aqui
+    public Camera playerCamera; // Referência da câmera para o Raycast
+    // --- FIM DA ADIÇÃO ---
 
     void Awake()
     {
-        // input = new PlayerInputActions(); // REMOVIDO
+        if (playerCamera == null) playerCamera = Camera.main;
+        if (interactionText != null) interactionText.gameObject.SetActive(false);
     }
 
     void OnEnable()
     {
-        // input.Enable(); // REMOVIDO
-
-        // Movido para o Start() para garantir que 'input' não seja nulo
-        // if (input != null)
-        // {
-        //     input.Player.Interact.performed += OnInteractPressed;
-        // }
-
-        InventoryManager.OnInventoryChanged += UpdateUIFromManager;
+        // A inscrição no InventoryManager foi removida
+        // pois este script não mexe mais na UI do inventário.
     }
 
     void OnDisable()
     {
-        if (input != null)
+        if (input != null && InputManager.Instance != null)
         {
             input.Player.Interact.performed -= OnInteractPressed;
         }
-        // input.Disable(); // REMOVIDO
-
-        InventoryManager.OnInventoryChanged -= UpdateUIFromManager;
+        // A desinscrição do InventoryManager foi removida.
     }
 
     void Start()
     {
-        // --- INÍCIO DA MODIFICAÇÃO ---
         if (InputManager.Instance == null)
         {
-            Debug.LogError("ItemPickupSystem não encontrou o InputManager! A coleta de itens não vai funcionar.");
+            Debug.LogError("InteractionManager não encontrou o InputManager!");
             this.enabled = false;
             return;
         }
         input = InputManager.Instance.InputActions;
         input.Player.Interact.performed += OnInteractPressed;
-        // --- FIM DA MODIFICAÇÃO ---
 
-        if (slotPrefab.activeSelf)
-            slotPrefab.SetActive(false);
-
-        foreach (Transform child in inventoryUIParent)
-        {
-            Destroy(child.gameObject);
-        }
-        slots.Clear();
-
-        for (int i = 0; i < inventorySize; i++)
-        {
-            GameObject slotObj = Instantiate(slotPrefab, inventoryUIParent);
-            slots.Add(slotObj.GetComponent<InventorySlot>());
-            slotObj.SetActive(false);
-        }
-
-        UpdateUIFromManager();
+        // --- AVISO DE MODIFICAÇÃO ---
+        // A lógica de 'Instantiate(slotPrefab)' foi REMOVIDA
+        // pois seu novo InventoryController.cs já cuida disso.
+        // --- FIM DO AVISO ---
     }
 
     void Update()
     {
-        DetectItemInFront();
+        // "Guarda Mestra" para todos os menus
+        if (input == null ||
+           (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+           (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
+        {
+            ClearHighlight(); // Limpa o highlight se o jogo pausar
+            return;
+        }
+
+        DetectInteractable(); // Renomeado de DetectItemInFront
     }
 
-    private void DetectItemInFront()
+    // --- FUNÇÃO MODIFICADA ---
+    private void DetectInteractable()
     {
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
-        RaycastHit hit;
+        if (playerCamera == null) return;
 
-        if (Physics.Raycast(ray, out hit, pickupRange, itemLayer))
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        RaycastHit hit;
+        
+        IInteractable newTarget = null;
+        Renderer newRenderer = null;
+
+        // O Raycast agora usa a MÁSCARA (LayerMask), não a Layer antiga
+        if (Physics.Raycast(ray, out hit, pickupRange, interactionMask))
         {
-            if (hit.collider.CompareTag(itemTag))
+            // Em vez de checar a TAG, procuramos o "contrato" IInteractable
+            newTarget = hit.collider.GetComponentInParent<IInteractable>();
+            
+            if (newTarget != null)
             {
-                if (currentTarget != hit.transform)
-                {
-                    ClearHighlight();
-                    currentTarget = hit.transform;
-                    HighlightItem(currentTarget);
-                }
-                return;
+                // Pega o renderer para o highlight
+                newRenderer = hit.collider.GetComponentInChildren<Renderer>();
             }
         }
 
-        ClearHighlight();
-        currentTarget = null;
+        // --- Lógica de Mudança de Alvo ---
+        if (newTarget != currentTarget)
+        {
+            // Limpa o alvo antigo (highlight e texto)
+            ClearHighlight();
+
+            if (newTarget != null)
+            {
+                // Configura o novo alvo
+                currentTarget = newTarget;
+                currentTargetRenderer = newRenderer;
+
+                // Mostra o texto de "dica" (ex: "[E] Abrir Porta")
+                if (interactionText != null)
+                {
+                    interactionText.text = $"[E] {currentTarget.GetInteractText()}";
+                    interactionText.gameObject.SetActive(true);
+                }
+                HighlightItem(); // Aplica o highlight
+            }
+        }
     }
 
+    // --- FUNÇÃO MODIFICADA ---
     private void OnInteractPressed(InputAction.CallbackContext ctx)
     {
-        if (currentTarget == null) return;
-
-        ObjectType objType = currentTarget.GetComponent<ObjectType>();
-        if (objType == null || objType.TypeObjec == null) return;
-
-        InventoryManager.Instance.AddItem(objType.TypeObjec);
-
-        if (WorldStateManager.Instance != null && !string.IsNullOrEmpty(objType.id))
+        // Se estamos olhando para algo interativo E o jogo não está pausado...
+        if (currentTarget != null &&
+           (PauseMenuManager.Instance == null || !PauseMenuManager.Instance.IsPaused) &&
+           (InventoryController.Instance == null || !InventoryController.Instance.IsInventoryOpen))
         {
-            WorldStateManager.Instance.RegisterCollectedItem(objType.id);
+            // --- AVISO DE MODIFICAÇÃO (LÓGICA MOVIDA) ---
+            // Toda a lógica de AddItem, RegisterCollectedItem e Destroy
+            // foi MOVIDA para o script ObjectType.cs.
+            // Este script agora apenas "chama" a interação.
+            // --- FIM DO AVISO ---
+            currentTarget.Interact();
+            
+            ClearHighlight();
         }
-        else
-        {
-            Debug.LogWarning($"Item {objType.name} não tem ID ou WorldStateManager não foi encontrado. Não será salvo.");
-        }
-
-        Destroy(currentTarget.gameObject);
-        ClearHighlight();
-        currentTarget = null;
     }
 
-    private void HighlightItem(Transform item)
+    // --- Funções de Highlight (Modificadas levemente) ---
+    private void HighlightItem()
     {
-        Renderer rend = item.GetComponentInChildren<Renderer>();
-        if (rend != null && highlightMaterial != null)
+        if (currentTargetRenderer != null && highlightMaterial != null)
         {
-            originalMaterial = rend.material;
-            rend.material = highlightMaterial;
+            originalMaterial = currentTargetRenderer.material;
+            currentTargetRenderer.material = highlightMaterial;
         }
     }
 
     private void ClearHighlight()
     {
-        if (currentTarget == null) return;
-        Renderer rend = currentTarget.GetComponentInChildren<Renderer>();
-        if (rend != null && originalMaterial != null)
+        if (currentTargetRenderer != null && originalMaterial != null)
         {
-            rend.material = originalMaterial;
+            currentTargetRenderer.material = originalMaterial;
         }
+        
+        // Limpa o texto da UI
+        if (interactionText != null)
+        {
+            interactionText.gameObject.SetActive(false);
+        }
+
+        currentTarget = null;
+        currentTargetRenderer = null;
+        originalMaterial = null;
     }
 
-    private void UpdateUIFromManager()
-    {
-        if (InventoryManager.Instance == null) return;
-
-        for (int i = 0; i < slots.Count; i++)
-        {
-            if (slots[i] == null)
-            {
-                Debug.LogWarning($"ItemPickupSystem: Slot {i} na lista é nulo. Foi destruído?");
-                continue;
-            }
-
-            if (i < InventoryManager.Instance.items.Count)
-            {
-                var entry = InventoryManager.Instance.items[i];
-                slots[i].SetItem(entry.item, entry.quantity);
-            }
-            else
-            {
-                slots[i].SetItem(null, 0);
-            }
-        }
-    }
+    // --- AVISO DE MODIFICAÇÃO ---
+    // A função 'UpdateUIFromManager()' foi REMOVIDA
+    // pois este script não controla mais a UI do inventário.
+    // --- FIM DO AVISO ---
 }

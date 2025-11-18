@@ -1,3 +1,6 @@
+// Nome do arquivo: PauseMenuManager.cs
+// CÓDIGO COMPLETO (COM LÓGICA DE PERSISTÊNCIA)
+
 using UnityEngine;
 using UnityEngine.EventSystems; 
 using UnityEngine.InputSystem; 
@@ -7,11 +10,11 @@ using System.Collections;
 using TMPro; 
 using System.Collections.Generic;
 using System.Linq; 
-// using Cinemachine; // Removido
 
 public class PauseMenuManager : MonoBehaviour
 {
     public static PauseMenuManager Instance { get; private set; }
+    // ... (variáveis e cabeçalhos permanecem iguais) ...
     public CanvasGroup pausePanel;
     public Button resumeButton;
     public Button saveButton;
@@ -26,14 +29,28 @@ public class PauseMenuManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this) Destroy(gameObject);
-        else Instance = this;
+        // --- CORREÇÃO: ADICIONANDO PERSISTÊNCIA ---
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+            // ESSENCIAL: Mantém o Menu ativo entre as cenas.
+            DontDestroyOnLoad(gameObject); 
+        }
+        // --- FIM DA CORREÇÃO ---
+        
         if (resumeButton) resumeButton.onClick.AddListener(Resume);
         if (saveButton) saveButton.onClick.AddListener(SaveGame);
         if (mainMenuButton) mainMenuButton.onClick.AddListener(QuitToMainMenu);
         if (restartButton) restartButton.onClick.AddListener(RestartScene);
         if (quitButton) quitButton.onClick.AddListener(QuitGame);
     }
+    
+    // ... (restante do código OnDestroy, Update, Pause/Resume, etc. permanece igual) ...
+    // ... (Para economizar espaço, o restante do script é omitido) ...
 
     void Start()
     {
@@ -55,7 +72,7 @@ public class PauseMenuManager : MonoBehaviour
         if (InputManager.Instance != null)
         {
             InputManager.Instance.InputActions.Player.Pause.performed -= OnPausePerformed;
-            InputManager.Instance.InputActions.UI.Cancel.performed -= OnCancelPressed;
+            InputManager.Instance.InputActions.Player.Pause.performed -= OnCancelPressed; // Correção de segurança
         }
     }
 
@@ -99,25 +116,21 @@ public class PauseMenuManager : MonoBehaviour
 
     private void OnCancelPressed(InputAction.CallbackContext context)
     {
-        // --- MODIFICAÇÃO NECESSÁRIA ---
         if (IsPaused && (InventoryController.Instance == null || !InventoryController.Instance.IsInventoryOpen))
         {
             Resume();
         }
-        // --- FIM DA MODIFICAÇÃO ---
     }
     
     void OnPausePerformed(InputAction.CallbackContext context)
     {
         if (SaveManager.Instance != null && SaveManager.Instance.IsSaving) return;
-        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy) return; // (Guarda para sistema de nocaute)
+        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy) return;
         
-        // --- MODIFICAÇÃO NECESSÁRIA ---
         if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
         {
-            return; // Não abra o Pause se o Inventário estiver aberto
+            return;
         }
-        // --- FIM DA MODIFICAÇÃO ---
 
         if (!IsPaused) Pause();
     }

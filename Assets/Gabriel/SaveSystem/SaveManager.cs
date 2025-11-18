@@ -1,6 +1,3 @@
-// Nome do arquivo: SaveManager.cs
-// CÓDIGO COMPLETO E LIMPO (COM LÓGICA DE REGISTRO E ESPERA)
-
 using UnityEngine;
 using System.IO;
 using UnityEngine.InputSystem;
@@ -16,8 +13,6 @@ public class SaveManager : MonoBehaviour
 
     private GameData gameData;
     private string saveFilePath;
-    
-    // A referência que o Player vai preencher
     private Transform registeredPlayerTransform;
 
     void Awake()
@@ -30,7 +25,6 @@ public class SaveManager : MonoBehaviour
         IsSaving = false;
     }
     
-    // O PlayerController chama esta função no Start() dele.
     public void RegisterPlayer(Transform player)
     {
         if (registeredPlayerTransform == null)
@@ -43,7 +37,7 @@ public class SaveManager : MonoBehaviour
     public void ResetGameData()
     {
         this.gameData = new GameData();
-        registeredPlayerTransform = null; // Limpa o player registrado
+        registeredPlayerTransform = null; 
         Debug.Log("GameData (no SaveManager) foi resetado.");
     }
 
@@ -66,18 +60,18 @@ public class SaveManager : MonoBehaviour
         IsSaving = true;
         Debug.Log("SALVANDO JOGO...");
         
-        // --- LÓGICA DE SALVAMENTO (USANDO O REGISTRO) ---
         if (WorldStateManager.Instance != null)
         {
             this.gameData.npcStates = WorldStateManager.Instance.GetSaveData();
             this.gameData.collectedItemIDs = WorldStateManager.Instance.GetItemSaveData();
+            this.gameData.unlockedDoorIDs = WorldStateManager.Instance.GetDoorSaveData();
         }
+
+        // --- AVISO DE CORREÇÃO---
         if (InventoryManager.Instance != null)
         {
-            InventoryManager.Instance.LoadSaveData((List<InventoryItemSaveData>)this.gameData.inventoryItems);
+            this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
         }
-        
-        // Usamos a referência registrada
         if (registeredPlayerTransform != null)
         {
             this.gameData.playerPosX = registeredPlayerTransform.position.x;
@@ -88,7 +82,6 @@ public class SaveManager : MonoBehaviour
         {
             Debug.LogWarning("SaveManager: Tentou salvar, mas nenhum Player está registrado.");
         }
-        // --- FIM DA LÓGICA DE SALVAMENTO ---
 
         string json = JsonUtility.ToJson(this.gameData, true); 
         File.WriteAllText(saveFilePath, json);
@@ -112,15 +105,15 @@ public class SaveManager : MonoBehaviour
             {
                 WorldStateManager.Instance.LoadSaveData(this.gameData.npcStates);
                 WorldStateManager.Instance.LoadItemSaveData(this.gameData.collectedItemIDs);
+                WorldStateManager.Instance.LoadDoorSaveData(this.gameData.unlockedDoorIDs);
             }
+            
+            // --- AVISO DE CORREÇÃO ---
             if (InventoryManager.Instance != null)
             {
                 InventoryManager.Instance.LoadSaveData(this.gameData.inventoryItems);
             }
 
-            // --- ESTA É A CORREÇÃO DE TIMING ---
-            // A rotina de teleporte é iniciada AQUI, pelo próprio SaveManager,
-            // assim que ele termina de carregar os dados.
             StartCoroutine(TeleportPlayerAfterSceneLoad());
             Debug.Log("JOGO CARREGADO!");
         }
@@ -132,21 +125,15 @@ public class SaveManager : MonoBehaviour
     
     private IEnumerator TeleportPlayerAfterSceneLoad()
     {
-        // 1. Espera um frame para a cena começar a carregar
         yield return null; 
 
-        // 2. --- CORREÇÃO DE TIMING ---
-        // Agora, esperamos ativamente (em loop) até que o Player
-        // chame 'RegisterPlayer' e preencha a variável.
-        float timeout = 5f; // (5 segundos de segurança)
+        float timeout = 5f; 
         while (registeredPlayerTransform == null && timeout > 0f)
         {
-            yield return null; // Espera o próximo frame
+            yield return null;
             timeout -= Time.deltaTime;
         }
-        // --- FIM DA CORREÇÃO ---
 
-        // 3. Agora, executamos o teleporte
         if (registeredPlayerTransform != null)
         {
             PlayerControllerSystem pc = registeredPlayerTransform.GetComponent<PlayerControllerSystem>();
@@ -158,8 +145,6 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            // Se o log de erro "Nenhum player se registrou" aparecer AGORA,
-            // significa que o PlayerControllerSystem.Start() nunca rodou.
             Debug.LogError("SaveManager (Teleport): Não foi possível teleportar o Player. Nenhum player se registrou!");
         }
     }

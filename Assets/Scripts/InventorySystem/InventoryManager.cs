@@ -1,3 +1,6 @@
+// Nome do arquivo: InventoryManager.cs
+// CÓDIGO COMPLETO (COM A ADIÇÃO DE 'HasItem')
+
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -13,7 +16,6 @@ public class InventoryManager : MonoBehaviour
     {
         public Objects item;
         public int quantity;
-
         public InventoryItem(Objects newItem, int newQuantity)
         {
             item = newItem;
@@ -30,7 +32,6 @@ public class InventoryManager : MonoBehaviour
     }
 
     public List<InventoryItem> items = new List<InventoryItem>();
-
     [Header("Quick Slots")]
     public Objects[] quickSlots = new Objects[4];
 
@@ -50,7 +51,6 @@ public class InventoryManager : MonoBehaviour
     public void AddItem(Objects newItem)
     {
         InventoryItem entry = items.Find(x => x.item == newItem);
-
         if (entry != null)
         {
             if (entry.quantity < newItem.maxStack)
@@ -73,23 +73,35 @@ public class InventoryManager : MonoBehaviour
             entry.quantity--;
             if (entry.quantity <= 0)
                 items.Remove(entry);
-
             OnInventoryChanged?.Invoke();
         }
     }
+
+    // --- FUNÇÃO ADICIONADA (PARA CORRIGIR O ERRO CS1061) ---
+    // (Pode colocar isso logo abaixo da função 'RemoveItem')
+    //
+    // Verifica se o inventário contém um item específico.
+    public bool HasItem(Objects itemToCheck)
+    {
+        if (itemToCheck == null) return false;
+
+        // Procura na lista de itens
+        InventoryItem entry = items.Find(x => x.item == itemToCheck);
+
+        // Retorna true se encontrou (entry != null)
+        return entry != null;
+    }
+    // --- FIM DA ADIÇÃO ---
 
     public void UseItem(Objects itemToUse, GameObject user)
     {
         InventoryItem entry = items.Find(x => x.item == itemToUse);
         if (entry == null) return;
-        if (user == null) return; // Checagem de segurança
-
+        if (user == null) return;
         foreach (var effect in itemToUse.useEffects)
         {
-            // CORREÇÃO: Usa o "user" que foi passado
             effect.Apply(user);
         }
-
         if (itemToUse.isConsumable)
         {
             RemoveItem(itemToUse);
@@ -105,7 +117,6 @@ public class InventoryManager : MonoBehaviour
     public void ResetState()
     {
         ClearInventory();
-
         for (int i = 0; i < quickSlots.Length; i++)
         {
             quickSlots[i] = null;
@@ -113,11 +124,9 @@ public class InventoryManager : MonoBehaviour
         OnQuickSlotsChanged?.Invoke();
     }
 
-    // --- FUNÇÃO MODIFICADA ---
     public void AssignQuickSlot(int index, Objects item)
     {
         if (index < 0 || index >= quickSlots.Length) return;
-
         if (item != null)
         {
             for (int i = 0; i < quickSlots.Length; i++)
@@ -128,22 +137,18 @@ public class InventoryManager : MonoBehaviour
                 }
             }
         }
-
         quickSlots[index] = item;
         OnQuickSlotsChanged?.Invoke();
     }
-    // --- FIM DA MODIFICAÇÃO ---
 
     public object GetSaveData()
     {
         InventorySaveData saveData = new InventorySaveData();
-
         foreach (var entry in items)
         {
             saveData.itemNames.Add(entry.item.name);
             saveData.itemQuantities.Add(entry.quantity);
         }
-
         foreach (var item in quickSlots)
         {
             if (item != null)
@@ -151,7 +156,6 @@ public class InventoryManager : MonoBehaviour
             else
                 saveData.quickSlotItemNames.Add(null);
         }
-
         return saveData;
     }
 
@@ -159,7 +163,6 @@ public class InventoryManager : MonoBehaviour
     {
         InventorySaveData saveData = data as InventorySaveData;
         if (saveData == null) return;
-
         items.Clear();
         for (int i = 0; i < saveData.itemNames.Count; i++)
         {
@@ -169,7 +172,6 @@ public class InventoryManager : MonoBehaviour
             else
                 Debug.LogWarning($"Não foi possível carregar o item: {saveData.itemNames[i]}");
         }
-
         for (int i = 0; i < saveData.quickSlotItemNames.Count && i < quickSlots.Length; i++)
         {
             if (!string.IsNullOrEmpty(saveData.quickSlotItemNames[i]))
@@ -182,7 +184,6 @@ public class InventoryManager : MonoBehaviour
                 quickSlots[i] = null;
             }
         }
-
         OnInventoryChanged?.Invoke();
         OnQuickSlotsChanged?.Invoke();
     }
