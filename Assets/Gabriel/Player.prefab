@@ -2921,6 +2921,10 @@ MonoBehaviour:
     m_RotationOrder: 4
   dodgeLockTime: 0.25
   invulnerableDuration: 0.33
+  walkSound: {fileID: 0}
+  jogSound: {fileID: 0}
+  sneakSound: {fileID: 0}
+  stepInterval: 0.5
 --- !u!114 &4987815280272050368
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2963,7 +2967,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f1dd742a0dc6164cb980e969bec967f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cam: {fileID: 5756904707344692557, guid: 8213ff3dd9645cd46bcc79410f590877, type: 3}
+  cam: {fileID: 73011298700565464}
   rotateRoot: {fileID: 0}
   searchRadius: 25
   minDot: 0.11

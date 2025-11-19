@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 613213771}
   - component: {fileID: 613213770}
   m_Layer: 10
-  m_Name: QuestItem-KeyCastle
+  m_Name: QuestItem-KeyPadre
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abfcbc74423ecbc4ead90dc831f897ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TypeObjec: {fileID: 11400000, guid: f58ea82c9748380428e45ff252199b0e, type: 2}
+  TypeObjec: {fileID: 11400000, guid: 88ccbf73e424b53438249b6803b32540, type: 2}
   id: dea7a649-c0ed-4fb0-8024-d16258e174a0
 --- !u!4 &613213771
 Transform:
@@ -417,7 +417,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -509,7 +509,7 @@ MonoBehaviour:
   consumeKeyOnUse: 0
   lockedMessage: Preciso de uma chave
   sceneName: Vilarejo
-  targetSpawnPointID: saida_igreja
+  targetSpawnPointID: saida_prefeito
   doorAnimator: {fileID: 0}
   openAnimationTrigger: Open
   lockedSound: {fileID: 8300000, guid: 1362b336f1cfd48439ec10d53c852dc0, type: 3}
@@ -664,7 +664,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 511b0ec600800304a9150fb88397b8d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mySpawnID: igreja_spawn
+  mySpawnID: casa_prefeito_spawn
   playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
 --- !u!4 &1571644399
 Transform:
@@ -675,7 +675,7 @@ Transform:
   m_GameObject: {fileID: 1571644397}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.17, y: 1.05, z: 12}
+  m_LocalPosition: {x: -3.02, y: 0.88, z: 11.72}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
