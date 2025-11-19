@@ -4123,6 +4123,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 81ae10d5415799d4db940c6fe498e861, type: 3}
   m_PrefabInstance: {fileID: 1152111430}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1162941383
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1162941385}
+  - component: {fileID: 1162941384}
+  m_Layer: 0
+  m_Name: Saida_Spawn_Igreja
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1162941384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1162941383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 511b0ec600800304a9150fb88397b8d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mySpawnID: saida_Hub
+  playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
+--- !u!4 &1162941385
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1162941383}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 11.366, y: 0.63, z: 91.782}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1176157402
 GameObject:
   m_ObjectHideFlags: 0
@@ -5064,6 +5110,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1324591730}
   m_CullTransparentMesh: 1
+--- !u!1 &1341091400
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1341091402}
+  - component: {fileID: 1341091401}
+  m_Layer: 0
+  m_Name: Saida_Spawn_Padre
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1341091401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341091400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 511b0ec600800304a9150fb88397b8d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mySpawnID: saida_padre
+  playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
+--- !u!4 &1341091402
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341091400}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -10.006, y: 11.286, z: 41.852}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1346455857
 GameObject:
   m_ObjectHideFlags: 0
@@ -5287,6 +5379,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4485863972962532, guid: 39360cdd17f538f4ea04f12d50ae4614, type: 3}
   m_PrefabInstance: {fileID: 1407784316}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1424757739
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1424757741}
+  - component: {fileID: 1424757740}
+  m_Layer: 0
+  m_Name: Saida_Spawn_Hub
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1424757740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424757739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 511b0ec600800304a9150fb88397b8d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mySpawnID: saida_Hub
+  playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
+--- !u!4 &1424757741
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424757739}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1, y: 0.63, z: 99.67}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1568747127
 GameObject:
   m_ObjectHideFlags: 0
@@ -10330,3 +10468,6 @@ SceneRoots:
   - {fileID: 147385229}
   - {fileID: 1730696688}
   - {fileID: 1176157404}
+  - {fileID: 1341091402}
+  - {fileID: 1424757741}
+  - {fileID: 1162941385}
