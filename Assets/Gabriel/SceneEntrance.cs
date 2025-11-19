@@ -1,16 +1,21 @@
+// Nome do arquivo: SceneEntrance.cs
+// CÓDIGO COMPLETO (CORRIGINDO VARIÁVEL NÃO UTILIZADA)
+
 using UnityEngine;
 
 public class SceneEntrance : MonoBehaviour
 {
     [Header("Configuração de Spawn")]
+    [Tooltip("Esta ID deve ser IDÊNTICA à 'spawnPointID' da porta que leva até aqui.")]
     public string mySpawnID;
 
     [Header("Prefab do Player")]
+    [Tooltip("Arraste o Prefab do seu Player aqui.")]
     public GameObject playerPrefab;
 
     void Awake()
     {
-        bool isDefaultStart = false;
+        // --- A VARIÁVEL 'isDefaultStart' FOI REMOVIDA AQUI ---
 
         // 1. Lógica de Checagem
         if (TransitionManager.Instance != null)
@@ -23,7 +28,7 @@ public class SceneEntrance : MonoBehaviour
                 // Se o ID for o ID de spawn inicial, a gente prossegue.
                 if (mySpawnID == "fase1_spawn")
                 {
-                    isDefaultStart = true;
+                    // isDefaultStart = true; <--- LINHA DE ATRIBUIÇÃO REMOVIDA
                 }
                 else
                 {
@@ -39,7 +44,7 @@ public class SceneEntrance : MonoBehaviour
         {
              // Fallback: Se não tem TransitionManager, só deve rodar o spawn inicial
              if (mySpawnID != "fase1_spawn") return;
-             isDefaultStart = true;
+             // isDefaultStart = true; <--- LINHA DE ATRIBUIÇÃO REMOVIDA
         }
 
         // --- SE CHEGOU AQUI, DEVE SPAWNAR OU TELEPORTAR ---
@@ -57,6 +62,8 @@ public class SceneEntrance : MonoBehaviour
         if (playerPrefab != null)
         {
             Debug.Log($"SceneEntrance [{mySpawnID}]: Instanciando Player na posição {transform.position}");
+            
+            // Instancia o player exatamente na posição deste GameObject
             Instantiate(playerPrefab, transform.position, transform.rotation);
         }
         else

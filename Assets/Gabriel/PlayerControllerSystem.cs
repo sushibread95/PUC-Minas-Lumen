@@ -1,5 +1,5 @@
 // Nome do arquivo: PlayerControllerSystem.cs
-// CÓDIGO COMPLETO (CORRIGIDO PARA SPAWN DE CÂMERA)
+// CÓDIGO COMPLETO (COM A CORREÇÃO DE ERROS CS0103)
 
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -26,10 +26,7 @@ public class PlayerControllerSystem : MonoBehaviour
     private int speedHash, groundedHash, crouchHash, moveXHash, moveYHash;
 
     [Header("Refs")]
-    // --- MODIFICAÇÃO DE CÓDIGO ---
-    // Removida a dependência do Inspector para a câmera.
     private Camera playerCamera;
-    // --- FIM DA MODIFICAÇÃO ---
     public LockOnSystem lockOn;
 
     [Header("Move")]
@@ -80,7 +77,14 @@ public class PlayerControllerSystem : MonoBehaviour
     [Tooltip("Duração de invencibilidade during dodge (s)")] public float invulnerableDuration = 0.3f;
     private bool _isInvulnerable = false;
 
+    [Header("Footstep Settings")]
+    public AudioClip walkSound;
+    public AudioClip jogSound;
+    public AudioClip sneakSound;
+    public float stepInterval = 0.5f; // Tempo entre os passos (em segundos)
+
     // internals
+    private float nextStepTime = 0f;
     private CharacterController cc;
     private PlayerInputActions input;
     private InputAction sprintAction; 
@@ -103,7 +107,6 @@ public class PlayerControllerSystem : MonoBehaviour
 
     void Awake()
     {
-        // ... (seu código do Awake() permanece o mesmo) ...
         cc = GetComponent<CharacterController>();
         if (!animator) animator = GetComponentInChildren<Animator>();
         if (cannon == null) cannon = GetComponentInChildren<Cannon>();
@@ -125,14 +128,12 @@ public class PlayerControllerSystem : MonoBehaviour
             return; 
         }
         
-        // --- MODIFICAÇÃO DE CÓDIGO ---
         // A Câmera é procurada no filho do Prefab
         playerCamera = GetComponentInChildren<Camera>();
         if (!playerCamera) 
         {
             Debug.LogError("PlayerControllerSystem: Câmera não encontrada como filha do Player Prefab. O jogo não vai renderizar.");
         }
-        // --- FIM DA MODIFICAÇÃO ---
         
         // Pega a "Fonte da Verdade" do Input
         input = InputManager.Instance.InputActions;
@@ -150,8 +151,6 @@ public class PlayerControllerSystem : MonoBehaviour
             cc.height = standHeight;
             cc.center = standCenter;
         }
-
-        // if (!playerCamera) playerCamera = Camera.main; // LINHA OBSOLETA REMOVIDA
 
         if (SaveManager.Instance != null)
         {
@@ -173,12 +172,11 @@ public class PlayerControllerSystem : MonoBehaviour
     void Update()
     {
         // --- CLÁUSULA DE GUARDA MESTRA (INTEGRADA) ---
-        // Se o input não existir, OU o Pause estiver aberto, OU o Inventário estiver aberto...
         if (input == null || 
            (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
            (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
         {
-            return; // ...NÃO FAÇA NADA.
+            return; 
         }
         // ---------------------------------------------
 
@@ -243,6 +241,48 @@ public class PlayerControllerSystem : MonoBehaviour
             if (groundedHash != 0) animator.SetBool(groundedHash, isGrounded);
             if (crouchHash   != 0) animator.SetBool(crouchHash, crouch);
         }
+
+        // --- CORREÇÃO AQUI: Passando moveInput.magnitude e sprintHeld ---
+        HandleFootsteps(dt, moveInput.magnitude, crouch, sneak, sprintHeld);
+    }
+
+    // --- CORREÇÃO AQUI: Adicionado parâmetro 'bool isSprinting' ---
+    void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)
+    {
+        if (inputMagnitude > 0.1f && isGrounded && Time.time >= nextStepTime)
+        {
+            AudioClip clipToPlay = null;
+            float currentStepInterval = stepInterval;
+
+            if (isCrouching || isSneaking)
+            {
+                clipToPlay = sneakSound;
+                currentStepInterval *= 1.5f; 
+            }
+            // --- CORREÇÃO AQUI: Usando o novo parâmetro 'isSprinting' ---
+            else if (isSprinting) 
+            {
+                clipToPlay = jogSound;
+                currentStepInterval *= 0.75f; // Deixa o passo mais rápido
+            }
+            else
+            {
+                clipToPlay = walkSound;
+            }
+
+            if (AudioManager.Instance != null && clipToPlay != null)
+            {
+                AudioManager.Instance.PlaySFX(clipToPlay, transform.position);
+            }
+
+            // Reseta o timer
+            nextStepTime = Time.time + currentStepInterval;
+        }
+        else if (!isGrounded || inputMagnitude < 0.1f)
+        {
+            // Se o player não está no chão ou não está se movendo, reseta o timer
+            nextStepTime = 0f;
+        }
     }
 
     // Função de travar o cursor (o "Vilão" anterior, agora controlado)
@@ -270,15 +310,12 @@ public class PlayerControllerSystem : MonoBehaviour
     private Vector3 GetInputDirection(Vector2 moveInput)
     {
         Vector3 camForward, camRight;
-        // --- MODIFICAÇÃO DE CÓDIGO ---
-        // Agora usa a variável local 'playerCamera' que foi procurada no Start()
         if (playerCamera)
         {
             Vector3 f = playerCamera.transform.forward; f.y = 0f; camForward = f.normalized;
             Vector3 r = playerCamera.transform.right;   r.y = 0f; camRight   = r.normalized;
         }
         else { camForward = transform.forward; camRight = transform.right; }
-        // --- FIM DA MODIFICAÇÃO ---
 
         Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
         return inputDir;
@@ -364,15 +401,13 @@ public class PlayerControllerSystem : MonoBehaviour
             moveInput = Vector2.zero;
         }
         Vector3 camForward, camRight;
-        // --- MODIFICAÇÃO DE CÓDIGO ---
-        // Agora usa a variável local 'playerCamera' que foi procurada no Start()
+        
         if (playerCamera)
         {
             Vector3 f = playerCamera.transform.forward; f.y = 0f; camForward = f.normalized;
             Vector3 r = playerCamera.transform.right;   r.y = 0f; camRight   = r.normalized;
         }
         else { camForward = transform.forward; camRight = transform.right; }
-        // --- FIM DA MODIFICAÇÃO ---
 
         Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
         float inputMag = Mathf.Clamp01(inputDir.magnitude);
