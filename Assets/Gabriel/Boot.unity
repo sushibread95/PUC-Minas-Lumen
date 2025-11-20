@@ -267,7 +267,7 @@ GameObject:
   - component: {fileID: 45030060}
   m_Layer: 5
   m_Name: Panel
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -332,7 +332,7 @@ GameObject:
   - component: {fileID: 81333529}
   m_Layer: 5
   m_Name: Bleed Out Slider
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -567,7 +567,7 @@ GameObject:
   - component: {fileID: 149113842}
   m_Layer: 5
   m_Name: Fill Rect
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -958,7 +958,7 @@ GameObject:
   - component: {fileID: 206125747}
   m_Layer: 5
   m_Name: Max Health Slider
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1427,7 +1427,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &277707496
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1614,7 +1614,7 @@ GameObject:
   - component: {fileID: 285495482}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1787,7 +1787,7 @@ GameObject:
   - component: {fileID: 335555109}
   m_Layer: 5
   m_Name: Hurt Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2083,8 +2083,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Coletar item (E)\nNocautear NPC (N)\nInvent\xE1rio ( I )  \nPause (Esc)\nQuick
-    Slots (Ctrl)"
+  m_text: "Coletar / interagir (E)\nInvent\xE1rio ( I )  \nPause (Esc)\nQuick Slots
+    (Q)"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2357,7 +2357,7 @@ GameObject:
   - component: {fileID: 480525009}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2632,7 +2632,7 @@ GameObject:
   - component: {fileID: 497494527}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3474,7 +3474,7 @@ GameObject:
   - component: {fileID: 653254457}
   m_Layer: 5
   m_Name: Fill Rect
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3546,7 +3546,7 @@ GameObject:
   - component: {fileID: 679806623}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3955,7 +3955,7 @@ GameObject:
   - component: {fileID: 747344750}
   m_Layer: 5
   m_Name: Current Health Slider
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4766,7 +4766,7 @@ GameObject:
   - component: {fileID: 878843909}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4842,7 +4842,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &881580790
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5171,7 +5171,7 @@ GameObject:
   - component: {fileID: 906237514}
   m_Layer: 5
   m_Name: Stamina Marker
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5497,7 +5497,7 @@ GameObject:
   - component: {fileID: 937899811}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5569,7 +5569,7 @@ GameObject:
   - component: {fileID: 975922917}
   m_Layer: 5
   m_Name: Health Marker
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5902,7 +5902,7 @@ GameObject:
   - component: {fileID: 1065582423}
   m_Layer: 5
   m_Name: Middle Panel
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6106,7 +6106,7 @@ GameObject:
   - component: {fileID: 1106161448}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6178,7 +6178,7 @@ GameObject:
   - component: {fileID: 1114160038}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6298,7 +6298,7 @@ GameObject:
   - component: {fileID: 1161858987}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7291,7 +7291,7 @@ GameObject:
   - component: {fileID: 1280201468}
   m_Layer: 5
   m_Name: OSP Marker
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7926,7 +7926,7 @@ GameObject:
   - component: {fileID: 1389683375}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8466,7 +8466,7 @@ GameObject:
   - component: {fileID: 1482514966}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8673,7 +8673,7 @@ GameObject:
   - component: {fileID: 1492986883}
   m_Layer: 5
   m_Name: Hurt Health Slider
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9403,7 +9403,7 @@ GameObject:
   - component: {fileID: 1559225420}
   m_Layer: 5
   m_Name: Bottom Panel
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9489,7 +9489,7 @@ GameObject:
   - component: {fileID: 1587223840}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9777,7 +9777,7 @@ GameObject:
   - component: {fileID: 1623136222}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9849,7 +9849,7 @@ GameObject:
   - component: {fileID: 1630964027}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10783,7 +10783,7 @@ GameObject:
   - component: {fileID: 1797669755}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10854,7 +10854,7 @@ GameObject:
   - component: {fileID: 1846085943}
   m_Layer: 5
   m_Name: Extra Header
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10916,7 +10916,7 @@ GameObject:
   - component: {fileID: 1872486357}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10988,7 +10988,7 @@ GameObject:
   - component: {fileID: 1872766706}
   m_Layer: 5
   m_Name: Marker
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -11335,7 +11335,7 @@ GameObject:
   - component: {fileID: 1933551672}
   m_Layer: 5
   m_Name: Background
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12159,7 +12159,7 @@ GameObject:
   - component: {fileID: 2049286190}
   m_Layer: 5
   m_Name: Top Panel
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12494,7 +12494,7 @@ GameObject:
   - component: {fileID: 2091501737}
   m_Layer: 5
   m_Name: Health Header
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12600,7 +12600,7 @@ GameObject:
   - component: {fileID: 2117831753}
   m_Layer: 5
   m_Name: Fill
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

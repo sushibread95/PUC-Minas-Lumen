@@ -7,10 +7,10 @@ using UnityEngine.InputSystem;
 
 public class MainMenu : MonoBehaviour
 {
-    // ... (todas as suas variáveis de Header/Referências permanecem as mesmas) ...
     [Header("Referências da UI")]
     public Button continueButton;
     public Button defaultSelectedButton; 
+    
     [Header("Nomes das Cenas")]
     public string gameSceneName = "Vilarejo"; 
 
@@ -19,19 +19,27 @@ public class MainMenu : MonoBehaviour
 
     void Start()
     {
-        saveFilePath = Path.Combine(Application.persistentDataPath, "savegame.json");
-        if (continueButton != null)
-        {
-            continueButton.interactable = File.Exists(saveFilePath);
-        }
+        // --- CORREÇÃO 1: Garante cursor livre e visível ao abrir o menu ---
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
+        // --- CORREÇÃO 2: Força o Input System a usar o mapa de UI ---
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToUIMap();
         }
         else
         {
-             Debug.LogError("[MainMenu] InputManager.Instance não encontrado no Start!");
+             // Isso pode acontecer se você abrir a cena do Menu direto sem passar pelo Boot.
+             // Não é crítico para testes, mas idealmente inicie pelo Boot.
+             Debug.LogWarning("[MainMenu] InputManager.Instance não encontrado. Certifique-se de iniciar pela cena de Boot.");
+        }
+
+        // Lógica do Save
+        saveFilePath = Path.Combine(Application.persistentDataPath, "savegame.json");
+        if (continueButton != null)
+        {
+            continueButton.interactable = File.Exists(saveFilePath);
         }
 
         SelectDefaultButton();
@@ -39,9 +47,9 @@ public class MainMenu : MonoBehaviour
 
     void Update()
     {
-        // ... (todo o seu código Update() e lógica de seleção permanece o mesmo) ...
         if (EventSystem.current == null) return;
 
+        // Lógica para garantir que sempre tenha um botão selecionado (navegação por controle/teclado)
         if (EventSystem.current.currentSelectedGameObject == null)
         {
             bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
@@ -74,24 +82,19 @@ public class MainMenu : MonoBehaviour
         }
         else
         {
+            // Tenta achar o primeiro botão disponível
             Button firstInteractableButton = GetComponentInChildren<Button>(false);
             if (firstInteractableButton != null && firstInteractableButton.interactable)
             {
                 EventSystem.current.SetSelectedGameObject(firstInteractableButton.gameObject);
                 lastSelectedGameObject = firstInteractableButton.gameObject;
             }
-             else 
-             {
-                 EventSystem.current.SetSelectedGameObject(null);
-                 lastSelectedGameObject = null;
-             }
         }
     }
 
-    // --- MODIFICAÇÃO CHAVE ---
     public void StartNewGame()
     {
-        // Limpa o estado e garante que a cena carregue com o Player no spawn inicial
+        // Limpa o estado para garantir um jogo novo limpo
         if (WorldStateManager.Instance != null)
         {
             WorldStateManager.Instance.ResetState();
@@ -100,6 +103,8 @@ public class MainMenu : MonoBehaviour
         {
             SaveManager.Instance.ResetGameData();
         }
+        
+        // Muda o input para Gameplay, pois a próxima cena é o jogo
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToGameplayMap();
@@ -107,26 +112,25 @@ public class MainMenu : MonoBehaviour
         
         Debug.Log("INICIANDO NOVO JOGO...");
 
-        // Usamos o TransitionManager para definir o spawn inicial
         if (TransitionManager.Instance != null)
         {
-            // O ID "fase1_spawn" é o que você configurou para o seu SceneEntrance!
+            // Define o spawn inicial
             TransitionManager.Instance.TransitionToScene(gameSceneName, "fase1_spawn");
         }
         else
         {
-             // Fallback caso o TransitionManager não exista
             SceneManager.LoadScene(gameSceneName);
         }
     }
-    // --- FIM DA MODIFICAÇÃO ---
 
     public void ContinueGame()
     {
+        // Muda o input para Gameplay
         if (InputManager.Instance != null)
         {
             InputManager.Instance.SwitchToGameplayMap();
         }
+        
         Debug.Log("CONTINUANDO JOGO...");
 
         if (SaveManager.Instance != null)
@@ -134,8 +138,6 @@ public class MainMenu : MonoBehaviour
             SaveManager.Instance.LoadGame();
         }
         
-        // Aqui, NÃO precisamos do TransitionManager, pois a cena já
-        // é carregada pelo SaveManager, e a rotina de teleporte já funciona.
         SceneManager.LoadScene(gameSceneName);
     }
 

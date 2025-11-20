@@ -1,7 +1,6 @@
-using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(EnemyHealth))]
 [RequireComponent(typeof(NavMeshAgent))]
@@ -16,37 +15,33 @@ public class EnemyAIController : MonoBehaviour
     [HideInInspector] public LockOnTarget lockOnTarget;
     public Cannon cannon;
 
-    [Tooltip("Distância para a I.A. decidir ATACAR (se já estiver em Alerta).")]
-    public float combatAggroRange = 7f;
-    [Tooltip("Tempo (segundos) que a I.A. continua procurando após perder o player de vista em combate.")]
-    public float combatMemoryDuration = 3.0f;
     [Header("Combat Settings")]
+    public float combatAggroRange = 7f;
+    public float combatMemoryDuration = 3.0f;
     public Spell[] enemyAttacks;
     public float attackRange = 10f;
     public float attackCooldown = 2.0f;
 
-    // --- INÍCIO DA MUDANÇA ---
     [Header("Fallen State")]
-    [Tooltip("Tempo (em segundos) que o inimigo fica caído antes de levantar com raiva")]
     public float fallenDuration = 15f;
-    // --- FIM DA MUDANÇA ---
 
-    [Header("Sensing Atributes")]
+    [Header("Sensing Attributes")]
     public float sightRange = 15f;
     public float hearingRange = 8f;
     [Range(0f, 180f)] public float viewAngle = 90f;
     public LayerMask targetMask;
     public LayerMask obstructionMask;
 
-    private IEnemyState currentState;
-    [HideInInspector] public EnemyStateID currentStateID = EnemyStateID.Idle;
-    [HideInInspector] public Transform playerTarget;
-    [HideInInspector] public Vector3 lastSeenLocation;
-
     [Header("Patrol Settings")]
     public float walkSpeed = 3.5f;
     public float chaseSpeed = 5.0f;
     public Transform[] waypoints;
+
+    // --- ESTADO ---
+    private IEnemyState currentState;
+    [HideInInspector] public EnemyStateID currentStateID = EnemyStateID.Idle;
+    [HideInInspector] public Transform playerTarget; 
+    [HideInInspector] public Vector3 lastSeenLocation;
 
     void Awake()
     {
@@ -55,25 +50,40 @@ public class EnemyAIController : MonoBehaviour
         npcData = GetComponent<CorruptedNPC>();
         lockOnTarget = GetComponent<LockOnTarget>();
         cannon = GetComponent<Cannon>();
+    }
 
-        if (GameObject.FindGameObjectWithTag("Player") is GameObject playerGO)
-        {
-            playerTarget = playerGO.transform;
-        }
-        else
-        {
-            Debug.LogError("IA: ERRO CRÍTICO! Não foi possível encontrar o 'Player'.");
-        }
-
+    void Start()
+    {
         agent.speed = walkSpeed;
+        // Inicia a busca persistente pelo player
+        StartCoroutine(FindPlayerRoutine());
         ChangeState(EnemyStateID.Patrol);
+    }
+
+    IEnumerator FindPlayerRoutine()
+    {
+        while (playerTarget == null)
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null)
+            {
+                playerTarget = p.transform;
+                Debug.Log($"IA ({gameObject.name}): Player ENCONTRADO via Coroutine!");
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
     }
 
     void Update()
     {
+        if (playerTarget == null) return;
+
         if (enemyHealth != null && enemyHealth.isFallen &&
             currentStateID != EnemyStateID.Fallen &&
-            currentStateID != EnemyStateID.Dead )
+            currentStateID != EnemyStateID.Dead)
         {
             ChangeState(EnemyStateID.Fallen);
         }
@@ -83,6 +93,7 @@ public class EnemyAIController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (playerTarget == null) return;
         currentState?.FixedUpdateState();
     }
 
@@ -108,7 +119,82 @@ public class EnemyAIController : MonoBehaviour
         };
     }
 
-    public bool CanSeeTarget() { if (playerTarget == null) return false; Vector3 eyePos = transform.position + Vector3.up * 1.5f; Vector3 targetPos = playerTarget.position + Vector3.up * 1f; Vector3 targetDir = (targetPos - eyePos).normalized; float distToTarget = Vector3.Distance(eyePos, targetPos); if (distToTarget > sightRange) return false; float dotProduct = Vector3.Dot(transform.forward, targetDir); if (dotProduct < Mathf.Cos(viewAngle * 0.5f * Mathf.Deg2Rad)) return false; if (Physics.Raycast(eyePos, targetDir, out RaycastHit hit, distToTarget, obstructionMask.value, QueryTriggerInteraction.Ignore)) return false; lastSeenLocation = playerTarget.position; return true; }
-    public bool CanHearTarget() { if (playerTarget == null) return false; if (playerTarget.GetComponent<PlayerControllerSystem>() is PlayerControllerSystem playerController) { float noiseMultiplier = playerController.noiseLevel; float effectiveHearingRange = hearingRange * noiseMultiplier; if (effectiveHearingRange < 0.1f) return false; float distToTarget = Vector3.Distance(transform.position, playerTarget.position); if (distToTarget < effectiveHearingRange) { lastSeenLocation = playerTarget.position; return true; } } return false; }
-    private void OnDrawGizmos() { Gizmos.color = Color.white; Gizmos.DrawWireSphere(transform.position, sightRange); Gizmos.color = Color.blue; Gizmos.DrawWireSphere(transform.position, hearingRange); Gizmos.color = Color.yellow; Quaternion rotLeft = Quaternion.Euler(0, -viewAngle / 2, 0); Quaternion rotRight = Quaternion.Euler(0, viewAngle / 2, 0); Vector3 lineLeft = rotLeft * transform.forward * sightRange; Vector3 lineRight = rotRight * transform.forward * sightRange; Gizmos.DrawLine(transform.position, transform.position + lineLeft); Gizmos.DrawLine(transform.position, transform.position + lineRight); }
+    // --- VERSÃO DE DEBUG DO CAN SEE TARGET ---
+    public bool CanSeeTarget()
+    {
+        if (playerTarget == null) return false;
+
+        Vector3 eyePos = transform.position + Vector3.up * 1.5f;
+        Vector3 targetPos = playerTarget.position + Vector3.up * 1f;
+        Vector3 targetDir = (targetPos - eyePos).normalized;
+        float distToTarget = Vector3.Distance(eyePos, targetPos);
+
+        // 1. Checa Distância
+        if (distToTarget > sightRange) 
+        {
+            // Debug.Log("IA DEBUG: Player longe demais."); 
+            return false;
+        }
+
+        // 2. Checa Ângulo
+        float dotProduct = Vector3.Dot(transform.forward, targetDir);
+        if (dotProduct < Mathf.Cos(viewAngle * 0.5f * Mathf.Deg2Rad)) 
+        {
+            // Debug.Log("IA DEBUG: Player fora do ângulo.");
+            return false;
+        }
+
+        // 3. Checa Obstáculos
+        // AQUI VEM O DIAGNÓSTICO
+        if (Physics.Raycast(eyePos, targetDir, out RaycastHit hit, distToTarget, obstructionMask.value, QueryTriggerInteraction.Ignore))
+        {
+            // Se bater em algo, avisa o que é!
+            // Se aparecer o nome do próprio Inimigo, é problema de Layer.
+            Debug.Log($"<color=red>IA VISÃO BLOQUEADA POR: {hit.collider.name} (Layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)})</color>");
+            Debug.DrawLine(eyePos, hit.point, Color.red);
+            return false;
+        }
+
+        // Se chegou aqui, está vendo!
+        // Debug.Log("<color=green>IA VENDO O PLAYER!</color>");
+        Debug.DrawLine(eyePos, targetPos, Color.green);
+        lastSeenLocation = playerTarget.position;
+        return true;
+    }
+
+    public bool CanHearTarget()
+    {
+        if (playerTarget == null) return false;
+        var playerController = playerTarget.GetComponent<PlayerControllerSystem>();
+        if (playerController != null)
+        {
+            float noiseMultiplier = playerController.noiseLevel;
+            float effectiveHearingRange = hearingRange * noiseMultiplier;
+
+            if (effectiveHearingRange < 0.1f) return false;
+
+            float distToTarget = Vector3.Distance(transform.position, playerTarget.position);
+            if (distToTarget < effectiveHearingRange)
+            {
+                lastSeenLocation = playerTarget.position;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireSphere(transform.position, sightRange);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, hearingRange);
+        Gizmos.color = Color.yellow;
+        Quaternion rotLeft = Quaternion.Euler(0, -viewAngle / 2, 0);
+        Quaternion rotRight = Quaternion.Euler(0, viewAngle / 2, 0);
+        Vector3 lineLeft = rotLeft * transform.forward * sightRange;
+        Vector3 lineRight = rotRight * transform.forward * sightRange;
+        Gizmos.DrawLine(transform.position, transform.position + lineLeft);
+        Gizmos.DrawLine(transform.position, transform.position + lineRight);
+    }
 }

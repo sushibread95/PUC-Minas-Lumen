@@ -1,35 +1,32 @@
-// Nome do arquivo: PauseMenuManager.cs
-// CÓDIGO COMPLETO (COM LÓGICA DE PERSISTÊNCIA)
-
 using UnityEngine;
 using UnityEngine.EventSystems; 
 using UnityEngine.InputSystem; 
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
-using TMPro; 
-using System.Collections.Generic;
-using System.Linq; 
 
 public class PauseMenuManager : MonoBehaviour
 {
     public static PauseMenuManager Instance { get; private set; }
-    // ... (variáveis e cabeçalhos permanecem iguais) ...
+
+    [Header("UI References")]
     public CanvasGroup pausePanel;
     public Button resumeButton;
     public Button saveButton;
     public Button mainMenuButton;
     public Button restartButton;
     public Button quitButton;
+
+    [Header("Settings")]
     public bool lockCursorInGameplay = true;
     public bool selectFirstButtonOnOpen = true;
     public string mainMenuSceneName = "MainMenu";
+
     public bool IsPaused { get; private set; }
     private GameObject lastSelectedGameObject;
 
     void Awake()
     {
-        // --- CORREÇÃO: ADICIONANDO PERSISTÊNCIA ---
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -37,10 +34,8 @@ public class PauseMenuManager : MonoBehaviour
         else
         {
             Instance = this;
-            // ESSENCIAL: Mantém o Menu ativo entre as cenas.
             DontDestroyOnLoad(gameObject); 
         }
-        // --- FIM DA CORREÇÃO ---
         
         if (resumeButton) resumeButton.onClick.AddListener(Resume);
         if (saveButton) saveButton.onClick.AddListener(SaveGame);
@@ -48,9 +43,6 @@ public class PauseMenuManager : MonoBehaviour
         if (restartButton) restartButton.onClick.AddListener(RestartScene);
         if (quitButton) quitButton.onClick.AddListener(QuitGame);
     }
-    
-    // ... (restante do código OnDestroy, Update, Pause/Resume, etc. permanece igual) ...
-    // ... (Para economizar espaço, o restante do script é omitido) ...
 
     void Start()
     {
@@ -59,26 +51,29 @@ public class PauseMenuManager : MonoBehaviour
             InputManager.Instance.InputActions.Player.Pause.performed += OnPausePerformed;
             InputManager.Instance.InputActions.UI.Cancel.performed += OnCancelPressed;
         }
-        else Debug.LogError("PauseMenuManager não conseguiu encontrar o InputManager.");
         
         Show(false);
         EnsureTimescale(1f);
+        
+        // No Start, assumimos que o jogo começou, então travamos o cursor
         SetCursorLocked(true);
         IsPaused = false;
     }
 
     void OnDestroy()
     {
-        if (InputManager.Instance != null)
+        if (InputManager.Instance != null && InputManager.Instance.InputActions != null)
         {
             InputManager.Instance.InputActions.Player.Pause.performed -= OnPausePerformed;
-            InputManager.Instance.InputActions.Player.Pause.performed -= OnCancelPressed; // Correção de segurança
+            InputManager.Instance.InputActions.UI.Cancel.performed -= OnCancelPressed;
         }
     }
 
     void Update()
     {
+        // Lógica de manter seleção do controle no menu de pause
         if (!IsPaused || !pausePanel || pausePanel.alpha < 0.9f) return;
+        
         if (EventSystem.current != null)
         {
              if (EventSystem.current.currentSelectedGameObject == null)
@@ -86,28 +81,17 @@ public class PauseMenuManager : MonoBehaviour
                  bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
                  if (!isMouseMoving) 
                  {
-                     if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy && lastSelectedGameObject.GetComponent<Selectable>()?.IsInteractable() == true)
+                     if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy)
                      {
                          EventSystem.current.SetSelectedGameObject(lastSelectedGameObject);
                      }
-                     else if (resumeButton != null && resumeButton.IsInteractable())
+                     else if (resumeButton != null && resumeButton.interactable)
                      {
                          EventSystem.current.SetSelectedGameObject(resumeButton.gameObject);
-                         lastSelectedGameObject = resumeButton.gameObject;
-                     }
-                      else
-                     {
-                         Selectable firstInteractable = pausePanel.GetComponentInChildren<Selectable>(false);
-                         if (firstInteractable != null && firstInteractable.IsInteractable())
-                         {
-                            EventSystem.current.SetSelectedGameObject(firstInteractable.gameObject);
-                            lastSelectedGameObject = firstInteractable.gameObject;
-                         }
-                         else lastSelectedGameObject = null;
                      }
                  }
              }
-             else if (EventSystem.current.currentSelectedGameObject != null)
+             else
              {
                  lastSelectedGameObject = EventSystem.current.currentSelectedGameObject;
              }
@@ -116,6 +100,7 @@ public class PauseMenuManager : MonoBehaviour
 
     private void OnCancelPressed(InputAction.CallbackContext context)
     {
+        // Se apertar 'Esc' ou 'B' no controle e não houver outro menu aberto (Inventário), resume o jogo
         if (IsPaused && (InventoryController.Instance == null || !InventoryController.Instance.IsInventoryOpen))
         {
             Resume();
@@ -126,11 +111,7 @@ public class PauseMenuManager : MonoBehaviour
     {
         if (SaveManager.Instance != null && SaveManager.Instance.IsSaving) return;
         if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy) return;
-        
-        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
-        {
-            return;
-        }
+        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return;
 
         if (!IsPaused) Pause();
     }
@@ -141,40 +122,36 @@ public class PauseMenuManager : MonoBehaviour
         IsPaused = true;
         Show(true);
         EnsureTimescale(0f);
-        SetCursorLocked(false); 
+        SetCursorLocked(false); // Solta o cursor para o menu
         if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
+        
         if (selectFirstButtonOnOpen && resumeButton)
         {
             StartCoroutine(SelectButtonLater(resumeButton));
-            lastSelectedGameObject = resumeButton.gameObject;
-        }
-        else
-        {
-             lastSelectedGameObject = null;
-             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         }
     }
 
     public void Resume()
     {
         if (!IsPaused) return;
-        IsPaused = false;
-        Show(false);
-        EnsureTimescale(1f);
-        SetCursorLocked(lockCursorInGameplay); 
-        if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
-        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
-        lastSelectedGameObject = null;
+        
+        // Faz a limpeza para voltar ao jogo
+        ResumeCleanup();
     }
 
-    private IEnumerator SelectButtonLater(Button button)
+    // Função auxiliar para "Voltar ao Jogo"
+    private void ResumeCleanup()
     {
-        yield return null;
-        if (button != null && EventSystem.current != null && button.interactable)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(button.gameObject);
-        }
+         // Reseta o estado do mundo se necessário (opcional)
+         // if (WorldStateManager.Instance != null) WorldStateManager.Instance.ResetState(); // <-- CUIDADO: ISSO RESETARIA TUDO AO DESPAUSAR. REMOVIDO.
+         
+         if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap(); 
+         EnsureTimescale(1f); 
+         SetCursorLocked(lockCursorInGameplay); // Trava o cursor de novo
+         IsPaused = false; 
+         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null); 
+         lastSelectedGameObject = null;
+         Show(false); 
     }
 
     public void SaveGame()
@@ -185,32 +162,26 @@ public class PauseMenuManager : MonoBehaviour
         }
     }
 
+    // --- CORREÇÃO PRINCIPAL AQUI ---
     public void QuitToMainMenu()
     {
-        ResumeCleanup(); 
+        // NÃO chamamos ResumeCleanup() aqui, pois ele travaria o cursor.
+        // Em vez disso, fazemos uma limpeza manual para MENU.
+        
+        EnsureTimescale(1f); // O tempo volta ao normal
+        IsPaused = false;
+        Show(false); // Esconde o painel de pause
+
+        // Carrega o Menu
         SceneManager.LoadScene(mainMenuSceneName);
     }
+    // ------------------------------
 
     public void RestartScene()
     {
-        ResumeCleanup(); 
+        ResumeCleanup(); // Aqui tudo bem limpar para gameplay, pois vamos recarregar a fase
         var scene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(scene.buildIndex);
-    }
-    
-    private void ResumeCleanup()
-    {
-         if (WorldStateManager.Instance != null)
-         {
-             WorldStateManager.Instance.ResetState(); 
-         }
-         if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap(); 
-         EnsureTimescale(1f); 
-         SetCursorLocked(lockCursorInGameplay); 
-         IsPaused = false; 
-         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null); 
-         lastSelectedGameObject = null;
-         Show(false); 
     }
 
     public void QuitGame()
@@ -242,5 +213,15 @@ public class PauseMenuManager : MonoBehaviour
     {
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !locked;
+    }
+
+    private IEnumerator SelectButtonLater(Button button)
+    {
+        yield return null;
+        if (button != null && EventSystem.current != null && button.interactable)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(button.gameObject);
+        }
     }
 }
