@@ -1473,7 +1473,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   doorType: 0
   doorID: vilarejo_porta_igreja
-  requiredKey: {fileID: 11400000, guid: c7a6d2f3f154e314792d03fa3536e623, type: 2}
+  requiredKey: {fileID: 11400000, guid: 385f99436813e5a43b993d2a31ffde7f, type: 2}
   consumeKeyOnUse: 1
   lockedMessage: Preciso de uma chave
   sceneName: igreja_interior
@@ -4857,7 +4857,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   doorType: 0
   doorID: vilarejo_porta_castelo
-  requiredKey: {fileID: 11400000, guid: f58ea82c9748380428e45ff252199b0e, type: 2}
+  requiredKey: {fileID: 11400000, guid: 08accd82d93e5f5459a6f2d72eee9565, type: 2}
   consumeKeyOnUse: 1
   lockedMessage: Preciso de uma chave
   sceneName: Hub

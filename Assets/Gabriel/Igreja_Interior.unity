@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abfcbc74423ecbc4ead90dc831f897ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TypeObjec: {fileID: 11400000, guid: f58ea82c9748380428e45ff252199b0e, type: 2}
+  TypeObjec: {fileID: 11400000, guid: 08accd82d93e5f5459a6f2d72eee9565, type: 2}
   id: dea7a649-c0ed-4fb0-8024-d16258e174a0
 --- !u!4 &613213771
 Transform:
