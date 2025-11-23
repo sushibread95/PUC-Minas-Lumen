@@ -64,8 +64,8 @@ public class InventoryController : MonoBehaviour
             return;
         }
         input = InputManager.Instance.InputActions;
-        input.Player.Inventory.performed += OnInventoryPressed;
-        input.UI.Cancel.performed += OnCancelPressed;
+        //input.Player.Inventory.performed += OnInventoryPressed;
+        //input.UI.Cancel.performed += OnCancelPressed;
         InputAction inventoryUIAction = input.FindAction("UI/Inventory");
         if (inventoryUIAction != null)
             inventoryUIAction.performed += OnCancelPressed;
@@ -101,8 +101,8 @@ public class InventoryController : MonoBehaviour
     {
         if (input != null && InputManager.Instance != null)
         {
-            input.Player.Inventory.performed -= OnInventoryPressed;
-            input.UI.Cancel.performed -= OnCancelPressed;
+            //input.Player.Inventory.performed -= OnInventoryPressed;
+            //input.UI.Cancel.performed -= OnCancelPressed;
 
             InputAction inventoryUIAction = input.FindAction("UI/Inventory");
             if (inventoryUIAction != null)
@@ -185,6 +185,10 @@ public class InventoryController : MonoBehaviour
 
         if (IsInventoryOpen)
         {
+            if (InventoryActionPanel.Instance != null) // <--- ADICIONE ISSO
+            {
+                InventoryActionPanel.Instance.HidePanel(); // <--- ADICIONE ISSO
+            }
             UpdateInventoryUI();
             
             Time.timeScale = 0f;

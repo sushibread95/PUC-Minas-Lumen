@@ -23,12 +23,12 @@ public class EquipmentUI : MonoBehaviour
     void OnEnable()
     {
         input.Enable();
-        input.Player.Equipment.performed += OnEquipmentPressed;
+       // input.Player.Equipment.performed += OnEquipmentPressed;
     }
 
     void OnDisable()
     {
-        input.Player.Equipment.performed -= OnEquipmentPressed;
+        //input.Player.Equipment.performed -= OnEquipmentPressed;
         input.Disable();
     }
 

@@ -129,35 +129,29 @@ public class EnemyAIController : MonoBehaviour
         Vector3 targetDir = (targetPos - eyePos).normalized;
         float distToTarget = Vector3.Distance(eyePos, targetPos);
 
-        // 1. Checa Distância
-        if (distToTarget > sightRange) 
-        {
-            // Debug.Log("IA DEBUG: Player longe demais."); 
-            return false;
-        }
+        // --- LÓGICA DE STEALTH ADICIONADA ---
+        float currentSightRange = sightRange; // Alcance padrão
 
-        // 2. Checa Ângulo
+        // Se o alvo for o Player, aplicamos o fator de visibilidade dele
+        var pStats = playerTarget.GetComponent<PlayerControllerSystem>();
+        if (pStats != null)
+        {
+            // Ex: Se visibilityFactor for 0.5 (agachado), o inimigo só vê até metade da distância
+            currentSightRange *= pStats.visibilityFactor;
+        }
+        // -------------------------------------
+
+        // Agora usamos o range dinâmico
+        if (distToTarget > currentSightRange) return false;
+
         float dotProduct = Vector3.Dot(transform.forward, targetDir);
-        if (dotProduct < Mathf.Cos(viewAngle * 0.5f * Mathf.Deg2Rad)) 
+        if (dotProduct < Mathf.Cos(viewAngle * 0.5f * Mathf.Deg2Rad)) return false;
+
+        if (Physics.Raycast(eyePos, targetDir, out RaycastHit hit, distToTarget, obstructionMask))
         {
-            // Debug.Log("IA DEBUG: Player fora do ângulo.");
             return false;
         }
 
-        // 3. Checa Obstáculos
-        // AQUI VEM O DIAGNÓSTICO
-        if (Physics.Raycast(eyePos, targetDir, out RaycastHit hit, distToTarget, obstructionMask.value, QueryTriggerInteraction.Ignore))
-        {
-            // Se bater em algo, avisa o que é!
-            // Se aparecer o nome do próprio Inimigo, é problema de Layer.
-            Debug.Log($"<color=red>IA VISÃO BLOQUEADA POR: {hit.collider.name} (Layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)})</color>");
-            Debug.DrawLine(eyePos, hit.point, Color.red);
-            return false;
-        }
-
-        // Se chegou aqui, está vendo!
-        // Debug.Log("<color=green>IA VENDO O PLAYER!</color>");
-        Debug.DrawLine(eyePos, targetPos, Color.green);
         lastSeenLocation = playerTarget.position;
         return true;
     }

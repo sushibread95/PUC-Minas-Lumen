@@ -2,75 +2,70 @@ using UnityEngine;
 
 public class CorruptedNPC : MonoBehaviour
 {
-    [Header("Identificação Única")]
-    [Tooltip("ID único para o save. Ex: 'vilarejo_lenhador_01'")]
-    public string npcID; //Save
+    [Header("Identificação")]
+    public string npcID;
 
-    [Header("Estado Atual")]
+    [Header("Recompensas")]
+    [Tooltip("Quanto de XP esse inimigo dá ao ser resolvido?")]
+    public float xpReward = 50f; // Valor base
+
+    [Header("Estado")]
     public NPCState currentState = NPCState.Corrompido;
-
-    [Header("Lógica de Consequência (Design)")]
-    [Tooltip("Arraste aqui o portão que este NPC abre se for purificado.")]
     public GameObject rotaParaAbrir;
 
-    [Header("Configuração de Nocaute")]
-    public float interactionRadius = 3f;
-
-    // --- AVISO DE MODIFICAÇÃO (ADIÇÃO) ---
     void OnValidate()
     {
-        if (string.IsNullOrEmpty(npcID))
-        {
-            npcID = System.Guid.NewGuid().ToString();
-        }
+        if (string.IsNullOrEmpty(npcID)) npcID = System.Guid.NewGuid().ToString();
     }
 
-    
     public void EntrarEmNocaute()
     {
         if (currentState != NPCState.Corrompido) return;
-
         currentState = NPCState.Nocauteado;
-        Debug.Log(npcID + " foi nocauteado. O jogador pode decidir.");
+        // Tocar animação de nocaute aqui
     }
 
     public void SerPurificado()
     {
-        Debug.Log(npcID + " foi PURIFICADO.");
         currentState = NPCState.Purificado;
+
+        // --- ADIÇÃO: Dá XP Verde + XP Base ---
+        if (LevelingSystem.Instance != null)
+        {
+            LevelingSystem.Instance.AddPurificationXP(xpReward);
+        }
+
         if (rotaParaAbrir != null) rotaParaAbrir.SetActive(false);
-        
-        if (WorldStateManager.Instance != null)
-            WorldStateManager.Instance.SetNPCState(npcID, NPCState.Purificado);
-        
+        if (WorldStateManager.Instance != null) WorldStateManager.Instance.SetNPCState(npcID, NPCState.Purificado);
+
         gameObject.SetActive(false);
     }
 
     public void SerMorto()
     {
-        Debug.Log(npcID + " foi MORTO.");
         currentState = NPCState.Morto;
-        
-        if (WorldStateManager.Instance != null)
-            WorldStateManager.Instance.SetNPCState(npcID, NPCState.Morto);
-        
+
+        // --- ADIÇÃO: Dá XP Vermelho + XP Base ---
+        if (LevelingSystem.Instance != null)
+        {
+            LevelingSystem.Instance.AddCombatXP(xpReward);
+        }
+
+        if (WorldStateManager.Instance != null) WorldStateManager.Instance.SetNPCState(npcID, NPCState.Morto);
+
         Destroy(gameObject);
     }
 
+    // ... (Start permanece igual para carregar estado) ...
     void Start()
     {
         if (WorldStateManager.Instance == null) return;
-
-        NPCState estadoSalvo;
-        if (WorldStateManager.Instance.npcWorldStates.TryGetValue(this.npcID, out estadoSalvo))
+        if (WorldStateManager.Instance.npcWorldStates.TryGetValue(this.npcID, out NPCState estadoSalvo))
         {
             if (estadoSalvo == NPCState.Purificado || estadoSalvo == NPCState.Morto)
             {
-                if (rotaParaAbrir != null && estadoSalvo == NPCState.Purificado)
-                {
-                    rotaParaAbrir.SetActive(false);
-                }
-                gameObject.SetActive(false); // Some com o NPC
+                if (rotaParaAbrir != null && estadoSalvo == NPCState.Purificado) rotaParaAbrir.SetActive(false);
+                gameObject.SetActive(false);
             }
         }
     }
