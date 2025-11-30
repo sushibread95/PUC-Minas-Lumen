@@ -11,6 +11,10 @@ public class GameData
 
     public List<NPCStateSaveData> npcStates;
     public List<string> collectedItemIDs;
+
+    public List<QuestSaveData> activeQuests = new List<QuestSaveData>();
+    
+    public List<string> completedQuestIDs = new List<string>();
     
     public float playerPosX;
     public float playerPosY;

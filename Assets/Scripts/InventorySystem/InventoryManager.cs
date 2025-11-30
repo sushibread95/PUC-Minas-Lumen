@@ -62,6 +62,12 @@ public class InventoryManager : MonoBehaviour
         {
             items.Add(new InventoryItem(newItem, 1));
         }
+
+        // --- MODIFICAÇÃO: Notifica o QuestSystem que um item foi coletado ---
+        // Usa o nome do item como ID. Certifique-se que o 'targetID' na QuestDefinition seja igual ao nome do item.
+        GameEvents.TriggerItemObtained(newItem.name, 1);
+        // -------------------------------------------------------------------
+
         OnInventoryChanged?.Invoke();
     }
 

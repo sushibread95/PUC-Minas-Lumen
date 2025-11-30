@@ -67,6 +67,14 @@ public class SaveManager : MonoBehaviour
             this.gameData.unlockedDoorIDs = WorldStateManager.Instance.GetDoorSaveData();
         }
 
+        // --- MODIFICAÇÃO: Salva Quests no GameData ---
+        if (QuestManager.Instance != null)
+        {
+            this.gameData.activeQuests = QuestManager.Instance.GetActiveQuestsSaveData();
+            this.gameData.completedQuestIDs = QuestManager.Instance.GetCompletedQuestsSaveData();
+        }
+        // ---------------------------------------------
+
         // --- AVISO DE CORREÇÃO---
         if (InventoryManager.Instance != null)
         {
@@ -108,6 +116,13 @@ public class SaveManager : MonoBehaviour
                 WorldStateManager.Instance.LoadDoorSaveData(this.gameData.unlockedDoorIDs);
             }
             
+            // --- MODIFICAÇÃO: Carrega Quests ---
+            if (QuestManager.Instance != null)
+            {
+                QuestManager.Instance.LoadQuestData(this.gameData.activeQuests, this.gameData.completedQuestIDs);
+            }
+            // -----------------------------------
+
             // --- AVISO DE CORREÇÃO ---
             if (InventoryManager.Instance != null)
             {
@@ -136,7 +151,9 @@ public class SaveManager : MonoBehaviour
 
         if (registeredPlayerTransform != null)
         {
-            PlayerControllerSystem pc = registeredPlayerTransform.GetComponent<PlayerControllerSystem>();
+            // --- PEQUENO AJUSTE: Use 'PlayerControllerSystem' ou o nome exato do seu script aqui ---
+            // Como não tenho o script PlayerController, mantive como estava, assumindo que você tem 'PlayerControllerSystem'
+            var pc = registeredPlayerTransform.GetComponent<PlayerControllerSystem>();
             if (pc != null)
             {
                 Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);

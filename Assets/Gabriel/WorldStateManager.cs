@@ -38,6 +38,14 @@ public class WorldStateManager : MonoBehaviour
         {
             InventoryManager.Instance.ResetState();
         }
+
+        // --- MODIFICAÇÃO: Garante que as Quests também sejam resetadas ---
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.ResetState();
+        }
+        // -----------------------------------------------------------------
+
         Debug.Log("WorldStateManager RESETADO para Novo Jogo.");
     }
     
