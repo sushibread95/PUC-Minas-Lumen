@@ -638,17 +638,6 @@
                 },
                 {
                     "name": "",
-                    "id": "9eff92a6-2b64-4910-a4c5-3b0c52beaa5b",
-                    "path": "<Mouse>/leftButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "LockOn",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "b672ebfd-17a8-4e68-8721-cb53b0dcf6f0",
                     "path": "<Gamepad>/leftStick/x",
                     "interactions": "",
