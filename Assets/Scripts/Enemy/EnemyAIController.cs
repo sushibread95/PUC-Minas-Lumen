@@ -14,6 +14,11 @@ public class EnemyAIController : MonoBehaviour
     [HideInInspector] public CorruptedNPC npcData;
     [HideInInspector] public LockOnTarget lockOnTarget;
     public Cannon cannon;
+    
+    [Header("Animation")] // --- ADIÇÃO ---
+    public Animator animator;
+    public string speedParam = "Speed"; // Blend Tree (0 a 1)
+    // --------------------
 
     [Header("Combat Settings")]
     public float combatAggroRange = 7f;
@@ -50,12 +55,14 @@ public class EnemyAIController : MonoBehaviour
         npcData = GetComponent<CorruptedNPC>();
         lockOnTarget = GetComponent<LockOnTarget>();
         cannon = GetComponent<Cannon>();
+        
+        // Auto-assign animator
+        if (animator == null) animator = GetComponentInChildren<Animator>();
     }
 
     void Start()
     {
         agent.speed = walkSpeed;
-        // Inicia a busca persistente pelo player
         StartCoroutine(FindPlayerRoutine());
         ChangeState(EnemyStateID.Patrol);
     }
@@ -68,7 +75,6 @@ public class EnemyAIController : MonoBehaviour
             if (p != null)
             {
                 playerTarget = p.transform;
-                Debug.Log($"IA ({gameObject.name}): Player ENCONTRADO via Coroutine!");
             }
             else
             {
@@ -79,6 +85,10 @@ public class EnemyAIController : MonoBehaviour
 
     void Update()
     {
+        // --- ADIÇÃO: Atualiza animação de movimento ---
+        UpdateAnimatorMovement();
+        // ----------------------------------------------
+
         if (playerTarget == null) return;
 
         if (enemyHealth != null && enemyHealth.isFallen &&
@@ -90,6 +100,20 @@ public class EnemyAIController : MonoBehaviour
 
         currentState?.UpdateState();
     }
+
+    // --- FUNÇÃO ADICIONADA: Sincroniza NavMesh com Animator ---
+    void UpdateAnimatorMovement()
+    {
+        if (animator == null || agent == null) return;
+
+        // Pega a velocidade normalizada (0 a 1) baseada na velocidade máxima do agente
+        float speedFraction = agent.velocity.magnitude / agent.speed;
+        
+        // Se estiver perseguindo (velocidade alta), o fraction será 1. Se patrulhando, será menor.
+        // Dica: Use DampTime para suavizar a transição
+        animator.SetFloat(speedParam, speedFraction, 0.1f, Time.deltaTime);
+    }
+    // -----------------------------------------------------------
 
     void FixedUpdate()
     {
@@ -119,7 +143,7 @@ public class EnemyAIController : MonoBehaviour
         };
     }
 
-    // --- VERSÃO DE DEBUG DO CAN SEE TARGET ---
+    // ... (Mantive o resto das funções de CanSeeTarget/CanHearTarget iguais) ...
     public bool CanSeeTarget()
     {
         if (playerTarget == null) return false;
@@ -129,19 +153,13 @@ public class EnemyAIController : MonoBehaviour
         Vector3 targetDir = (targetPos - eyePos).normalized;
         float distToTarget = Vector3.Distance(eyePos, targetPos);
 
-        // --- LÓGICA DE STEALTH ADICIONADA ---
-        float currentSightRange = sightRange; // Alcance padrão
-
-        // Se o alvo for o Player, aplicamos o fator de visibilidade dele
+        float currentSightRange = sightRange; 
         var pStats = playerTarget.GetComponent<PlayerControllerSystem>();
         if (pStats != null)
         {
-            // Ex: Se visibilityFactor for 0.5 (agachado), o inimigo só vê até metade da distância
             currentSightRange *= pStats.visibilityFactor;
         }
-        // -------------------------------------
 
-        // Agora usamos o range dinâmico
         if (distToTarget > currentSightRange) return false;
 
         float dotProduct = Vector3.Dot(transform.forward, targetDir);
@@ -176,19 +194,12 @@ public class EnemyAIController : MonoBehaviour
         }
         return false;
     }
-
+    
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, sightRange);
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, hearingRange);
-        Gizmos.color = Color.yellow;
-        Quaternion rotLeft = Quaternion.Euler(0, -viewAngle / 2, 0);
-        Quaternion rotRight = Quaternion.Euler(0, viewAngle / 2, 0);
-        Vector3 lineLeft = rotLeft * transform.forward * sightRange;
-        Vector3 lineRight = rotRight * transform.forward * sightRange;
-        Gizmos.DrawLine(transform.position, transform.position + lineLeft);
-        Gizmos.DrawLine(transform.position, transform.position + lineRight);
     }
 }

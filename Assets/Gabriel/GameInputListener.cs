@@ -14,7 +14,7 @@ public class GameInputListener : MonoBehaviour
     void OnEnable()
     {
         input.Enable();
-        // Se inscreve no evento "Inventory" (que você configurou para TAB)
+        // Se inscreve no evento "Inventory" (que vocï¿½ configurou para TAB)
         input.Player.Inventory.performed += OnInventoryPressed;
         // Se inscreve no "Map" (caso tenha)
         input.Player.Map.performed += OnMapPressed;
@@ -31,13 +31,13 @@ public class GameInputListener : MonoBehaviour
     {
         if (CharacterMenuWindow.Instance == null) return;
 
-        // Se o menu estiver fechado: Abre direto na aba 0 (Inventário)
-        if (!CharacterMenuWindow.Instance.menuPanel.activeSelf)
+        // Se o menu estiver fechado: Abre direto na aba 0 (Inventï¿½rio)
+        if (!CharacterMenuWindow.Instance.IsMenuOpen)
         {
-            CharacterMenuWindow.Instance.OpenSpecificTab(0); // 0 = Inventário
+            CharacterMenuWindow.Instance.OpenSpecificTab(0); // 0 = Inventï¿½rio
             CharacterMenuWindow.Instance.ToggleMenu(); // Liga o menu
         }
-        // Se o menu já estiver aberto: Fecha
+        // Se o menu jï¿½ estiver aberto: Fecha
         else
         {
             CharacterMenuWindow.Instance.ToggleMenu(); // Desliga
@@ -48,7 +48,7 @@ public class GameInputListener : MonoBehaviour
     {
         if (CharacterMenuWindow.Instance == null) return;
 
-        if (!CharacterMenuWindow.Instance.menuPanel.activeSelf)
+        if (!CharacterMenuWindow.Instance.IsMenuOpen)
         {
             CharacterMenuWindow.Instance.OpenSpecificTab(2); // 2 = Mapa (exemplo)
             CharacterMenuWindow.Instance.ToggleMenu();

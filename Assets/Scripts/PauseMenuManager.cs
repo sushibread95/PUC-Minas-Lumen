@@ -42,6 +42,7 @@ public class PauseMenuManager : MonoBehaviour
         if (mainMenuButton) mainMenuButton.onClick.AddListener(QuitToMainMenu);
         if (restartButton) restartButton.onClick.AddListener(RestartScene);
         if (quitButton) quitButton.onClick.AddListener(QuitGame);
+        if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
     }
 
     void Start()
@@ -174,6 +175,11 @@ public class PauseMenuManager : MonoBehaviour
 
         // Carrega o Menu
         SceneManager.LoadScene(mainMenuSceneName);
+
+        if (PlayerPersistent.Instance != null)
+        {
+            Destroy(PlayerPersistent.Instance.gameObject);
+        }
     }
     // ------------------------------
 

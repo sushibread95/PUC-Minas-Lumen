@@ -142,18 +142,20 @@ public class SaveManager : MonoBehaviour
     {
         yield return null; 
 
-        float timeout = 5f; 
-        while (registeredPlayerTransform == null && timeout > 0f)
+        // --- MUDANÇA: Em vez de esperar registro, busca o persistente ---
+        
+        Transform targetTransform = registeredPlayerTransform;
+
+        // Se a referência se perdeu (o que não deve acontecer com DontDestroy, mas por segurança)
+        if (targetTransform == null && PlayerPersistent.Instance != null)
         {
-            yield return null;
-            timeout -= Time.deltaTime;
+            targetTransform = PlayerPersistent.Instance.transform;
+            RegisterPlayer(targetTransform); // Atualiza a referência
         }
 
-        if (registeredPlayerTransform != null)
+        if (targetTransform != null)
         {
-            // --- PEQUENO AJUSTE: Use 'PlayerControllerSystem' ou o nome exato do seu script aqui ---
-            // Como não tenho o script PlayerController, mantive como estava, assumindo que você tem 'PlayerControllerSystem'
-            var pc = registeredPlayerTransform.GetComponent<PlayerControllerSystem>();
+            var pc = targetTransform.GetComponent<PlayerControllerSystem>();
             if (pc != null)
             {
                 Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
@@ -162,7 +164,8 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("SaveManager (Teleport): Não foi possível teleportar o Player. Nenhum player se registrou!");
+            // Fallback antigo
+            Debug.LogWarning("SaveManager: Player Persistente não encontrado para Load.");
         }
     }
 }

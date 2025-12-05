@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections; // NecessÃ¡rio para Coroutines
 
 [RequireComponent(typeof(CorruptedNPC))]
 public class EnemyHealth : MonoBehaviour
@@ -8,18 +9,20 @@ public class EnemyHealth : MonoBehaviour
     public int health = 50;
     private int currentHealth;
 
+    [Header("Animation")]
+    public Animator animator;
+    public string hurtTrigger = "Hurt";
+    public string deathTrigger = "Die"; // Certifique-se que o Trigger no Animator Ã© "Die"
+    public string fallenBool = "IsFallen"; 
+
     [Header("Fallen State")]
     [Tooltip("A % de vida para o inimigo cair (ex: 0.2 = 20% da vida)")]
     [SerializeField][Range(0.01f, 1f)] private float fallenThresholdPercent = 0.2f;
     [HideInInspector] public bool isFallen = false;
-
-    // --- INÍCIO DAS MUDANÇAS ---
-    [HideInInspector] public bool canBeKilledNormally = false; // Flag para "morrer de vez"
-    // --- FIM DAS MUDANÇAS ---
+    [HideInInspector] public bool canBeKilledNormally = false; 
 
     [Header("UI (World Space)")]
-    [Tooltip("Arraste o Slider da barra de vida que fica em cima da cabeça do inimigo aqui")]
-    public Slider healthBarSlider; // Deixei público para o FallenState acessar
+    public Slider healthBarSlider; 
 
     [Header("Identity")]
     public ProjectileOwner ownerType = ProjectileOwner.Enemy;
@@ -30,6 +33,8 @@ public class EnemyHealth : MonoBehaviour
     private void Awake()
     {
         corruptedNPC = GetComponent<CorruptedNPC>();
+        // Tenta pegar o animator automaticamente se esquecer de arrastar
+        if (animator == null) animator = GetComponentInChildren<Animator>();
     }
 
     private void OnEnable()
@@ -37,7 +42,7 @@ public class EnemyHealth : MonoBehaviour
         currentHealth = health;
         isDead = false;
         isFallen = false;
-        canBeKilledNormally = false; // --- LINHA ADICIONADA ---
+        canBeKilledNormally = false; 
 
         if (healthBarSlider != null)
         {
@@ -49,9 +54,7 @@ public class EnemyHealth : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (isDead) return; // Se já está morto, ignora
-
-        // Se está caído, não pode tomar dano
+        if (isDead) return; 
         if (isFallen) return;
 
         GameObject objectThatHitUs = collision.gameObject;
@@ -61,7 +64,7 @@ public class EnemyHealth : MonoBehaviour
         if (effects == null) return;
         if (projectile != null && projectile.owner == this.ownerType)
         {
-            return; // Fogo amigo
+            return; 
         }
 
         ApplyEffect(effects.effects);
@@ -69,7 +72,11 @@ public class EnemyHealth : MonoBehaviour
 
     public bool ApplyEffect(Effect[] effectToApply)
     {
-        if (isDead || isFallen) return false;
+        if (isDead) return false;
+        // Se estiver caÃ­do, sÃ³ aceita dano se a flag de morte estiver liberada (pelo golpe final)
+        if (isFallen && !canBeKilledNormally) return false;
+
+        bool tookDamage = false; 
 
         for (int i = 0; i < effectToApply.Length; i++)
         {
@@ -81,60 +88,79 @@ public class EnemyHealth : MonoBehaviour
                 case Effect.EffectType.magic:
 
                     currentHealth -= (int)power;
+                    tookDamage = true;
 
                     if (healthBarSlider != null)
                     {
                         healthBarSlider.value = currentHealth;
                     }
 
-                    // --- INÍCIO DAS MUDANÇAS ---
-
-                    // Se a vida zerar E ele já se levantou uma vez...
-                    if (currentHealth <= 0 && canBeKilledNormally)
+                    // Se a vida zerar...
+                    if (currentHealth <= 0)
                     {
-                        // ...MORRE DE VEZ.
-                        Kill();
+                        // Se jÃ¡ caiu e recebeu o golpe final (canBeKilledNormally)...
+                        if (canBeKilledNormally)
+                        {
+                            Kill();
+                        }
+                        // Se ainda nÃ£o caiu, mas a vida zerou por dano massivo...
+                        // (Opcional: vocÃª pode forÃ§ar ele a cair ou morrer direto. 
+                        // Aqui mantivemos a lÃ³gica de cair se chegar no threshold, 
+                        // mas se for 0 ele deve cair imediatamente para ser finalizado).
+                        else if (!isFallen)
+                        {
+                            EnterFallenState();
+                            // Deixa com 1 de vida para nÃ£o bugar a lÃ³gica de morte depois
+                            currentHealth = 1; 
+                        }
                     }
-                    // Se a vida baixar do limite E ele ainda NÃO caiu...
+                    // Se a vida sÃ³ baixou do limite...
                     else if (currentHealth <= (health * fallenThresholdPercent) && !isFallen && !canBeKilledNormally)
                     {
-                        // ...CAI (para o player decidir).
-                        isFallen = true;
+                        EnterFallenState();
                     }
-                    // --- FIM DAS MUDANÇAS ---
                     break;
 
                 case Effect.EffectType.stamina:
                     break;
             }
         }
+
+        // Toca animaÃ§Ã£o de dano (apenas se nÃ£o estiver morto ou caÃ­do)
+        if (tookDamage && !isDead && !isFallen && animator != null)
+        {
+            animator.SetTrigger(hurtTrigger);
+        }
+
         return true;
     }
 
-    // --- INÍCIO DAS MUDANÇAS ---
-    // Chamado pelo FallenState quando o timer acaba
+    private void EnterFallenState()
+    {
+        isFallen = true;
+        if (animator != null) animator.SetBool(fallenBool, true);
+    }
+
     public void RecoverFromFallen()
     {
         isFallen = false;
-        canBeKilledNormally = true; // Agora ele pode morrer de vez
+        canBeKilledNormally = true; // Agora ele pode morrer em combate normal
 
-        // Cura o inimigo um pouco acima do limite de "cair"
         currentHealth = (int)(health * fallenThresholdPercent) + 1;
 
-        // Mostra a barra de vida de novo
         if (healthBarSlider != null)
         {
             healthBarSlider.value = currentHealth;
             healthBarSlider.gameObject.SetActive(true);
         }
 
-        // Reseta o estado do NPC
+        if (animator != null) animator.SetBool(fallenBool, false);
+
         if (corruptedNPC != null)
         {
             corruptedNPC.currentState = NPCState.Corrompido;
         }
     }
-    // --- FIM DAS MUDANÇAS ---
 
     private void Kill()
     {
@@ -142,19 +168,40 @@ public class EnemyHealth : MonoBehaviour
         isDead = true;
 
         HealthSystem.TriggerEnemyKilled();
+        
+        // --- ADIÃ‡ÃƒO CRÃTICA: Desliga o Ã­mÃ£ do "Fallen" ---
+        isFallen = false; 
+        if (animator != null)
+        {
+            animator.SetBool(fallenBool, false); // <--- ISSO IMPEDE DE VOLTAR
+            animator.SetTrigger(deathTrigger);
+        }
+        // --------------------------------------------------
+        
+        StartCoroutine(DeathRoutine());
+    }
+    private IEnumerator DeathRoutine()
+    {
+        // Esconde a barra de vida imediatamente
+        if (healthBarSlider != null) healthBarSlider.gameObject.SetActive(false);
 
-        // --- INÍCIO DAS MUDANÇAS ---
-        // Se a função Kill() foi chamada, é porque ele deve MORRER,
-        // não apenas ser nocauteado.
+        // Toca animaÃ§Ã£o de morte
+        if (animator != null)
+        {
+            animator.SetTrigger(deathTrigger);
+        }
+
+        // Espera a animaÃ§Ã£o terminar (ajuste o tempo conforme sua animaÃ§Ã£o)
+        yield return new WaitForSeconds(3f);
+
+        // Chama a lÃ³gica final para transformar em cadÃ¡ver
         if (corruptedNPC != null)
         {
-            corruptedNPC.SerMorto(); // Chama a morte final
+            corruptedNPC.SerMorto(); 
         }
-        // --- FIM DAS MUDANÇAS ---
-
-        if (healthBarSlider != null)
+        else
         {
-            healthBarSlider.gameObject.SetActive(false);
+            Destroy(gameObject);
         }
     }
 }

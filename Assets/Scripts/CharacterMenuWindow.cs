@@ -1,26 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems; // Necessário para seleção
+using System.Collections;
 
 public class CharacterMenuWindow : MonoBehaviour
 {
     public static CharacterMenuWindow Instance;
 
-    [Header("Painel Principal")]
-    public GameObject menuPanel; // O objeto "MenuUI"
+    [Header("UI References")]
+    public GameObject menuPanelObject; // O GameObject pai (para ligar/desligar)
+    public CanvasGroup menuCanvasGroup; // --- ADIÇÃO: Para controle de interação ---
 
-    [Header("Abas de Conte�do")]
-    // Element 0: IventoryCanva
-    // Element 1: Equipamentos
+    [Header("Abas de Conteúdo")]
+    // 0: Inventário, 1: Equipamentos, etc.
     public GameObject[] pages;
 
-    [Header("Popups (Para fechar ao trocar de aba)")]
-    public GameObject actionPanel; // O objeto "ActionPanel"
+    [Header("Popups")]
+    public GameObject actionPanel; 
 
-    [Header("Visual dos Bot�es (Opcional)")]
+    [Header("Navegação Visual")]
     public Image[] tabBackgrounds;
     public Color activeTabColor = Color.white;
     public Color inactiveTabColor = Color.gray;
+
+    public bool IsMenuOpen => menuPanelObject != null && menuPanelObject.activeSelf;
 
     private int currentPageIndex = 0;
     private PlayerInputActions input;
@@ -30,8 +34,13 @@ public class CharacterMenuWindow : MonoBehaviour
         if (Instance != null && Instance != this) Destroy(gameObject);
         else Instance = this;
 
-        if (menuPanel) menuPanel.SetActive(false);
-        if (actionPanel) actionPanel.SetActive(false); // Garante que come�a fechado
+        // Configuração inicial segura
+        if (menuPanelObject) menuPanelObject.SetActive(false);
+        if (actionPanel) actionPanel.SetActive(false); 
+        
+        // Garante referência do CanvasGroup
+        if (menuCanvasGroup == null && menuPanelObject != null)
+            menuCanvasGroup = menuPanelObject.GetComponent<CanvasGroup>();
     }
 
     void Start()
@@ -39,66 +48,96 @@ public class CharacterMenuWindow : MonoBehaviour
         if (InputManager.Instance != null)
         {
             input = InputManager.Instance.InputActions;
-            // Configura Q e E para trocar abas
-            var uiMap = input.UI.Get();
-            uiMap.FindAction("NextTab").performed += ctx => ChangeTab(1);
-            uiMap.FindAction("PrevTab").performed += ctx => ChangeTab(-1);
+            // Configura Q e E para trocar abas apenas se o menu estiver aberto
+            var uiMap = input.UI; // Usando referência direta ao mapa
+            uiMap.NextTab.performed += ctx => ChangeTab(1);
+            uiMap.PrevTab.performed += ctx => ChangeTab(-1);
         }
     }
 
+    // Input de UI geralmente funciona mesmo pausado, então Update é seguro aqui
     void Update()
     {
-        if (!menuPanel.activeSelf) return;
-        // Fallback teclado
+        if (menuPanelObject == null || !menuPanelObject.activeSelf) return;
+        
+        // Fallback de teclado para abas
         if (Keyboard.current.eKey.wasPressedThisFrame) ChangeTab(1);
         if (Keyboard.current.qKey.wasPressedThisFrame) ChangeTab(-1);
     }
 
     public void ToggleMenu()
     {
-        bool isActive = !menuPanel.activeSelf;
-        menuPanel.SetActive(isActive);
+        bool isOpening = !menuPanelObject.activeSelf;
 
-        if (isActive) // --- ABRINDO O MENU ---
+        if (isOpening)
         {
-            Time.timeScale = 0f;
-
-            // Se for a primeira vez ou quiser resetar, abre no invent�rio
-            // if (currentPageIndex == 0) OpenSpecificTab(0); 
-
-            // Atualiza para mostrar a aba correta
-            UpdateUI();
-
-            // Garante que o ActionPanel comece fechado
-            if (actionPanel) actionPanel.SetActive(false);
-
-            if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            OpenMenu();
         }
-        else // --- FECHANDO O MENU ---
+        else
         {
-            Time.timeScale = 1f;
-
-            // 1. Fecha o ActionPanel
-            if (actionPanel) actionPanel.SetActive(false);
-
-            // 2. CORRE��O: For�a todas as p�ginas (Invent�rio, Equip, etc) a sumirem
-            // Isso resolve o problema se elas n�o forem filhas do menuPanel
-            foreach (var page in pages)
-            {
-                if (page != null) page.SetActive(false);
-            }
-
-            if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            CloseMenu();
         }
+    }
+
+    private void OpenMenu()
+    {
+        menuPanelObject.SetActive(true);
+        if (menuCanvasGroup)
+        {
+            menuCanvasGroup.alpha = 1f;
+            menuCanvasGroup.interactable = true;
+            menuCanvasGroup.blocksRaycasts = true;
+        }
+
+        Time.timeScale = 0f; // Pausa o jogo
+        
+        // Configura Inputs
+        if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
+        
+        // Destrava Cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        if (actionPanel) actionPanel.SetActive(false);
+
+        // Atualiza a aba atual (Isso vai chamar a lógica do Inventário se for a aba 0)
+        UpdateUI();
+    }
+
+    public void CloseMenu()
+    {
+        if (menuCanvasGroup)
+        {
+            menuCanvasGroup.alpha = 0f;
+            menuCanvasGroup.interactable = false;
+            menuCanvasGroup.blocksRaycasts = false;
+        }
+        menuPanelObject.SetActive(false);
+
+        Time.timeScale = 1f; // Despausa
+
+        if (actionPanel) actionPanel.SetActive(false);
+
+        // Desliga todas as páginas visualmente
+        foreach (var page in pages)
+        {
+            if (page != null) page.SetActive(false);
+        }
+
+        // Restaura Gameplay
+        if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
+        
+        // Trava Cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        
+        // Limpa seleção do EventSystem para não ficar "fantasma"
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
 
     public void ChangeTab(int direction)
     {
-        if (!menuPanel.activeSelf) return;
+        if (!menuPanelObject.activeSelf) return;
         currentPageIndex += direction;
         if (currentPageIndex >= pages.Length) currentPageIndex = 0;
         else if (currentPageIndex < 0) currentPageIndex = pages.Length - 1;
@@ -109,23 +148,31 @@ public class CharacterMenuWindow : MonoBehaviour
     {
         if (index < 0 || index >= pages.Length) return;
         currentPageIndex = index;
-        UpdateUI();
+        // Se o menu já estiver aberto, só atualiza. Se não, o ToggleMenu cuida disso.
+        if (menuPanelObject.activeSelf) UpdateUI();
     }
 
     private void UpdateUI()
     {
-        // 1. Sempre fecha o ActionPanel ao mudar de aba
         if (actionPanel != null) actionPanel.SetActive(false);
 
-        // 2. Liga a p�gina certa
         for (int i = 0; i < pages.Length; i++)
         {
-            if (pages[i] != null)
-                pages[i].SetActive(i == currentPageIndex);
+            if (pages[i] == null) continue;
+            
+            bool isActive = (i == currentPageIndex);
+            pages[i].SetActive(isActive);
+
+            // --- INTEGRAÇÃO COM CONTROLLERS ---
+            // Se ativamos a aba de Inventário (assumindo index 0), avisamos o controller
+            if (isActive && i == 0 && InventoryController.Instance != null)
+            {
+                InventoryController.Instance.OnInventoryTabOpened();
+            }
         }
 
-        // 3. Atualiza cores dos bot�es (se tiver)
-        if (tabBackgrounds != null && tabBackgrounds.Length > 0)
+        // Cores dos botões de aba
+        if (tabBackgrounds != null)
         {
             for (int i = 0; i < tabBackgrounds.Length; i++)
             {

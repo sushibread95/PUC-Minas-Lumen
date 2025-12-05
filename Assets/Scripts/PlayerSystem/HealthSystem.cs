@@ -1,40 +1,51 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
+using System; 
 
 public class HealthSystem : MonoBehaviour
 {
     public static HealthSystem Instance { get; private set; }
 
-    // Evento est·tico para avisar o sistema quando um inimigo morre
-    public static event System.Action OnEnemyKilled;
+    // Eventos Globais
+    public static event Action OnEnemyKilled;
+    public static event Action OnPlayerDied; 
 
-    [Header("UI References (Via HUDManager)")]
+    [Header("UI References")]
     private Slider healthBar;
     private Slider manaBar;
 
-    [Header("Current Status")]
+    [Header("Status")]
     public float currentHealth;
     public float currentMana;
 
     [Header("Identity")]
     private PlayerControllerSystem playerController;
-    public ProjectileOwner ownerType = ProjectileOwner.None;
+    public ProjectileOwner ownerType = ProjectileOwner.None; // Geralmente 'Player' neste script
 
-    [Header("Bleed Out")]
+    [Header("Animation")]
+    public Animator animator; 
+    public string deathTrigger = "Die";
+    public string hurtTrigger = "Hurt"; 
+
+    [Header("Bleed Out / Morte")]
     public bool isDead = false;
     [SerializeField] private Slider bleedOutSlider;
     [SerializeField] private float bleedOutDuration = 5f;
     private float bleedOutTimer = 0f;
     private bool isInBleedOut = false;
 
-    private CorruptedNPC corruptedNPC;
+    private CorruptedNPC corruptedNPC; // Refer√™ncia opcional caso usado em NPC
 
     private void Awake()
     {
         playerController = GetComponent<PlayerControllerSystem>();
         TryGetComponent(out corruptedNPC);
+        
+        if (animator == null) animator = GetComponentInChildren<Animator>();
 
+        // L√≥gica de Singleton apenas se for o Player
         if (playerController != null)
         {
             if (Instance != null && Instance != this) Destroy(gameObject);
@@ -44,7 +55,7 @@ public class HealthSystem : MonoBehaviour
 
     private void Start()
     {
-        // Pega valores iniciais do PlayerStats se disponÌvel
+        // Se for Player, pega stats do PlayerStats. Se for NPC gen√©rico, usa 100.
         if (playerController != null && PlayerStats.Instance != null)
         {
             currentHealth = PlayerStats.Instance.maxHealth;
@@ -52,17 +63,198 @@ public class HealthSystem : MonoBehaviour
         }
         else if (corruptedNPC != null)
         {
-            // Valores padr„o para inimigos
             currentHealth = 100f;
         }
 
-        // Conecta com a UI
+        // Conecta com o HUD
         if (HUDManager.Instance != null && playerController != null)
         {
             HUDManager.Instance.AssignSlidersTo(this);
         }
     }
 
+    // --- ADI√á√ÉO NECESS√ÅRIA: DETEC√á√ÉO DE DANO (FALTAVA ISSO) ---
+    // Sem isso, o inimigo bate e nada acontece.
+
+    // 1. Detecta Magias e Armas (Is Trigger)
+    private void OnTriggerEnter(Collider other)
+    {
+        HandleHit(other.gameObject);
+    }
+
+    // 2. Detecta Colis√µes F√≠sicas
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleHit(collision.gameObject);
+    }
+
+    // L√≥gica unificada de recebimento de impacto
+    private void HandleHit(GameObject attacker)
+    {
+        if (isDead) return;
+        if (isInBleedOut) return;
+
+        // Verifica se o Player est√° rolando (Invulner√°vel)
+        if (playerController != null && playerController.IsInvulnerable()) return;
+
+        // Tenta extrair o dano do objeto que bateu
+        EffectsLibrary effects = attacker.GetComponent<EffectsLibrary>();
+        Projectile projectile = attacker.GetComponent<Projectile>();
+
+        if (effects == null) return; // Se n√£o tem efeito, ignora
+
+        // Fogo Amigo: Se for o pr√≥prio proj√©til do player, ignora
+        if (projectile != null && projectile.owner == this.ownerType)
+        {
+            return; 
+        }
+
+        // Aplica o dano efetivamente
+        ApplyEffect(effects.effects);
+    }
+    // -----------------------------------------------------------
+
+    private void Update()
+    {
+        if (isDead) return;
+
+        UpdateUIBars();
+
+        // Checagem de Vida Zero
+        if (currentHealth <= 0f && !isInBleedOut)
+        {
+            if (corruptedNPC != null)
+            {
+                if (corruptedNPC.currentState == NPCState.Corrompido) corruptedNPC.EntrarEmNocaute();
+                else if (corruptedNPC.currentState != NPCState.Nocauteado) Destroy(gameObject);
+            }
+            else if (playerController != null) 
+            {
+                // Inicia Sangramento do Player
+                isInBleedOut = true;
+                if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(true);
+                bleedOutTimer = bleedOutDuration;
+            }
+        }
+
+        // L√≥gica de Sangramento (Contagem regressiva para Game Over)
+        if (isInBleedOut)
+        {
+            bleedOutTimer -= Time.deltaTime;
+            if (bleedOutSlider) bleedOutSlider.value = bleedOutTimer / bleedOutDuration;
+
+            if (bleedOutTimer <= 0f)
+            {
+                Kill();
+            }
+        }
+    }
+
+    public void RecoverHealth(float amount)
+    {
+        float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
+        currentHealth += amount;
+        if (currentHealth > maxH) currentHealth = maxH;
+        
+        // Se curar durante o sangramento, salva o player
+        if (isInBleedOut && currentHealth > 0)
+        {
+            isInBleedOut = false;
+            if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(false);
+        }
+        
+        UpdateUIBars();
+    }
+
+    public void RestoreMana(float amount)
+    {
+        float maxM = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxMana : 50f;
+        currentMana += amount;
+        if (currentMana > maxM) currentMana = maxM;
+        UpdateUIBars();
+    }
+
+    public bool ApplyEffect(Effect[] effectToApply)
+    {
+        // 1. Checa se tem Mana suficiente (para magias de custo)
+        foreach (var effect in effectToApply)
+        {
+            if (effect.effectType == Effect.EffectType.magic)
+            {
+                if (currentMana < effect.power) return false;
+            }
+        }
+
+        bool tookDamage = false; 
+
+        // 2. Aplica os efeitos
+        foreach (var effect in effectToApply)
+        {
+            float finalPower = effect.power;
+
+            // Se for dano f√≠sico no Player, aplica defesa
+            if (effect.effectType == Effect.EffectType.physical && playerController != null && PlayerStats.Instance != null)
+            {
+                finalPower = Mathf.Max(1f, finalPower - PlayerStats.Instance.defense);
+            }
+
+            switch (effect.effectType)
+            {
+                case Effect.EffectType.physical:
+                    currentHealth -= finalPower;
+                    tookDamage = true;
+                    break;
+
+                case Effect.EffectType.magic: 
+                    currentMana -= finalPower;
+                    break;
+            }
+        }
+
+        // Toca anima√ß√£o de Hurt se tomou dano e n√£o est√° morrendo
+        if (tookDamage && !isDead && !isInBleedOut && animator != null)
+        {
+            animator.SetTrigger(hurtTrigger);
+        }
+
+        return true;
+    }
+
+    private void Kill()
+    {
+        if (isDead) return;
+        isDead = true;
+
+        if (playerController != null)
+        {
+            // Inicia a sequencia de Game Over
+            StartCoroutine(PlayerDeathRoutine());
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private IEnumerator PlayerDeathRoutine()
+    {
+        // Trava Inputs
+        if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
+        
+        // Anima√ß√£o
+        if (animator != null)
+        {
+            animator.SetLayerWeight(1, 0f); // Prioriza anima√ß√£o de corpo inteiro
+            animator.SetTrigger(deathTrigger);
+        }
+
+        // Avisa o DeathScreenManager para mostrar a tela
+        OnPlayerDied?.Invoke();
+
+        yield return null;
+    }
+
+    // Auxiliares de UI
     public void SetSliders(Slider hp, Slider mana, Slider bleed)
     {
         this.healthBar = hp;
@@ -73,7 +265,6 @@ public class HealthSystem : MonoBehaviour
 
     public void UpdateMaxStats(float newMaxHealth, float newMaxMana)
     {
-        // Cura total ao subir de nÌvel (opcional)
         currentHealth = newMaxHealth;
         currentMana = newMaxMana;
         UpdateUIBars();
@@ -86,157 +277,25 @@ public class HealthSystem : MonoBehaviour
         float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
         float maxM = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxMana : 50f;
 
-        if (healthBar)
-        {
-            healthBar.maxValue = maxH;
-            healthBar.value = currentHealth;
-        }
-        if (manaBar)
-        {
-            manaBar.maxValue = maxM;
-            manaBar.value = currentMana;
-        }
+        if (healthBar) { healthBar.maxValue = maxH; healthBar.value = currentHealth; }
+        if (manaBar) { manaBar.maxValue = maxM; manaBar.value = currentMana; }
     }
 
-    private void Update()
-    {
-        if (isDead) return;
-
-        UpdateUIBars();
-
-        // LÛgica de Morte / Nocaute
-        if (currentHealth <= 0f && !isInBleedOut)
-        {
-            if (corruptedNPC != null)
-            {
-                if (corruptedNPC.currentState == NPCState.Corrompido) corruptedNPC.EntrarEmNocaute();
-                else if (corruptedNPC.currentState != NPCState.Nocauteado) Destroy(gameObject);
-            }
-            else if (playerController != null) // Player
-            {
-                isInBleedOut = true;
-                if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(true);
-                bleedOutTimer = bleedOutDuration;
-            }
-        }
-
-        // LÛgica de Sangramento do Player
-        if (isInBleedOut)
-        {
-            bleedOutTimer -= Time.deltaTime;
-            if (bleedOutSlider) bleedOutSlider.value = bleedOutTimer / bleedOutDuration;
-
-            if (bleedOutTimer <= 0f)
-            {
-                isDead = true;
-                Kill();
-            }
-        }
-    }
-
-    // --- FUN«√O RESTAURADA: Usada pelo HealEffect ---
-    public void RecoverHealth(float amount)
-    {
-        float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
-
-        currentHealth += amount;
-
-        if (currentHealth > maxH)
-        {
-            currentHealth = maxH;
-        }
-
-        UpdateUIBars();
-    }
-    // ------------------------------------------------
-
-    public void RestoreMana(float amount)
-    {
-        float maxM = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxMana : 50f;
-        currentMana += amount;
-        if (currentMana > maxM) currentMana = maxM;
-        UpdateUIBars();
-    }
-
-    public bool ApplyEffect(Effect[] effectToApply)
-    {
-        // 1. Checagem de Custo (Mana)
-        foreach (var effect in effectToApply)
-        {
-            if (effect.effectType == Effect.EffectType.magic)
-            {
-                if (currentMana < effect.power) return false;
-            }
-        }
-
-        // 2. AplicaÁ„o
-        foreach (var effect in effectToApply)
-        {
-            float finalPower = effect.power;
-
-            // AplicaÁ„o de Defesa
-            if (effect.effectType == Effect.EffectType.physical && playerController != null && PlayerStats.Instance != null)
-            {
-                finalPower = Mathf.Max(1f, finalPower - PlayerStats.Instance.defense);
-            }
-
-            switch (effect.effectType)
-            {
-                case Effect.EffectType.physical:
-                    currentHealth -= finalPower;
-                    break;
-
-                case Effect.EffectType.magic: // Custo de Mana
-                    currentMana -= finalPower;
-                    break;
-            }
-        }
-        return true;
-    }
-
-    private void Kill()
-    {
-        if (playerController != null)
-        {
-            Debug.Log("JOGADOR MORREU PERMANENTEMENTE.");
-            if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
-            Time.timeScale = 1f;
-            SceneManager.LoadScene("MainMenu");
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
     public bool CheckEffect(Effect[] effectToApply)
     {
         if (effectToApply == null) return true;
-
         for (int i = 0; i < effectToApply.Length; i++)
         {
-            switch (effectToApply[i].effectType)
+            if (effectToApply[i].effectType == Effect.EffectType.magic)
             {
-                case Effect.EffectType.magic: // Custo de Mana
-                    if (currentMana < effectToApply[i].power)
-                    {
-                        return false; // Mana insuficiente!
-                    }
-                    break;
-
-                    /*
-                    case Effect.EffectType.stamina:
-                        if (currentStamina < effectToApply[i].power) return false;
-                        break;
-                    */
+                if (currentMana < effectToApply[i].power) return false; 
             }
         }
-        return true; // Passou em todos os testes
+        return true; 
     }
 
-    // --- FUN«√O RESTAURADA: Usada pelo EnemyHealth ---
     public static void TriggerEnemyKilled()
     {
         OnEnemyKilled?.Invoke();
     }
-    // ------------------------------------------------
 }
