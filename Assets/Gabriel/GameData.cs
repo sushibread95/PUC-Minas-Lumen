@@ -19,7 +19,12 @@ public class GameData
     public float playerPosX;
     public float playerPosY;
     public float playerPosZ;
+    
     public List<string> unlockedDoorIDs;
+
+    // --- ADIÇÃO: Lista para salvar diálogos/eventos já vistos ---
+    public List<string> triggeredEvents = new List<string>();
+    // -----------------------------------------------------------
 
     public GameData()
     {
@@ -32,6 +37,9 @@ public class GameData
         inventoryItems = null;
 
         unlockedDoorIDs = new List<string>();
+        
+        // --- INICIALIZAÇÃO ---
+        triggeredEvents = new List<string>();
     }
 }
 

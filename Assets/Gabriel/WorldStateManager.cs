@@ -1,6 +1,3 @@
-// Nome do arquivo: WorldStateManager.cs
-// CÓDIGO COMPLETO (COM AS NOVAS FUNÇÕES DE PORTA)
-
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -8,12 +5,15 @@ public class WorldStateManager : MonoBehaviour
 {
     public static WorldStateManager Instance { get; private set; }
 
+    // --- ESTADOS DO MUNDO ---
     public Dictionary<string, NPCState> npcWorldStates = new Dictionary<string, NPCState>();
     public HashSet<string> collectedItemIDs = new HashSet<string>();
     
-    // --- VARIÁVEL ADICIONADA (PARA CORRIGIR O ERRO CS1061) ---
+    // Lista de portas destrancadas (para persistência de chaves)
     public HashSet<string> unlockedDoorIDs = new HashSet<string>();
-    // --- FIM DA ADIÇÃO ---
+    
+    // Lista de eventos/diálogos já acionados (para não repetirem)
+    public HashSet<string> triggeredEventIDs = new HashSet<string>();
 
     void Awake()
     {
@@ -29,32 +29,22 @@ public class WorldStateManager : MonoBehaviour
     {
         npcWorldStates.Clear();
         collectedItemIDs.Clear(); 
+        unlockedDoorIDs.Clear(); 
+        triggeredEventIDs.Clear(); // Limpa eventos também
         
-        // --- LINHA ADICIONADA ---
-        unlockedDoorIDs.Clear(); // Reseta as portas também
-        // --- FIM DA ADIÇÃO ---
-        
-        if (InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.ResetState();
-        }
-
-        // --- MODIFICAÇÃO: Garante que as Quests também sejam resetadas ---
-        if (QuestManager.Instance != null)
-        {
-            QuestManager.Instance.ResetState();
-        }
-        // -----------------------------------------------------------------
+        if (InventoryManager.Instance != null) InventoryManager.Instance.ResetState();
+        if (QuestManager.Instance != null) QuestManager.Instance.ResetState();
 
         Debug.Log("WorldStateManager RESETADO para Novo Jogo.");
     }
     
-    // --- Funções de NPC (você já tinha) ---
+    // --- FUNÇÕES DE NPC ---
     public void SetNPCState(string npcID, NPCState state)
     {
         if (string.IsNullOrEmpty(npcID)) return;
         npcWorldStates[npcID] = state;
     }
+
     public List<NPCStateSaveData> GetSaveData()
     {
         List<NPCStateSaveData> dataParaSalvar = new List<NPCStateSaveData>();
@@ -64,6 +54,7 @@ public class WorldStateManager : MonoBehaviour
         }
         return dataParaSalvar;
     }
+
     public void LoadSaveData(List<NPCStateSaveData> dadosCarregados)
     {
         npcWorldStates.Clear();
@@ -75,42 +66,41 @@ public class WorldStateManager : MonoBehaviour
         }
     }
     
-    // --- Funções de Item (você já tinha) ---
+    // --- FUNÇÕES DE ITENS COLETADOS ---
     public void RegisterCollectedItem(string id)
     {
         if (!collectedItemIDs.Contains(id))
             collectedItemIDs.Add(id);
     }
+
     public bool IsItemCollected(string id)
     {
         return collectedItemIDs.Contains(id);
     }
+
     public List<string> GetItemSaveData()
     {
         return new List<string>(collectedItemIDs); 
     }
+
     public void LoadItemSaveData(List<string> data)
     {
         if (data != null) collectedItemIDs = new HashSet<string>(data); 
         else collectedItemIDs = new HashSet<string>();
     }
 
-    // --- FUNÇÕES ADICIONADAS (PARA CORRIGIR O ERRO CS1061) ---
-
-    // 1. Chamada pela InteractableDoor para salvar a porta
+    // --- FUNÇÕES DE PORTAS (Destrancadas) ---
     public void RegisterUnlockedDoor(string doorID)
     {
         if (!unlockedDoorIDs.Contains(doorID))
             unlockedDoorIDs.Add(doorID);
     }
 
-    // 2. Chamada pela InteractableDoor para checar o estado no Start()
     public bool IsDoorUnlocked(string doorID)
     {
         return unlockedDoorIDs.Contains(doorID);
     }
     
-    // 3. O SaveManager precisa salvar e carregar esta lista
     public List<string> GetDoorSaveData()
     {
         return new List<string>(unlockedDoorIDs); 
@@ -120,7 +110,31 @@ public class WorldStateManager : MonoBehaviour
     {
         if (data != null) unlockedDoorIDs = new HashSet<string>(data); 
         else unlockedDoorIDs = new HashSet<string>();
-        Debug.Log("WorldStateManager carregou " + unlockedDoorIDs.Count + " portas destrancadas.");
     }
-    // --- FIM DAS FUNÇÕES ADICIONADAS ---
+
+    // --- FUNÇÕES DE EVENTOS/DIÁLOGOS (Triggered Events) ---
+    public void RegisterEventTriggered(string eventID)
+    {
+        if (!string.IsNullOrEmpty(eventID) && !triggeredEventIDs.Contains(eventID))
+        {
+            triggeredEventIDs.Add(eventID);
+        }
+    }
+
+    public bool HasEventHappened(string eventID)
+    {
+        if (string.IsNullOrEmpty(eventID)) return false;
+        return triggeredEventIDs.Contains(eventID);
+    }
+
+    public List<string> GetTriggeredEventsSaveData()
+    {
+        return new List<string>(triggeredEventIDs);
+    }
+
+    public void LoadTriggeredEventsSaveData(List<string> data)
+    {
+        if (data != null) triggeredEventIDs = new HashSet<string>(data);
+        else triggeredEventIDs = new HashSet<string>();
+    }
 }

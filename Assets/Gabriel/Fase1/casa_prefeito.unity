@@ -504,12 +504,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   doorType: 1
-  doorID: 
+  doorID: porta_pref
+  targetSceneName: Vilarejo
+  targetSpawnID: porta_pref_exterior
+  mySpawnID: porta_pref_interior
+  spawnPoint: {fileID: 1571644399}
+  playerPrefab: {fileID: 0}
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 0
   lockedMessage: Preciso de uma chave
-  sceneName: Vilarejo
-  targetSpawnPointID: saida_prefeito
   doorAnimator: {fileID: 0}
   openAnimationTrigger: Open
   lockedSound: {fileID: 8300000, guid: 1362b336f1cfd48439ec10d53c852dc0, type: 3}
@@ -644,7 +647,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1571644399}
-  - component: {fileID: 1571644398}
   m_Layer: 0
   m_Name: SPAWN_PortaPrincipal
   m_TagString: Untagged
@@ -652,20 +654,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1571644398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1571644397}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 511b0ec600800304a9150fb88397b8d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mySpawnID: casa_prefeito_spawn
-  playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
 --- !u!4 &1571644399
 Transform:
   m_ObjectHideFlags: 0

@@ -60,26 +60,32 @@ public class SaveManager : MonoBehaviour
         IsSaving = true;
         Debug.Log("SALVANDO JOGO...");
         
+        // 1. Salva estado do mundo (NPCs, Itens, Portas e EVENTOS)
         if (WorldStateManager.Instance != null)
         {
             this.gameData.npcStates = WorldStateManager.Instance.GetSaveData();
             this.gameData.collectedItemIDs = WorldStateManager.Instance.GetItemSaveData();
             this.gameData.unlockedDoorIDs = WorldStateManager.Instance.GetDoorSaveData();
+            
+            // --- ADIÇÃO: Salva os eventos já triggados (Diálogos únicos) ---
+            this.gameData.triggeredEvents = WorldStateManager.Instance.GetTriggeredEventsSaveData();
+            // --------------------------------------------------------------
         }
 
-        // --- MODIFICAÇÃO: Salva Quests no GameData ---
+        // 2. Salva Quests
         if (QuestManager.Instance != null)
         {
             this.gameData.activeQuests = QuestManager.Instance.GetActiveQuestsSaveData();
             this.gameData.completedQuestIDs = QuestManager.Instance.GetCompletedQuestsSaveData();
         }
-        // ---------------------------------------------
 
-        // --- AVISO DE CORREÇÃO---
+        // 3. Salva Inventário
         if (InventoryManager.Instance != null)
         {
             this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
         }
+
+        // 4. Salva Posição do Player
         if (registeredPlayerTransform != null)
         {
             this.gameData.playerPosX = registeredPlayerTransform.position.x;
@@ -88,7 +94,18 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("SaveManager: Tentou salvar, mas nenhum Player está registrado.");
+            // Tenta recuperar referência caso perdida (Persistência)
+            if (PlayerPersistent.Instance != null)
+            {
+                registeredPlayerTransform = PlayerPersistent.Instance.transform;
+                this.gameData.playerPosX = registeredPlayerTransform.position.x;
+                this.gameData.playerPosY = registeredPlayerTransform.position.y;
+                this.gameData.playerPosZ = registeredPlayerTransform.position.z;
+            }
+            else
+            {
+                Debug.LogWarning("SaveManager: Tentou salvar, mas nenhum Player está registrado.");
+            }
         }
 
         string json = JsonUtility.ToJson(this.gameData, true); 
@@ -109,21 +126,25 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(saveFilePath);
             this.gameData = JsonUtility.FromJson<GameData>(json);
 
+            // 1. Carrega Mundo (NPCs, Itens, Portas e EVENTOS)
             if (WorldStateManager.Instance != null)
             {
                 WorldStateManager.Instance.LoadSaveData(this.gameData.npcStates);
                 WorldStateManager.Instance.LoadItemSaveData(this.gameData.collectedItemIDs);
                 WorldStateManager.Instance.LoadDoorSaveData(this.gameData.unlockedDoorIDs);
+                
+                // --- ADIÇÃO: Carrega eventos já triggados ---
+                WorldStateManager.Instance.LoadTriggeredEventsSaveData(this.gameData.triggeredEvents);
+                // --------------------------------------------
             }
             
-            // --- MODIFICAÇÃO: Carrega Quests ---
+            // 2. Carrega Quests
             if (QuestManager.Instance != null)
             {
                 QuestManager.Instance.LoadQuestData(this.gameData.activeQuests, this.gameData.completedQuestIDs);
             }
-            // -----------------------------------
 
-            // --- AVISO DE CORREÇÃO ---
+            // 3. Carrega Inventário
             if (InventoryManager.Instance != null)
             {
                 InventoryManager.Instance.LoadSaveData(this.gameData.inventoryItems);
@@ -142,29 +163,33 @@ public class SaveManager : MonoBehaviour
     {
         yield return null; 
 
-        // --- MUDANÇA: Em vez de esperar registro, busca o persistente ---
-        
+        // Tenta encontrar o Player Persistente
         Transform targetTransform = registeredPlayerTransform;
 
-        // Se a referência se perdeu (o que não deve acontecer com DontDestroy, mas por segurança)
         if (targetTransform == null && PlayerPersistent.Instance != null)
         {
             targetTransform = PlayerPersistent.Instance.transform;
-            RegisterPlayer(targetTransform); // Atualiza a referência
+            RegisterPlayer(targetTransform); 
         }
 
         if (targetTransform != null)
         {
             var pc = targetTransform.GetComponent<PlayerControllerSystem>();
+            var cc = targetTransform.GetComponent<CharacterController>();
+
             if (pc != null)
             {
                 Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
-                pc.TeleportToPosition(pos);
+                
+                // Desliga CC para teleportar seguro
+                if (cc) cc.enabled = false;
+                pc.TeleportToPosition(pos); // Seu método interno
+                targetTransform.position = pos; // Redundância direta
+                if (cc) cc.enabled = true;
             }
         }
         else
         {
-            // Fallback antigo
             Debug.LogWarning("SaveManager: Player Persistente não encontrado para Load.");
         }
     }

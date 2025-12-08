@@ -472,12 +472,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   doorType: 1
-  doorID: 
+  doorID: igreja_porta_interna
+  targetSceneName: Vilarejo
+  targetSpawnID: ingreja_exterior
+  mySpawnID: porta_igreja_interior
+  spawnPoint: {fileID: 1571644399}
+  playerPrefab: {fileID: 0}
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 0
   lockedMessage: 
-  sceneName: Vilarejo
-  targetSpawnPointID: saida_frente_igreja
   doorAnimator: {fileID: 0}
   openAnimationTrigger: 
   lockedSound: {fileID: 8300000, guid: 1362b336f1cfd48439ec10d53c852dc0, type: 3}

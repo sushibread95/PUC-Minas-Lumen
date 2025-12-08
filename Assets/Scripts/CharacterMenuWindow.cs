@@ -169,6 +169,12 @@ public class CharacterMenuWindow : MonoBehaviour
             {
                 InventoryController.Instance.OnInventoryTabOpened();
             }
+
+            if (isActive && QuestUIController.Instance != null && i == 1) // Troque 1 pelo índice correto da sua aba
+            {
+                QuestUIController.Instance.OnQuestTabOpened();
+            }
+
         }
 
         // Cores dos botões de aba

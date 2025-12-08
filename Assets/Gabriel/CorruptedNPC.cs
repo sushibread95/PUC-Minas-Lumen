@@ -4,15 +4,19 @@ using UnityEngine.AI;
 
 public class CorruptedNPC : MonoBehaviour
 {
-    [Header("Identificação")]
-    public string npcID;
+    [Header("Identificação Única (Save System)")]
+    public string npcID; // ÚNICO para cada boneco (não mexa)
+
+    [Header("Identificação de Quest")]
+    [Tooltip("Nome do TIPO do inimigo. Ex: 'Goblin', 'Lobo'. Deve ser IGUAL ao Target ID na Quest.")]
+    public string enemyTypeID; // --- NOVO CAMPO PARA A QUEST ---
 
     [Header("Recompensas")]
     public float xpReward = 50f;
 
     [Header("UI de Decisão")]
-    [Tooltip("Arraste o GameObject 'DecisionCanvas' aqui. O script cuida do resto.")]
-    public GameObject decisionUIObject; // --- VOLTAMOS PARA GAMEOBJECT (MAIS FÁCIL DE ARRASTAR) ---
+    [Tooltip("Arraste o GameObject 'DecisionCanvas' aqui.")]
+    public GameObject decisionUIObject; 
     public float interactionRange = 3.0f;
     public float fadeSpeed = 5.0f;
 
@@ -20,8 +24,7 @@ public class CorruptedNPC : MonoBehaviour
     public NPCState currentState = NPCState.Corrompido;
     public GameObject rotaParaAbrir;
 
-    // Variáveis Privadas
-    private CanvasGroup uiCanvasGroup; // --- USAMOS ESTE PARA A LÓGICA INTERNA ---
+    private CanvasGroup uiCanvasGroup;
     private EnemyHealth healthSystem;
     private Transform playerTransform;
     private PlayerInputActions input;
@@ -39,39 +42,25 @@ public class CorruptedNPC : MonoBehaviour
 
     void Start()
     {
-        // 1. Configuração Automática da UI
+        // Setup da UI
         if (decisionUIObject != null)
         {
-            // Tenta pegar o CanvasGroup
             uiCanvasGroup = decisionUIObject.GetComponent<CanvasGroup>();
-            
-            // Se não tiver, adiciona automaticamente para evitar erros
-            if (uiCanvasGroup == null)
-            {
-                uiCanvasGroup = decisionUIObject.AddComponent<CanvasGroup>();
-            }
-
-            // Inicializa invisível
+            if (uiCanvasGroup == null) uiCanvasGroup = decisionUIObject.AddComponent<CanvasGroup>();
             uiCanvasGroup.alpha = 0f;
             decisionUIObject.SetActive(true);
         }
-        else
-        {
-            Debug.LogWarning($"CorruptedNPC ({name}): O campo 'Decision UI Object' está vazio no Inspector!");
-        }
 
-        // 2. Cache do Player e Input
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj) playerTransform = playerObj.transform;
         if (InputManager.Instance != null) input = InputManager.Instance.InputActions;
 
-        // 3. Carregar Save
+        // Carregar Save
         if (WorldStateManager.Instance != null)
         {
             if (WorldStateManager.Instance.npcWorldStates.TryGetValue(this.npcID, out NPCState estadoSalvo))
             {
                 currentState = estadoSalvo;
-
                 if (estadoSalvo == NPCState.Purificado)
                 {
                     if (rotaParaAbrir != null) rotaParaAbrir.SetActive(false);
@@ -88,14 +77,11 @@ public class CorruptedNPC : MonoBehaviour
     void Update()
     {
         if (currentState == NPCState.Morto) return;
-        
-        // Se não configurou a UI, aborta para não dar erro
         if (uiCanvasGroup == null) return;
 
         float targetAlpha = 0f; 
         bool canInteract = false;
 
-        // Lógica de aparecer a UI
         if (healthSystem != null && healthSystem.isFallen && playerTransform != null)
         {
             float dist = Vector3.Distance(transform.position, playerTransform.position);
@@ -106,10 +92,8 @@ public class CorruptedNPC : MonoBehaviour
             }
         }
         
-        // Aplica Fade usando a variável privada uiCanvasGroup
         uiCanvasGroup.alpha = Mathf.MoveTowards(uiCanvasGroup.alpha, targetAlpha, Time.deltaTime * fadeSpeed);
         
-        // Otimização
         if (uiCanvasGroup.alpha <= 0.01f && targetAlpha == 0f) 
         {
             if (decisionUIObject.activeSelf) decisionUIObject.SetActive(false);
@@ -119,7 +103,6 @@ public class CorruptedNPC : MonoBehaviour
              if (!decisionUIObject.activeSelf) decisionUIObject.SetActive(true);
         }
 
-        // Inputs
         if (canInteract && input != null)
         {
             if (input.Player.Purify.WasPressedThisFrame()) SerPurificado();
@@ -133,8 +116,6 @@ public class CorruptedNPC : MonoBehaviour
             }
         }
     }
-
-    // --- FUNÇÕES DE ESTADO ---
 
     public void EntrarEmNocaute()
     {
@@ -159,6 +140,14 @@ public class CorruptedNPC : MonoBehaviour
         currentState = NPCState.Morto;
         HideUI();
 
+        // --- ADIÇÃO CRÍTICA PARA QUESTS ---
+        if (!string.IsNullOrEmpty(enemyTypeID))
+        {
+            // Avisa o sistema: "Um inimigo do tipo X morreu"
+            GameEvents.TriggerEnemyDeath(enemyTypeID);
+        }
+        // ----------------------------------
+
         if (LevelingSystem.Instance != null) LevelingSystem.Instance.AddCombatXP(xpReward);
         if (WorldStateManager.Instance != null) WorldStateManager.Instance.SetNPCState(npcID, NPCState.Morto);
         
@@ -168,7 +157,6 @@ public class CorruptedNPC : MonoBehaviour
     private void TransformToCorpse(bool instant)
     {
         if (myCollider) myCollider.enabled = false;
-        
         if (agent) agent.enabled = false;
         var ai = GetComponent<EnemyAIController>();
         if (ai) ai.enabled = false;
@@ -178,11 +166,7 @@ public class CorruptedNPC : MonoBehaviour
 
         if (animator)
         {
-            if (instant)
-            {
-                // Mude "dead" para o nome exato do estado no seu Animator se for diferente
-                animator.Play("dead", 0, 1.0f); 
-            }
+            if (instant) animator.Play("dead", 0, 1.0f); // Confira o nome no Animator!
         }
     }
 
