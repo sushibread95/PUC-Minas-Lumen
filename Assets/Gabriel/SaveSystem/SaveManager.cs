@@ -1,6 +1,3 @@
-// Nome do arquivo: SaveManager.cs
-// CÓDIGO COMPLETO E LIMPO (COM LÓGICA DE REGISTRO E ESPERA)
-
 using UnityEngine;
 using System.IO;
 using UnityEngine.InputSystem;
@@ -16,8 +13,6 @@ public class SaveManager : MonoBehaviour
 
     private GameData gameData;
     private string saveFilePath;
-    
-    // A referência que o Player vai preencher
     private Transform registeredPlayerTransform;
 
     void Awake()
@@ -30,7 +25,6 @@ public class SaveManager : MonoBehaviour
         IsSaving = false;
     }
     
-    // O PlayerController chama esta função no Start() dele.
     public void RegisterPlayer(Transform player)
     {
         if (registeredPlayerTransform == null)
@@ -43,7 +37,7 @@ public class SaveManager : MonoBehaviour
     public void ResetGameData()
     {
         this.gameData = new GameData();
-        registeredPlayerTransform = null; // Limpa o player registrado
+        registeredPlayerTransform = null; 
         Debug.Log("GameData (no SaveManager) foi resetado.");
     }
 
@@ -66,18 +60,32 @@ public class SaveManager : MonoBehaviour
         IsSaving = true;
         Debug.Log("SALVANDO JOGO...");
         
-        // --- LÓGICA DE SALVAMENTO (USANDO O REGISTRO) ---
+        // 1. Salva estado do mundo (NPCs, Itens, Portas e EVENTOS)
         if (WorldStateManager.Instance != null)
         {
             this.gameData.npcStates = WorldStateManager.Instance.GetSaveData();
             this.gameData.collectedItemIDs = WorldStateManager.Instance.GetItemSaveData();
+            this.gameData.unlockedDoorIDs = WorldStateManager.Instance.GetDoorSaveData();
+            
+            // --- ADIÇÃO: Salva os eventos já triggados (Diálogos únicos) ---
+            this.gameData.triggeredEvents = WorldStateManager.Instance.GetTriggeredEventsSaveData();
+            // --------------------------------------------------------------
         }
+
+        // 2. Salva Quests
+        if (QuestManager.Instance != null)
+        {
+            this.gameData.activeQuests = QuestManager.Instance.GetActiveQuestsSaveData();
+            this.gameData.completedQuestIDs = QuestManager.Instance.GetCompletedQuestsSaveData();
+        }
+
+        // 3. Salva Inventário
         if (InventoryManager.Instance != null)
         {
             this.gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
         }
-        
-        // Usamos a referência registrada
+
+        // 4. Salva Posição do Player
         if (registeredPlayerTransform != null)
         {
             this.gameData.playerPosX = registeredPlayerTransform.position.x;
@@ -86,9 +94,19 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("SaveManager: Tentou salvar, mas nenhum Player está registrado.");
+            // Tenta recuperar referência caso perdida (Persistência)
+            if (PlayerPersistent.Instance != null)
+            {
+                registeredPlayerTransform = PlayerPersistent.Instance.transform;
+                this.gameData.playerPosX = registeredPlayerTransform.position.x;
+                this.gameData.playerPosY = registeredPlayerTransform.position.y;
+                this.gameData.playerPosZ = registeredPlayerTransform.position.z;
+            }
+            else
+            {
+                Debug.LogWarning("SaveManager: Tentou salvar, mas nenhum Player está registrado.");
+            }
         }
-        // --- FIM DA LÓGICA DE SALVAMENTO ---
 
         string json = JsonUtility.ToJson(this.gameData, true); 
         File.WriteAllText(saveFilePath, json);
@@ -108,19 +126,30 @@ public class SaveManager : MonoBehaviour
             string json = File.ReadAllText(saveFilePath);
             this.gameData = JsonUtility.FromJson<GameData>(json);
 
+            // 1. Carrega Mundo (NPCs, Itens, Portas e EVENTOS)
             if (WorldStateManager.Instance != null)
             {
                 WorldStateManager.Instance.LoadSaveData(this.gameData.npcStates);
                 WorldStateManager.Instance.LoadItemSaveData(this.gameData.collectedItemIDs);
+                WorldStateManager.Instance.LoadDoorSaveData(this.gameData.unlockedDoorIDs);
+                
+                // --- ADIÇÃO: Carrega eventos já triggados ---
+                WorldStateManager.Instance.LoadTriggeredEventsSaveData(this.gameData.triggeredEvents);
+                // --------------------------------------------
             }
+            
+            // 2. Carrega Quests
+            if (QuestManager.Instance != null)
+            {
+                QuestManager.Instance.LoadQuestData(this.gameData.activeQuests, this.gameData.completedQuestIDs);
+            }
+
+            // 3. Carrega Inventário
             if (InventoryManager.Instance != null)
             {
                 InventoryManager.Instance.LoadSaveData(this.gameData.inventoryItems);
             }
 
-            // --- ESTA É A CORREÇÃO DE TIMING ---
-            // A rotina de teleporte é iniciada AQUI, pelo próprio SaveManager,
-            // assim que ele termina de carregar os dados.
             StartCoroutine(TeleportPlayerAfterSceneLoad());
             Debug.Log("JOGO CARREGADO!");
         }
@@ -132,35 +161,36 @@ public class SaveManager : MonoBehaviour
     
     private IEnumerator TeleportPlayerAfterSceneLoad()
     {
-        // 1. Espera um frame para a cena começar a carregar
         yield return null; 
 
-        // 2. --- CORREÇÃO DE TIMING ---
-        // Agora, esperamos ativamente (em loop) até que o Player
-        // chame 'RegisterPlayer' e preencha a variável.
-        float timeout = 5f; // (5 segundos de segurança)
-        while (registeredPlayerTransform == null && timeout > 0f)
-        {
-            yield return null; // Espera o próximo frame
-            timeout -= Time.deltaTime;
-        }
-        // --- FIM DA CORREÇÃO ---
+        // Tenta encontrar o Player Persistente
+        Transform targetTransform = registeredPlayerTransform;
 
-        // 3. Agora, executamos o teleporte
-        if (registeredPlayerTransform != null)
+        if (targetTransform == null && PlayerPersistent.Instance != null)
         {
-            PlayerControllerSystem pc = registeredPlayerTransform.GetComponent<PlayerControllerSystem>();
+            targetTransform = PlayerPersistent.Instance.transform;
+            RegisterPlayer(targetTransform); 
+        }
+
+        if (targetTransform != null)
+        {
+            var pc = targetTransform.GetComponent<PlayerControllerSystem>();
+            var cc = targetTransform.GetComponent<CharacterController>();
+
             if (pc != null)
             {
                 Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
-                pc.TeleportToPosition(pos);
+                
+                // Desliga CC para teleportar seguro
+                if (cc) cc.enabled = false;
+                pc.TeleportToPosition(pos); // Seu método interno
+                targetTransform.position = pos; // Redundância direta
+                if (cc) cc.enabled = true;
             }
         }
         else
         {
-            // Se o log de erro "Nenhum player se registrou" aparecer AGORA,
-            // significa que o PlayerControllerSystem.Start() nunca rodou.
-            Debug.LogError("SaveManager (Teleport): Não foi possível teleportar o Player. Nenhum player se registrou!");
+            Debug.LogWarning("SaveManager: Player Persistente não encontrado para Load.");
         }
     }
 }

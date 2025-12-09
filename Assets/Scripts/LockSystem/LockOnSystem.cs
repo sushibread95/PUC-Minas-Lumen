@@ -240,6 +240,7 @@ public class LockOnSystem : MonoBehaviour
     bool TargetIsValid(LockOnTarget t)
     {
         if (!t) return false;
+        if (!t.enabled) return false;
         if (!t.Pivot) return false;
         return true;
     }

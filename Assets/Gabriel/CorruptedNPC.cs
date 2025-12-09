@@ -1,85 +1,239 @@
-// Nome do arquivo: CorruptedNPC.cs
-// CÓDIGO COMPLETO E LIMPO (MODIFICADO - SEM LÓGICA DE INPUT)
-
 using UnityEngine;
-// using UnityEngine.InputSystem; // Não é mais necessário aqui
+using UnityEngine.InputSystem;
+using UnityEngine.AI; 
 
 public class CorruptedNPC : MonoBehaviour
 {
-    [Header("Identificação Única")]
-    public string npcID; //Save
+    [Header("Identificação (MUITO IMPORTANTE)")]
+    [Tooltip("Este ID deve ser ÚNICO para cada inimigo na cena.")]
+    public string npcID;
+    public string enemyTypeID; 
 
-    [Header("Estado Atual")]
+    [Header("Recompensas")]
+    public float xpReward = 50f;
+
+    [Header("UI de Decisão")]
+    public GameObject decisionUIObject; 
+    
+    [Header("UI de Purificado")]
+    public GameObject thankYouUIObject; 
+
+    public float interactionRange = 5.0f;
+
+    [Header("Estado")]
     public NPCState currentState = NPCState.Corrompido;
-
-    [Header("Lógica de Consequência (Design)")]
     public GameObject rotaParaAbrir;
 
-    [Header("Configuração de Nocaute")]
-    public float interactionRadius = 3f;
+    private EnemyHealth healthSystem;
+    private Transform playerTransform;
+    private PlayerInputActions input;
+    private Animator animator; 
+    private NavMeshAgent agent; 
+    private Collider myCollider; 
+    private EnemyAIController aiController;
 
-    // --- MODIFICAÇÃO ---
-    // Não precisamos mais do 'Awake()' para desligar o FinishableNPC
-    // --- FIM DA MODIFICAÇÃO ---
-    
-    // O NPCInteraction.cs chama esta função
-    public void EntrarEmNocaute()
+    void Awake()
     {
-        // Se já foi nocauteado, não faz nada
-        if (currentState != NPCState.Corrompido) return;
+        healthSystem = GetComponent<EnemyHealth>();
+        animator = GetComponentInChildren<Animator>();
+        agent = GetComponent<NavMeshAgent>();
+        myCollider = GetComponent<Collider>();
+        aiController = GetComponent<EnemyAIController>();
+    }
 
-        currentState = NPCState.Nocauteado;
-        // 1. Para a IA de combate (ex: para de atacar)
-        // ...
+    void Start()
+    {
+        // Garante UIs desligadas no início
+        if (decisionUIObject != null) decisionUIObject.SetActive(false);
+        if (thankYouUIObject != null) thankYouUIObject.SetActive(false);
 
-        Debug.Log(npcID + " foi nocauteado. O jogador pode decidir.");
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj) playerTransform = playerObj.transform;
+        if (InputManager.Instance != null) input = InputManager.Instance.InputActions;
+
+        // --- SISTEMA DE LOAD ---
+        if (WorldStateManager.Instance != null)
+        {
+            if (WorldStateManager.Instance.npcWorldStates.TryGetValue(this.npcID, out NPCState estadoSalvo))
+            {
+                currentState = estadoSalvo;
+
+                if (estadoSalvo == NPCState.Purificado)
+                {
+                    ApplyPurifiedState();
+                    if (healthSystem && healthSystem.healthBarSlider) 
+                        healthSystem.healthBarSlider.gameObject.SetActive(false);
+                }
+                else if (estadoSalvo == NPCState.Morto)
+                {
+                    TransformToCorpse(true); 
+                }
+                // NOVA LÓGICA: Carregar estado caído (Nocauteado)
+                else if (estadoSalvo == NPCState.Nocauteado)
+                {
+                    ApplyFallenState();
+                }
+            }
+        }
+    }
+
+    void Update()
+    {
+        if (currentState == NPCState.Morto) 
+        {
+            HideAllUI();
+            return;
+        }
         
-        // 2. --- MODIFICAÇÃO ---
-        // Ele NÃO chama mais a UI.
-        // Ele apenas MUDA O ESTADO. O NPCInteraction.cs vai ver isso.
-        // --- FIM DA MODIFICAÇÃO ---
+        if (playerTransform == null)
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) playerTransform = p.transform;
+            else return; 
+        }
+
+        float dist = Vector3.Distance(transform.position, playerTransform.position);
+        bool isClose = dist <= interactionRange; 
+
+        bool showDecision = false;
+        bool showThankYou = false;
+
+        if (currentState == NPCState.Purificado)
+        {
+            if (isClose) showThankYou = true;
+        }
+        else if (healthSystem != null && healthSystem.isFallen)
+        {
+            if (isClose) showDecision = true;
+        }
+
+        if (decisionUIObject != null && decisionUIObject.activeSelf != showDecision)
+            decisionUIObject.SetActive(showDecision);
+            
+        if (thankYouUIObject != null && thankYouUIObject.activeSelf != showThankYou)
+            thankYouUIObject.SetActive(showThankYou);
+
+        if (showDecision && input != null)
+        {
+            if (input.Player.Purify.WasPressedThisFrame()) 
+            {
+                SerPurificado();
+            }
+            else if (input.Player.Kill.WasPressedThisFrame())
+            {
+                 if (healthSystem != null)
+                 {
+                    healthSystem.canBeKilledNormally = true; 
+                    healthSystem.ApplyEffect(new Effect[] { new Effect { effectType = Effect.EffectType.physical, power = 9999 } });
+                 }
+            }
+        }
+    }
+    
+    void LateUpdate()
+    {
+        if (Camera.main != null)
+        {
+            if (decisionUIObject != null && decisionUIObject.activeSelf)
+                decisionUIObject.transform.rotation = Camera.main.transform.rotation;
+            
+            if (thankYouUIObject != null && thankYouUIObject.activeSelf)
+                thankYouUIObject.transform.rotation = Camera.main.transform.rotation;
+        }
     }
 
     public void SerPurificado()
     {
-        Debug.Log(npcID + " foi PURIFICADO.");
         currentState = NPCState.Purificado;
+        HideAllUI();
+
+        if (healthSystem != null && healthSystem.healthBarSlider != null)
+            healthSystem.healthBarSlider.gameObject.SetActive(false);
+        
+        if (UIFeedbackManager.Instance != null) UIFeedbackManager.Instance.ShowNotification("Inimigo Purificado!", 2f);
+        if (LevelingSystem.Instance != null) LevelingSystem.Instance.AddPurificationXP(xpReward);
+        
+        UpdateSaveState(NPCState.Purificado); // Salva
+        
         if (rotaParaAbrir != null) rotaParaAbrir.SetActive(false);
-        if (WorldStateManager.Instance != null)
-            WorldStateManager.Instance.SetNPCState(npcID, NPCState.Purificado);
-        gameObject.SetActive(false);
+        ApplyPurifiedState();
+    }
+
+    private void ApplyPurifiedState()
+    {
+        if (aiController != null) aiController.OnPurify();
     }
 
     public void SerMorto()
     {
-        Debug.Log(npcID + " foi MORTO.");
         currentState = NPCState.Morto;
-        if (WorldStateManager.Instance != null)
-            WorldStateManager.Instance.SetNPCState(npcID, NPCState.Morto);
-        Destroy(gameObject);
+        HideAllUI();
+
+        if (!string.IsNullOrEmpty(enemyTypeID)) GameEvents.TriggerEnemyDeath(enemyTypeID);
+        if (LevelingSystem.Instance != null) LevelingSystem.Instance.AddCombatXP(xpReward);
+        
+        UpdateSaveState(NPCState.Morto); // Salva
+        
+        TransformToCorpse(false); 
     }
 
-    // --- MODIFICAÇÃO ---
-    // A função Update() inteira foi removida.
-    // O NPCInteraction.cs agora cuida de toda a lógica de input.
-    // --- FIM DA MODIFICAÇÃO ---
-    
-    void Start()
+    // Chamado pelo EnemyHealth quando a vida zera
+    public void EntrarEmNocaute()
     {
-        // A lógica de Load continua perfeita
-        if (WorldStateManager.Instance == null) return;
+        if (currentState == NPCState.Purificado || currentState == NPCState.Morto) return;
+        
+        currentState = NPCState.Nocauteado;
+        UpdateSaveState(NPCState.Nocauteado); // Salva imediatamente o estado caído!
+    }
 
-        NPCState estadoSalvo;
-        if (WorldStateManager.Instance.npcWorldStates.TryGetValue(this.npcID, out estadoSalvo))
+    // Chamado pelo EnemyHealth se ele recuperar vida (feature futura?)
+    public void RecuperarDeNocaute()
+    {
+        currentState = NPCState.Corrompido;
+        UpdateSaveState(NPCState.Corrompido);
+    }
+
+    // --- LÓGICA DE LOAD DO ESTADO CAÍDO ---
+    private void ApplyFallenState()
+    {
+        if (healthSystem != null)
         {
-            if (estadoSalvo == NPCState.Purificado || estadoSalvo == NPCState.Morto)
-            {
-                if (rotaParaAbrir != null && estadoSalvo == NPCState.Purificado)
-                {
-                    rotaParaAbrir.SetActive(false);
-                }
-                gameObject.SetActive(false);
-            }
+            healthSystem.ForceFallenStateOnLoad();
         }
+        // Se precisar parar IA ou algo assim, adicione aqui
+    }
+
+    private void UpdateSaveState(NPCState newState)
+    {
+        if (WorldStateManager.Instance != null) 
+            WorldStateManager.Instance.SetNPCState(npcID, newState);
+    }
+
+    private void TransformToCorpse(bool instant)
+    {
+        if (myCollider) myCollider.enabled = false;
+        if (agent) agent.enabled = false;
+        if (aiController) aiController.enabled = false; 
+
+        if (healthSystem && healthSystem.healthBarSlider) 
+            healthSystem.healthBarSlider.gameObject.SetActive(false);
+
+        if (animator)
+        {
+            if (instant) animator.Play("dead", 0, 1.0f); 
+        }
+        
+        HideAllUI();
+    }
+
+    private void HideAllUI()
+    {
+        if (decisionUIObject != null) decisionUIObject.SetActive(false);
+        if (thankYouUIObject != null) thankYouUIObject.SetActive(false);
+    }
+    
+    void OnValidate()
+    {
+        if (string.IsNullOrEmpty(npcID)) npcID = System.Guid.NewGuid().ToString();
     }
 }

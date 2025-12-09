@@ -4,30 +4,39 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
-using TMPro; 
-using System.Collections.Generic;
-using System.Linq; 
-// using Cinemachine; // Removido
 
 public class PauseMenuManager : MonoBehaviour
 {
     public static PauseMenuManager Instance { get; private set; }
+
+    [Header("UI References")]
     public CanvasGroup pausePanel;
     public Button resumeButton;
     public Button saveButton;
     public Button mainMenuButton;
     public Button restartButton;
     public Button quitButton;
+
+    [Header("Settings")]
     public bool lockCursorInGameplay = true;
     public bool selectFirstButtonOnOpen = true;
     public string mainMenuSceneName = "MainMenu";
+
     public bool IsPaused { get; private set; }
     private GameObject lastSelectedGameObject;
 
     void Awake()
     {
-        if (Instance != null && Instance != this) Destroy(gameObject);
-        else Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); 
+        }
+        
         if (resumeButton) resumeButton.onClick.AddListener(Resume);
         if (saveButton) saveButton.onClick.AddListener(SaveGame);
         if (mainMenuButton) mainMenuButton.onClick.AddListener(QuitToMainMenu);
@@ -42,17 +51,14 @@ public class PauseMenuManager : MonoBehaviour
             InputManager.Instance.InputActions.Player.Pause.performed += OnPausePerformed;
             InputManager.Instance.InputActions.UI.Cancel.performed += OnCancelPressed;
         }
-        else Debug.LogError("PauseMenuManager não conseguiu encontrar o InputManager.");
         
-        Show(false);
-        EnsureTimescale(1f);
-        SetCursorLocked(true);
-        IsPaused = false;
+        // Garante estado limpo no início
+        CleanupForMainMenu(); 
     }
 
     void OnDestroy()
     {
-        if (InputManager.Instance != null)
+        if (InputManager.Instance != null && InputManager.Instance.InputActions != null)
         {
             InputManager.Instance.InputActions.Player.Pause.performed -= OnPausePerformed;
             InputManager.Instance.InputActions.UI.Cancel.performed -= OnCancelPressed;
@@ -61,7 +67,11 @@ public class PauseMenuManager : MonoBehaviour
 
     void Update()
     {
-        if (!IsPaused || !pausePanel || pausePanel.alpha < 0.9f) return;
+        // Se não estiver pausado, ou se estivermos na cena do Menu Principal, não rode lógica de seleção.
+        if (!IsPaused || SceneManager.GetActiveScene().name == mainMenuSceneName) return;
+        
+        if (pausePanel == null || pausePanel.alpha < 0.9f) return;
+        
         if (EventSystem.current != null)
         {
              if (EventSystem.current.currentSelectedGameObject == null)
@@ -69,28 +79,17 @@ public class PauseMenuManager : MonoBehaviour
                  bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
                  if (!isMouseMoving) 
                  {
-                     if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy && lastSelectedGameObject.GetComponent<Selectable>()?.IsInteractable() == true)
+                     if (lastSelectedGameObject != null && lastSelectedGameObject.activeInHierarchy)
                      {
                          EventSystem.current.SetSelectedGameObject(lastSelectedGameObject);
                      }
-                     else if (resumeButton != null && resumeButton.IsInteractable())
+                     else if (resumeButton != null && resumeButton.interactable)
                      {
                          EventSystem.current.SetSelectedGameObject(resumeButton.gameObject);
-                         lastSelectedGameObject = resumeButton.gameObject;
-                     }
-                      else
-                     {
-                         Selectable firstInteractable = pausePanel.GetComponentInChildren<Selectable>(false);
-                         if (firstInteractable != null && firstInteractable.IsInteractable())
-                         {
-                            EventSystem.current.SetSelectedGameObject(firstInteractable.gameObject);
-                            lastSelectedGameObject = firstInteractable.gameObject;
-                         }
-                         else lastSelectedGameObject = null;
                      }
                  }
              }
-             else if (EventSystem.current.currentSelectedGameObject != null)
+             else
              {
                  lastSelectedGameObject = EventSystem.current.currentSelectedGameObject;
              }
@@ -99,25 +98,20 @@ public class PauseMenuManager : MonoBehaviour
 
     private void OnCancelPressed(InputAction.CallbackContext context)
     {
-        // --- MODIFICAÇÃO NECESSÁRIA ---
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName) return;
+
         if (IsPaused && (InventoryController.Instance == null || !InventoryController.Instance.IsInventoryOpen))
         {
             Resume();
         }
-        // --- FIM DA MODIFICAÇÃO ---
     }
     
     void OnPausePerformed(InputAction.CallbackContext context)
     {
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName) return;
+
         if (SaveManager.Instance != null && SaveManager.Instance.IsSaving) return;
-        if (ChoiceUI.Instance != null && ChoiceUI.Instance.gameObject.activeInHierarchy) return; // (Guarda para sistema de nocaute)
-        
-        // --- MODIFICAÇÃO NECESSÁRIA ---
-        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
-        {
-            return; // Não abra o Pause se o Inventário estiver aberto
-        }
-        // --- FIM DA MODIFICAÇÃO ---
+        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return;
 
         if (!IsPaused) Pause();
     }
@@ -128,69 +122,24 @@ public class PauseMenuManager : MonoBehaviour
         IsPaused = true;
         Show(true);
         EnsureTimescale(0f);
-        SetCursorLocked(false); 
+        SetCursorLocked(false);
         if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
+        
         if (selectFirstButtonOnOpen && resumeButton)
         {
             StartCoroutine(SelectButtonLater(resumeButton));
-            lastSelectedGameObject = resumeButton.gameObject;
-        }
-        else
-        {
-             lastSelectedGameObject = null;
-             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         }
     }
 
     public void Resume()
     {
         if (!IsPaused) return;
-        IsPaused = false;
-        Show(false);
-        EnsureTimescale(1f);
-        SetCursorLocked(lockCursorInGameplay); 
-        if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
-        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
-        lastSelectedGameObject = null;
+        ResumeCleanup();
     }
 
-    private IEnumerator SelectButtonLater(Button button)
+    // Usado para voltar ao jogo
+    public void ResumeCleanup()
     {
-        yield return null;
-        if (button != null && EventSystem.current != null && button.interactable)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(button.gameObject);
-        }
-    }
-
-    public void SaveGame()
-    {
-        if (SaveManager.Instance != null)
-        {
-            SaveManager.Instance.SaveGame();
-        }
-    }
-
-    public void QuitToMainMenu()
-    {
-        ResumeCleanup(); 
-        SceneManager.LoadScene(mainMenuSceneName);
-    }
-
-    public void RestartScene()
-    {
-        ResumeCleanup(); 
-        var scene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(scene.buildIndex);
-    }
-    
-    private void ResumeCleanup()
-    {
-         if (WorldStateManager.Instance != null)
-         {
-             WorldStateManager.Instance.ResetState(); 
-         }
          if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap(); 
          EnsureTimescale(1f); 
          SetCursorLocked(lockCursorInGameplay); 
@@ -198,6 +147,79 @@ public class PauseMenuManager : MonoBehaviour
          if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null); 
          lastSelectedGameObject = null;
          Show(false); 
+    }
+
+    // --- NOVA FUNÇÃO DE LIMPEZA TOTAL ---
+    // Usada pelo MainMenu e pelo TransitionManager
+    public void CleanupForMainMenu()
+    {
+        IsPaused = false;
+        EnsureTimescale(1f);
+        Show(false); // Garante blocksRaycasts = false
+        
+        // Libera cursor (menu principal cuidará disso)
+        SetCursorLocked(false);
+        
+        // Limpa seleção
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+        
+        lastSelectedGameObject = null;
+    }
+
+    // Mantido para compatibilidade com chamadas antigas do MainMenu.cs
+    public void ForceHide()
+    {
+        CleanupForMainMenu();
+    }
+    // ------------------------------------
+
+    public void SaveGame()
+    {
+        if (SaveManager.Instance != null) SaveManager.Instance.SaveGame();
+    }
+
+    // --- FUNÇÃO MODIFICADA ---
+    public void QuitToMainMenu()
+    {
+        // 1. Tenta usar o TransitionManager (Jeito Correto/Persistente)
+        if (TransitionManager.Instance != null)
+        {
+            // O TransitionManager vai cuidar de destruir o player e carregar a cena
+            // Ele também pode chamar o nosso CleanupForMainMenu() internamente se configurado
+            TransitionManager.Instance.ReturnToMainMenu();
+            
+            // Garantimos a limpeza local antes de entregar o controle
+            CleanupForMainMenu();
+            return;
+        }
+        
+        // 2. Fallback Manual (Caso TransitionManager não exista)
+        CleanupForMainMenu();
+        
+        if (PlayerPersistent.Instance != null)
+        {
+            Destroy(PlayerPersistent.Instance.gameObject);
+        }
+
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+    // -------------------------
+
+    public void RestartScene()
+    {
+        ResumeCleanup();
+        if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
+
+        var currentSceneName = SceneManager.GetActiveScene().name;
+        if (TransitionManager.Instance != null)
+        {
+            TransitionManager.Instance.TransitionToScene(currentSceneName, "fase1_spawn"); 
+        }
+        else
+        {
+            SceneManager.LoadScene(currentSceneName);
+        }
     }
 
     public void QuitGame()
@@ -229,5 +251,15 @@ public class PauseMenuManager : MonoBehaviour
     {
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !locked;
+    }
+
+    private IEnumerator SelectButtonLater(Button button)
+    {
+        yield return null;
+        if (button != null && EventSystem.current != null && button.interactable)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(button.gameObject);
+        }
     }
 }

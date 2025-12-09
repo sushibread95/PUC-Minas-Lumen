@@ -5,8 +5,15 @@ public class WorldStateManager : MonoBehaviour
 {
     public static WorldStateManager Instance { get; private set; }
 
+    // --- ESTADOS DO MUNDO ---
     public Dictionary<string, NPCState> npcWorldStates = new Dictionary<string, NPCState>();
     public HashSet<string> collectedItemIDs = new HashSet<string>();
+    
+    // Lista de portas destrancadas (para persistência de chaves)
+    public HashSet<string> unlockedDoorIDs = new HashSet<string>();
+    
+    // Lista de eventos/diálogos já acionados (para não repetirem)
+    public HashSet<string> triggeredEventIDs = new HashSet<string>();
 
     void Awake()
     {
@@ -22,33 +29,22 @@ public class WorldStateManager : MonoBehaviour
     {
         npcWorldStates.Clear();
         collectedItemIDs.Clear(); 
+        unlockedDoorIDs.Clear(); 
+        triggeredEventIDs.Clear(); // Limpa eventos também
         
-        // --- MODIFICAÇÃO NECESSÁRIA ---
-        // Também reseta o inventário
-        if (InventoryManager.Instance != null)
-        {
-            InventoryManager.Instance.ResetState();
-        }
-        // --- FIM DA MODIFICAÇÃO ---
-        
+        if (InventoryManager.Instance != null) InventoryManager.Instance.ResetState();
+        if (QuestManager.Instance != null) QuestManager.Instance.ResetState();
+
         Debug.Log("WorldStateManager RESETADO para Novo Jogo.");
     }
     
+    // --- FUNÇÕES DE NPC ---
     public void SetNPCState(string npcID, NPCState state)
     {
         if (string.IsNullOrEmpty(npcID)) return;
         npcWorldStates[npcID] = state;
-        Debug.Log("Estado do Mundo Salvo: " + npcID + " agora é " + state);
     }
-    public void RegisterCollectedItem(string id)
-    {
-        if (!collectedItemIDs.Contains(id))
-            collectedItemIDs.Add(id);
-    }
-    public bool IsItemCollected(string id)
-    {
-        return collectedItemIDs.Contains(id);
-    }
+
     public List<NPCStateSaveData> GetSaveData()
     {
         List<NPCStateSaveData> dataParaSalvar = new List<NPCStateSaveData>();
@@ -58,6 +54,7 @@ public class WorldStateManager : MonoBehaviour
         }
         return dataParaSalvar;
     }
+
     public void LoadSaveData(List<NPCStateSaveData> dadosCarregados)
     {
         npcWorldStates.Clear();
@@ -67,16 +64,77 @@ public class WorldStateManager : MonoBehaviour
              if (!string.IsNullOrEmpty(item.npcID))
                  npcWorldStates[item.npcID] = item.state;
         }
-        Debug.Log("WorldStateManager carregou " + npcWorldStates.Count + " estados de NPC.");
     }
+    
+    // --- FUNÇÕES DE ITENS COLETADOS ---
+    public void RegisterCollectedItem(string id)
+    {
+        if (!collectedItemIDs.Contains(id))
+            collectedItemIDs.Add(id);
+    }
+
+    public bool IsItemCollected(string id)
+    {
+        return collectedItemIDs.Contains(id);
+    }
+
     public List<string> GetItemSaveData()
     {
         return new List<string>(collectedItemIDs); 
     }
+
     public void LoadItemSaveData(List<string> data)
     {
         if (data != null) collectedItemIDs = new HashSet<string>(data); 
         else collectedItemIDs = new HashSet<string>();
-        Debug.Log("WorldStateManager carregou " + collectedItemIDs.Count + " itens de cena coletados.");
+    }
+
+    // --- FUNÇÕES DE PORTAS (Destrancadas) ---
+    public void RegisterUnlockedDoor(string doorID)
+    {
+        if (!unlockedDoorIDs.Contains(doorID))
+            unlockedDoorIDs.Add(doorID);
+    }
+
+    public bool IsDoorUnlocked(string doorID)
+    {
+        return unlockedDoorIDs.Contains(doorID);
+    }
+    
+    public List<string> GetDoorSaveData()
+    {
+        return new List<string>(unlockedDoorIDs); 
+    }
+    
+    public void LoadDoorSaveData(List<string> data)
+    {
+        if (data != null) unlockedDoorIDs = new HashSet<string>(data); 
+        else unlockedDoorIDs = new HashSet<string>();
+    }
+
+    // --- FUNÇÕES DE EVENTOS/DIÁLOGOS (Triggered Events) ---
+    public void RegisterEventTriggered(string eventID)
+    {
+        if (!string.IsNullOrEmpty(eventID) && !triggeredEventIDs.Contains(eventID))
+        {
+            triggeredEventIDs.Add(eventID);
+        }
+    }
+
+    public bool HasEventHappened(string eventID)
+    {
+        if (string.IsNullOrEmpty(eventID)) return false;
+        return triggeredEventIDs.Contains(eventID);
+    }
+
+    public List<string> GetTriggeredEventsSaveData()
+    {
+        return new List<string>(triggeredEventIDs);
+    }
+
+    public void LoadTriggeredEventsSaveData(List<string> data)
+    {
+        if (data != null) triggeredEventIDs = new HashSet<string>(data);
+        else triggeredEventIDs = new HashSet<string>();
     }
 }

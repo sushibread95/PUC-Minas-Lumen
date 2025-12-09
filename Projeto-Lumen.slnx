@@ -4,5 +4,6 @@
   <Project Path="Unity.InputSystem.Recorder.csproj" />
   <Project Path="Unity.InputSystem.InGameHints.csproj" />
   <Project Path="InputSystem.Samples.Visualizers.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.InputSystem.RebindingUI.csproj" />
 </Solution>
