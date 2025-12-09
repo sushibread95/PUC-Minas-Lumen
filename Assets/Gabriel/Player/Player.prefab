@@ -1674,7 +1674,7 @@ MonoBehaviour:
   crouchCenter: {x: 0, y: 0.6, z: 0}
   crouchLerp: 24
   noiseLevel: 1
-  visibilityFactor: 0
+  visibilityFactor: 1
   backstabRange: 1.5
   backstabAngle: 0.5
   backstabDamage: 40
@@ -1707,9 +1707,9 @@ MonoBehaviour:
     recoilForce: 0
   cannon: {fileID: 8613387593237960628}
   dodgeTriggerParam: DodgeTrigger
-  dodgeDistance: 4
+  dodgeDistance: 3
   dodgeDuration: 1
-  dodgeCooldown: 0.5
+  dodgeCooldown: 0.18
   dodgeSpeedCurve:
     serializedVersion: 2
     m_Curve:
@@ -1734,8 +1734,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  dodgeLockTime: 0.25
-  invulnerableDuration: 0.33
+  dodgeLockTime: 0.1
+  invulnerableDuration: 0.08
   walkSound: {fileID: 8300000, guid: 18e5eb742880e274e94209c94d857cbe, type: 3}
   jogSound: {fileID: 8300000, guid: 18e5eb742880e274e94209c94d857cbe, type: 3}
   sneakSound: {fileID: 0}
@@ -1753,7 +1753,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1adf0195edc3d34bae27cc4a1d0abe1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHealth: 100
+  currentHealth: 90
   currentMana: 60
   ownerType: 1
   animator: {fileID: 0}
@@ -1836,7 +1836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df7b0a0d3880ea7459cffcb1bb9f6757, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pickupRange: 3
+  pickupRange: 4
   interactionMask:
     serializedVersion: 2
     m_Bits: 1024
@@ -1858,7 +1858,7 @@ MonoBehaviour:
   ownerType: 1
   playerHealth: {fileID: 4987815280272050368}
   enemyHealth: {fileID: 0}
-  projectileSpeed: 9
+  projectileSpeed: 8
   lockOn: {fileID: 8457247831172761889}
   useLockAimWhenAvailable: 1
   ignoreSpreadWhenLocked: 0
@@ -1897,10 +1897,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentLevel: 1
   currentBaseXP: 0
-  xpToNextLevel: 50
+  xpToNextLevel: 100
   combatXPTotal: 0
   purificationXPTotal: 0
-  levelMultiplier: 1.2
+  levelMultiplier: 1.5
 --- !u!114 &853564441824183225
 MonoBehaviour:
   m_ObjectHideFlags: 0

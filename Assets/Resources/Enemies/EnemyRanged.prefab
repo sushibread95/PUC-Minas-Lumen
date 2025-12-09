@@ -571,7 +571,7 @@ GameObject:
   - component: {fileID: 5645078577382264731}
   - component: {fileID: 6376576628400656235}
   m_Layer: 6
-  m_Name: Enemy
+  m_Name: EnemyRanged
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -709,10 +709,10 @@ MonoBehaviour:
   attackRange: 1
   attackCooldown: 3
   meleeHitbox: {fileID: 4330128670377362905}
-  attackTrigger: Punch
-  meleeDamage: 15
-  attackImpactDelay: 0.4
-  hitboxActiveDuration: 0.2
+  attackTrigger: 
+  meleeDamage: 0
+  attackImpactDelay: 0
+  hitboxActiveDuration: 0
   fallenDuration: 15
   sightRange: 9
   hearingRange: 6
@@ -1801,6 +1801,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 10
+  debugHitCooldown: 1
 --- !u!54 &2369601891940370813
 Rigidbody:
   m_ObjectHideFlags: 0
