@@ -88,6 +88,12 @@ public class PlayerControllerSystem : MonoBehaviour
     [Header("Controller Defaults")]
     public bool applyControllerDefaultsOnStart = true;
 
+    [Header("Status - Grabbed")]
+    public bool isGrabbed = false;
+    public float struggleValue = 0f;
+    public float struggleGoal = 100f;
+    private EnemyGrabber currentGrabber;
+
     // Internals
     private float nextStepTime = 0f;
     private CharacterController cc;
@@ -177,6 +183,12 @@ public class PlayerControllerSystem : MonoBehaviour
         {
             return;
         }
+
+        if (isGrabbed)
+        {
+            HandleGrabInput();
+            return; // TRAVA TUDO: Não anda, não ataca, não abre menu.
+        }
         // ------------------------------------------
 
         bool isAltPressed = Keyboard.current != null && Keyboard.current.altKey.isPressed;
@@ -253,6 +265,8 @@ public class PlayerControllerSystem : MonoBehaviour
         }
 
         HandleFootsteps(dt, moveInput.magnitude, _crouchToggled, _sneakToggled, sprintHeld);
+
+
     }
 
     // --- BACKSTAB ---
@@ -455,6 +469,51 @@ public class PlayerControllerSystem : MonoBehaviour
         }
         _isDodging = false;
     }
+
+    private void HandleGrabInput()
+    {
+        // Player esmaga o botão de Pulo (Espaço/A) ou Interagir (F/X) para soltar
+        if (input.Player.Jump.WasPressedThisFrame() || input.Player.Interact.WasPressedThisFrame())
+        {
+            struggleValue += 15f; // Dificuldade: Quanto cada clique enche a barra
+            
+            // Opcional: Tocar som de esforço
+            // Opcional: Tremida na câmera
+
+            if (struggleValue >= struggleGoal)
+            {
+                // VENCEU!
+                if (currentGrabber != null) currentGrabber.OnGrabBroken();
+                ExitGrabbedState();
+            }
+        }
+    }
+
+    public void EnterGrabbedState(EnemyGrabber grabber, Transform snapPoint)
+    {
+        isGrabbed = true;
+        currentGrabber = grabber;
+        struggleValue = 0f;
+        
+        // Desliga física de movimento para não brigar com o inimigo
+        if (cc) cc.enabled = false; 
+
+        // Teleporta para a posição exata da animação (Snap)
+        transform.position = snapPoint.position;
+        transform.rotation = snapPoint.rotation;
+
+        // Toca animação de "Sendo Segurado" (se tiver) ou Idle
+        if (animator) animator.SetBool("IsGrabbed", true); // Crie esse Bool no Animator do Player!
+    }
+
+    public void ExitGrabbedState()
+    {
+        isGrabbed = false;
+        currentGrabber = null;
+        if (cc) cc.enabled = true;
+        if (animator) animator.SetBool("IsGrabbed", false);
+    }
+
     IEnumerator Invulnerability(float duration) { _isInvulnerable = true; yield return new WaitForSeconds(duration); _isInvulnerable = false; }
     public bool IsInvulnerable() => _isInvulnerable;
     private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)

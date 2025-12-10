@@ -568,8 +568,8 @@ GameObject:
   - component: {fileID: 3862872650792610415}
   - component: {fileID: 8794855621032663350}
   - component: {fileID: 9114502565216172472}
-  - component: {fileID: 5645078577382264731}
   - component: {fileID: 6376576628400656235}
+  - component: {fileID: 2511481722195076494}
   m_Layer: 6
   m_Name: GrabberEnemy
   m_TagString: Enemy
@@ -597,6 +597,7 @@ Transform:
   - {fileID: 7387487220939212355}
   - {fileID: 6996274935035367943}
   - {fileID: 2976900149391523182}
+  - {fileID: 733130213664419884}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 190, z: 0}
 --- !u!114 &4928717048764485694
@@ -702,31 +703,17 @@ MonoBehaviour:
   npcData: {fileID: 0}
   lockOnTarget: {fileID: 0}
   isPurified: 0
-  cannon: {fileID: 5645078577382264731}
   animator: {fileID: 6376576628400656235}
   speedParam: Speed
   combatAggroRange: 40
   combatMemoryDuration: 10
-  enemyAttacks:
-  - cannonBarrels:
-    - {fileID: 6996274935035367943}
-    projectile: {fileID: 3817545438240022728, guid: daec2703534303e49b60b3cdf9a4673f, type: 3}
-    muzzleParticles: {fileID: 6891589255296840677, guid: 411712745a830c249967edc3d7c6b2cf, type: 3}
-    dudMuzzleParticles: {fileID: 0}
-    spellTriggerParam: AttackSpell
-    spellStateName: 
-    spellLayerIndex: 0
-    castLockTime: 0
-    fireRate: 1
-    magazine: 999
-    cooldown: 1
-    castEffects: []
-    projectilePerShot: 1
-    spreadAngle: 0
-    fixedSpread: 0
-    recoilForce: 0
-  attackRange: 6
+  attackRange: 1
   attackCooldown: 3
+  meleeHitbox: {fileID: 0}
+  attackTrigger: GrabAttempt
+  meleeDamage: 15
+  attackImpactDelay: 0.4
+  hitboxActiveDuration: 0.2
   fallenDuration: 15
   sightRange: 9
   hearingRange: 6
@@ -758,7 +745,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b8ebf4241e8f5047ba193ba6811acb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  npcID: 3e20c2cd-70bd-4a5a-8228-e45941beeec4
+  npcID: 33b00fb7-0a4f-49ae-97e3-fdd6d2736408
   enemyTypeID: inimigo_corrompido
   xpReward: 50
   decisionUIObject: {fileID: 6521154626577292667}
@@ -790,27 +777,6 @@ MonoBehaviour:
   healthBarSlider: {fileID: 8516511307752784105}
   ownerType: 2
   isDead: 0
---- !u!114 &5645078577382264731
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 887129037511198414}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d7b7838601b3db4da12c1df9cb543c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ownerType: 2
-  playerHealth: {fileID: 0}
-  enemyHealth: {fileID: 9114502565216172472}
-  projectileSpeed: 10
-  lockOn: {fileID: 0}
-  useLockAimWhenAvailable: 0
-  ignoreSpreadWhenLocked: 0
-  debugDrawRay: 0
-  debugRayColor: {r: 1, g: 0.6, b: 0.1, a: 1}
 --- !u!95 &6376576628400656235
 Animator:
   serializedVersion: 7
@@ -821,7 +787,7 @@ Animator:
   m_GameObject: {fileID: 887129037511198414}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: d7f88d22b08bd3f4eb25743149a2b898, type: 3}
-  m_Controller: {fileID: 9100000, guid: 479581be68c062040ab9241af34cda33, type: 2}
+  m_Controller: {fileID: 9100000, guid: 440a2fa613a6bf847b67a48928edba5b, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -833,6 +799,24 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2511481722195076494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 887129037511198414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9b6ec416bf58074fb0e970ba14c9357, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grabSnapPoint: {fileID: 733130213664419884}
+  damagePerSecond: 5
+  maxGrabDuration: 5
+  grabSuccessTrigger: GrabSuccess
+  grabBrokenTrigger: GrabBroken
+  grabFinishTrigger: GrabFinish
 --- !u!1 &977708009319877154
 GameObject:
   m_ObjectHideFlags: 0
@@ -1324,6 +1308,37 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!1 &2674875161302103764
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 733130213664419884}
+  m_Layer: 6
+  m_Name: SnapGrab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &733130213664419884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2674875161302103764}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.151, y: 1.276, z: 0.865}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9052856044335744377}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2864752218539634650
 GameObject:
   m_ObjectHideFlags: 0
@@ -1755,6 +1770,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8061099782218490558}
+  - component: {fileID: 2452346085194590225}
+  - component: {fileID: 8980852166587815709}
   m_Layer: 0
   m_Name: mixamorig:RightHandMiddle1
   m_TagString: Untagged
@@ -1778,6 +1795,54 @@ Transform:
   - {fileID: 6632768567969977267}
   m_Father: {fileID: 5531922963734818957}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &2452346085194590225
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3857857625064706774}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: -0.000000025625564, y: 0.02, z: -0.000000006654489}
+--- !u!54 &8980852166587815709
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3857857625064706774}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &3971462775108437568
 GameObject:
   m_ObjectHideFlags: 0

@@ -36,10 +36,11 @@ public class EnemyAIController : MonoBehaviour
     [Tooltip("Por quanto tempo a hitbox fica ligada")]
     public float hitboxActiveDuration = 0.2f; 
 
-    // --- A VARIÁVEL QUE EU TINHA ESQUECIDO (VOLTOU!) ---
     [Header("Fallen State")]
     public float fallenDuration = 15f;
-    // ---------------------------------------------------
+
+    [Header("Combat Refs")]
+    public EnemyGrabber grabberComponent;
 
     [Header("Sensing Attributes")]
     public float sightRange = 15f;
@@ -141,16 +142,29 @@ public class EnemyAIController : MonoBehaviour
         };
     }
 
-    public void PerformMeleeAttack()
+        public void PerformMeleeAttack()
     {
         if (animator != null)
         {
+            // Toca a animação (GrabAttempt ou Punch)
             animator.SetTrigger(attackTrigger);
-            StartCoroutine(MeleeAttackRoutine());
+
+            // DECISÃO: É um Grabber ou um Pugilista?
+            
+            // Se tiver o componente Grabber configurado, usa a lógica de Grab
+            if (grabberComponent != null)
+            {
+                grabberComponent.StartGrabAttempt();
+            }
+            // Se não, usa a lógica de Soco (MeleeHitbox)
+            else 
+            {
+                StartCoroutine(MeleeAttackRoutine());
+            }
         }
     }
-
-    private IEnumerator MeleeAttackRoutine()
+    
+        private IEnumerator MeleeAttackRoutine()
     {
         yield return new WaitForSeconds(attackImpactDelay);
 

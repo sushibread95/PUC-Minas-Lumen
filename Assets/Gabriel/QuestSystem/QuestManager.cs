@@ -120,13 +120,25 @@ public class QuestManager : MonoBehaviour
         activeQuests.Remove(questData); // Move para lista de completas ou mantém com flag? 
         // Nota: Geralmente mantemos em uma lista separada "completed" para limpar o save.
 
-        QuestDefinition def = GetQuestDefinition(questData.questID);
+QuestDefinition def = GetQuestDefinition(questData.questID);
         
         // Dar Recompensas
         if (def != null)
         {
-            // Exemplo de dar itens (assumindo que você implemente IDs no InventoryManager)
-            // foreach(var itemID in def.itemRewardIDs) InventoryManager.Instance.AddItemById(itemID);
+            // 1. Dar XP (Agora funciona!)
+            if (LevelingSystem.Instance != null && def.xpReward > 0)
+            {
+                LevelingSystem.Instance.AddQuestXP(def.xpReward);
+            }
+
+            // 2. Dar Ouro (Agora funciona!)
+            if (PlayerStats.Instance != null && def.goldReward > 0)
+            {
+                PlayerStats.Instance.AddGold(def.goldReward);
+            }
+
+            // 3. Dar Itens (Se tiver InventoryManager)
+            // foreach(var itemID in def.itemRewardIDs) InventoryManager.Instance.AddItem(itemID);
             
             if (UIFeedbackManager.Instance != null) 
                 UIFeedbackManager.Instance.ShowNotification($"Quest Completada: {def.title}!", 4f);

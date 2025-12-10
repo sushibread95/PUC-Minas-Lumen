@@ -4,17 +4,17 @@ public class LevelingSystem : MonoBehaviour
 {
     public static LevelingSystem Instance { get; private set; }
 
-    [Header("Nível Principal")]
+    [Header("Nï¿½vel Principal")]
     public int currentLevel = 1;
     public float currentBaseXP = 0f;
     public float xpToNextLevel = 100f;
 
-    [Header("XPs Específicos (Acumulativos)")]
+    [Header("XPs Especï¿½ficos (Acumulativos)")]
     public float combatXPTotal = 0f;      // XP Vermelho (Luta)
     public float purificationXPTotal = 0f; // XP Verde (Stealth/Purificar)
 
-    [Header("Configuração")]
-    public float levelMultiplier = 1.2f; // Dificuldade do próximo nível
+    [Header("Configuraï¿½ï¿½o")]
+    public float levelMultiplier = 1.2f; // Dificuldade do prï¿½ximo nï¿½vel
 
     void Awake()
     {
@@ -24,6 +24,12 @@ public class LevelingSystem : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+    }
+
+    public void AddQuestXP(float amount)
+    {
+        AddBaseXP(amount);
+        Debug.Log($"Ganhou {amount} de XP de MissÃ£o (Azul/Neutro).");
     }
 
     // Chamado quando MATA um inimigo
@@ -42,7 +48,7 @@ public class LevelingSystem : MonoBehaviour
         Debug.Log($"Ganhou {amount} de Purification XP (Verde).");
     }
 
-    // Lógica interna que sobe o nível principal
+    // Lï¿½gica interna que sobe o nï¿½vel principal
     private void AddBaseXP(float amount)
     {
         currentBaseXP += amount;
@@ -58,10 +64,10 @@ public class LevelingSystem : MonoBehaviour
         currentBaseXP -= xpToNextLevel;
         currentLevel++;
 
-        // Aumenta a dificuldade do próximo nível
+        // Aumenta a dificuldade do prï¿½ximo nï¿½vel
         xpToNextLevel *= levelMultiplier;
 
-        Debug.LogWarning($"LEVEL UP! Nível atual: {currentLevel}");
+        Debug.LogWarning($"LEVEL UP! Nï¿½vel atual: {currentLevel}");
 
         // Atualiza os atributos do Player
         if (PlayerStats.Instance != null)
@@ -70,6 +76,6 @@ public class LevelingSystem : MonoBehaviour
             PlayerStats.Instance.IncreaseStatsOnLevelUp();
         }
 
-        // Aqui você pode tocar som de level up, criar partículas, etc.
+        // Aqui vocï¿½ pode tocar som de level up, criar partï¿½culas, etc.
     }
 }

@@ -12,13 +12,16 @@ public class PlayerStats : MonoBehaviour
     public float magicAttack = 10f;
     public float defense = 5f;
 
-    [Header("Atributos de Sobrevivência (Base Máxima)")]
+    [Header("Atributos de Sobrevivï¿½ncia (Base Mï¿½xima)")]
     public float maxHealth = 100f;
     public float maxMana = 50f;
 
-    [Header("Utilitários")]
-    [Tooltip("Multiplicador de velocidade (1 = normal, 0.5 = 2x mais rápido)")]
+    [Header("Utilitï¿½rios")]
+    [Tooltip("Multiplicador de velocidade (1 = normal, 0.5 = 2x mais rï¿½pido)")]
     public float spellCastSpeedMod = 1f;
+
+    [Header("Economia")] // --- NOVO ---
+    public int currentGold = 0;
 
     void Awake()
     {
@@ -26,17 +29,15 @@ public class PlayerStats : MonoBehaviour
         else Instance = this;
     }
 
-    // Função chamada pelo LevelingSystem ao upar
     public void IncreaseStatsOnLevelUp()
     {
-        // Exemplo de curva de crescimento simples
         maxHealth += 10f;
         maxMana += 5f;
         physicalAttack += 2f;
         magicAttack += 2f;
         defense += 1f;
 
-        // Avisa o HealthSystem para curar/atualizar as barras com os novos máximos
+        // Avisa o HealthSystem para curar/atualizar as barras com os novos maximos
         if (HealthSystem.Instance != null)
         {
             HealthSystem.Instance.UpdateMaxStats(maxHealth, maxMana);
@@ -45,6 +46,11 @@ public class PlayerStats : MonoBehaviour
         Debug.Log("STATS ATUALIZADOS! Novo MaxHP: " + maxHealth);
     }
 
-    // Futuramente aqui teremos métodos como:
-    // public void EquipItem(Item item) { ... }
+    public void AddGold(int amount)
+    {
+        currentGold += amount;
+        Debug.Log($"Recebeu {amount} de Ouro! Total: {currentGold}");
+        
+    }
+
 }
