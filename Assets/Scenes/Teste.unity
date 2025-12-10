@@ -5327,7 +5327,7 @@ GameObject:
   - component: {fileID: 1553497872}
   - component: {fileID: 1553497871}
   m_Layer: 10
-  m_Name: Item (6)
+  m_Name: PotionP
   m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5628,7 +5628,7 @@ GameObject:
   - component: {fileID: 1707880803}
   - component: {fileID: 1707880802}
   m_Layer: 10
-  m_Name: Item (7)
+  m_Name: PotionM
   m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

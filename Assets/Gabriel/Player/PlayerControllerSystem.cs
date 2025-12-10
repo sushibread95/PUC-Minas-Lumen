@@ -79,11 +79,12 @@ public class PlayerControllerSystem : MonoBehaviour
     public float invulnerableDuration = 0.3f;
     private bool _isInvulnerable = false;
 
-    [Header("Footstep Settings")]
-    public AudioClip walkSound;
-    public AudioClip jogSound;
-    public AudioClip sneakSound;
-    public float stepInterval = 0.5f;
+[Header("Footstep Settings")]
+    // Mudamos de AudioClip único para AudioClip[] (Array)
+    public AudioClip[] walkSounds; 
+    public AudioClip[] jogSounds;
+    public AudioClip[] sneakSounds;
+    public float stepInterval = 0.5f;    
 
     [Header("Controller Defaults")]
     public bool applyControllerDefaultsOnStart = true;
@@ -516,15 +517,36 @@ public class PlayerControllerSystem : MonoBehaviour
 
     IEnumerator Invulnerability(float duration) { _isInvulnerable = true; yield return new WaitForSeconds(duration); _isInvulnerable = false; }
     public bool IsInvulnerable() => _isInvulnerable;
-    private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)
+private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)
     {
         if (inputMagnitude > 0.1f && isGrounded && Time.time >= nextStepTime)
         {
-            AudioClip clip = isCrouching ? sneakSound : (isSprinting ? jogSound : (isSneaking ? sneakSound : walkSound));
+            // 1. Seleciona o "Pool" (Lista) de sons correto para o estado atual
+            AudioClip[] currentPool = null;
+
+            if (isCrouching || isSneaking) currentPool = sneakSounds;
+            else if (isSprinting) currentPool = jogSounds;
+            else currentPool = walkSounds;
+
+            // 2. Se a lista tiver sons, sorteia um e toca
+            if (currentPool != null && currentPool.Length > 0)
+            {
+                // Sorteia um índice aleatório (0, 1 ou 2...)
+                int randomIndex = Random.Range(0, currentPool.Length);
+                AudioClip clip = currentPool[randomIndex];
+
+                if (AudioManager.Instance && clip) 
+                    AudioManager.Instance.PlaySFX(clip, transform.position);
+            }
+
+            // 3. Calcula o tempo para o próximo passo
             float interval = stepInterval * (isCrouching ? 1.8f : (isSprinting ? 0.6f : 1f));
-            if (AudioManager.Instance && clip) AudioManager.Instance.PlaySFX(clip, transform.position);
             nextStepTime = Time.time + interval;
         }
-        else if (!isGrounded || inputMagnitude < 0.1f) nextStepTime = 0f;
+        else if (!isGrounded || inputMagnitude < 0.1f) 
+        {
+            nextStepTime = 0f;
+        }
     }
-}
+    
+    }

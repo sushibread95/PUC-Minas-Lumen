@@ -7091,6 +7091,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allQuestsDatabase:
   - {fileID: 11400000, guid: 7f279ce8fb8c2ca4194f932b4d9c6fcf, type: 2}
+  - {fileID: 11400000, guid: 09085dd405490954fac5d3769049d02a, type: 2}
 --- !u!4 &958815540
 Transform:
   m_ObjectHideFlags: 0
