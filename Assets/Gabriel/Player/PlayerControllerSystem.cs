@@ -170,7 +170,8 @@ public class PlayerControllerSystem : MonoBehaviour
            (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
            (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) ||
            (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen) ||
-           (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive))
+           (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)||
+           (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive))
         {
             return;
         }

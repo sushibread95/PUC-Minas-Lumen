@@ -13698,7 +13698,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TypeObjec: {fileID: 11400000, guid: e77f3a2a7296fa641bef88c803a9bd20, type: 2}
-  id: b1bd2cf2-d58b-40fc-9c97-44fa7e5f4d83
+  id: 1eacc021-3bea-4702-94ec-70f503adc1c3
 --- !u!65 &631952866
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13947,7 +13947,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f107cafcfb47b43b96ae7cf8b85fa2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetItemID: bilhete_quest
+  targetItemObject: {fileID: 11400000, guid: e77f3a2a7296fa641bef88c803a9bd20, type: 2}
   playOnce: 1
   onPickup:
     m_PersistentCalls:
@@ -13980,7 +13980,7 @@ MonoBehaviour:
   - "O padre trancou o port\xE3o da vila..."
   - "Disse que \xE9 para nossa prote\xE7\xE3o."
   - Estamos presos aqui fora com eles.
-  speakerName: 
+  speakerName: Priscilla
 --- !u!4 &646609754
 Transform:
   m_ObjectHideFlags: 0
@@ -16703,7 +16703,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 1
+  doorType: 0
   doorID: porta_pref_ex
   targetSceneName: casa_prefeito
   targetSpawnID: porta_pref_interior
@@ -36811,51 +36811,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: b782ac054ec443746ba19063d1e16596, type: 3}
---- !u!1 &2039184609
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2039184611}
-  - component: {fileID: 2039184610}
-  m_Layer: 0
-  m_Name: Quest_debug
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2039184610
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2039184609}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8b68ac6c3d721e4f903a344c1bfc6bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  questIDToStart: quest_inicio
---- !u!4 &2039184611
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2039184609}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.2836356, y: -7.3742266, z: 37.59531}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2094321553 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100000, guid: 6b0df067d8acef346aae1d839098fcbb, type: 3}
@@ -37026,7 +36981,6 @@ SceneRoots:
   - {fileID: 225923908}
   - {fileID: 520670352}
   - {fileID: 16093287}
-  - {fileID: 2039184611}
   - {fileID: 329839143}
   - {fileID: 1646607130}
   - {fileID: 1519662968}

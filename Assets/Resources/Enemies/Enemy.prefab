@@ -710,10 +710,11 @@ MonoBehaviour:
   attackCooldown: 3
   meleeHitbox: {fileID: 4330128670377362905}
   attackTrigger: 
-  meleeDamage: 0
+  meleeDamage: 10
   attackImpactDelay: 0
   hitboxActiveDuration: 0
   fallenDuration: 15
+  grabberComponent: {fileID: 0}
   sightRange: 9
   hearingRange: 6
   viewAngle: 90

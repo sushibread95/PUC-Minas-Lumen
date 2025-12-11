@@ -10152,7 +10152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f107cafcfb47b43b96ae7cf8b85fa2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetItemID: vilarejo_porta_castelo
+  targetItemObject: {fileID: 11400000, guid: 1fb082a820b696c41b75d8bc4cb9ca09, type: 2}
   playOnce: 1
   onPickup:
     m_PersistentCalls:

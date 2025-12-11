@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.SceneManagement; // Necessário para carregar o Menu
 using UnityEngine.UI;
 using System.Collections;
 using System; 
@@ -73,9 +73,7 @@ public class HealthSystem : MonoBehaviour
         }
     }
 
-    // --- ADIÇÃO NECESSÁRIA: DETECÇÃO DE DANO (FALTAVA ISSO) ---
-    // Sem isso, o inimigo bate e nada acontece.
-
+    // --- DETECÇÃO DE DANO ---
     // 1. Detecta Magias e Armas (Is Trigger)
     private void OnTriggerEnter(Collider other)
     {
@@ -227,7 +225,7 @@ public class HealthSystem : MonoBehaviour
 
         if (playerController != null)
         {
-            // Inicia a sequencia de Game Over
+            // Inicia a sequencia de Game Over Imediata
             StartCoroutine(PlayerDeathRoutine());
         }
         else
@@ -236,23 +234,34 @@ public class HealthSystem : MonoBehaviour
         }
     }
 
+    // --- AQUI ESTÁ A MUDANÇA (LoadScene direto) ---
     private IEnumerator PlayerDeathRoutine()
     {
-        // Trava Inputs
+        // 1. Trava Inputs (Segurança)
         if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
         
-        // Animação
+        // 2. Tenta tocar o início da animação de morte (Visual)
         if (animator != null)
         {
-            animator.SetLayerWeight(1, 0f); // Prioriza animação de corpo inteiro
+            animator.SetLayerWeight(1, 0f); 
             animator.SetTrigger(deathTrigger);
         }
 
-        // Avisa o DeathScreenManager para mostrar a tela
+        // 3. Avisa eventos (para quem estiver ouvindo, logs, analytics)
         OnPlayerDied?.Invoke();
 
-        yield return null;
+        // 4. Espera um único frame para garantir que a engine processou a morte
+        yield return null; 
+
+        // 5. Destrói o Player Persistente
+        // ISSO É IMPORTANTE: Para não voltar pro menu com um player "Zumbi" ativo.
+        // Como o script está no Player, 'gameObject' refere-se ao próprio Player.
+        Destroy(gameObject);
+
+        // 6. Carrega o Menu Principal imediatamente
+        SceneManager.LoadScene("MainMenu");
     }
+    // ----------------------------------------------
 
     // Auxiliares de UI
     public void SetSliders(Slider hp, Slider mana, Slider bleed)

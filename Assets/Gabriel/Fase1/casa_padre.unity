@@ -5692,7 +5692,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f107cafcfb47b43b96ae7cf8b85fa2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetItemID: chave_igreja
+  targetItemObject: {fileID: 11400000, guid: 385f99436813e5a43b993d2a31ffde7f, type: 2}
   playOnce: 1
   onPickup:
     m_PersistentCalls:

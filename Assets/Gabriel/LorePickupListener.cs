@@ -3,20 +3,18 @@ using UnityEngine.Events;
 
 public class LorePickupListener : MonoBehaviour
 {
-    [Header("Configuração")]
-    [Tooltip("O ID do item que vai disparar esse diálogo (Ex: chave_moinho)")]
-    public string targetItemID;
+    [Header("Configuração (Arraste o Item Aqui)")]
+    [Tooltip("Arraste o ScriptableObject do item que dispara a lore (Ex: Bilhete_start)")]
+    public Objects targetItemObject; // --- MUDANÇA: Usa o seu script Objects ---
 
     [Tooltip("Se marcado, o script se destrói após tocar (toca uma vez só)")]
     public bool playOnce = true;
 
     [Header("O que acontece?")]
-    [Tooltip("Arraste aqui o seu DialogueTrigger ou função de Lore")]
     public UnityEvent onPickup;
 
     void OnEnable()
     {
-        // Se inscreve para saber quando itens são pegos
         GameEvents.OnItemObtained += HandleItemObtained;
     }
 
@@ -27,20 +25,32 @@ public class LorePickupListener : MonoBehaviour
 
     private void HandleItemObtained(string itemID, int quantity)
     {
-        // Verifica se o item pego é o que estamos esperando
-        if (itemID == targetItemID)
+        // SEGURANÇA: Se esqueceu de arrastar o item, avisa e ignora
+        if (targetItemObject == null)
         {
-            Debug.Log($"[Lore] Item {itemID} coletado. Tocando lore...");
+            Debug.LogWarning("[Lore] Nenhum item configurado no LorePickupListener!");
+            return;
+        }
+
+        // --- LÓGICA CORRIGIDA ---
+        // O InventoryManager envia o 'itemID' que é igual ao item.name (Nome do Arquivo na Project Window).
+        // Então comparamos com o .name do objeto arrastado, e não com o campo interno .objectName.
+        if (itemID == targetItemObject.name)
+        {
+            Debug.Log($"[Lore] Item '{itemID}' reconhecido! Disparando evento...");
             
-            // Dispara o evento (Toca o diálogo)
             onPickup?.Invoke();
 
             if (playOnce)
             {
-                // Se remove para não tocar de novo
                 GameEvents.OnItemObtained -= HandleItemObtained;
                 Destroy(this); 
             }
+        }
+        else
+        {
+            // Debug opcional para ver o que está passando
+            // Debug.Log($"[Lore] Ignorando item '{itemID}'. Esperando por '{targetItemObject.name}'");
         }
     }
 }

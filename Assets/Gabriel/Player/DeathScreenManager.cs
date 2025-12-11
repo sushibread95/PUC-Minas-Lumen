@@ -1,36 +1,79 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems; // Necessário para selecionar botões
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections;
 
 public class DeathScreenManager : MonoBehaviour
 {
     public static DeathScreenManager Instance;
+    public bool IsDeathScreenActive { get; private set; }
 
     [Header("UI References")]
-    public CanvasGroup deathScreenGroup; // --- MUDANÇA: Usando CanvasGroup para controle total ---
+    public CanvasGroup deathScreenGroup; 
     public Button resumeButton;         
     public Button menuButton;           
-    public TextMeshProUGUI deathText;   
     
     [Header("Settings")]
     public float delayBeforeScreen = 2.0f;
+    public string mainMenuSceneName = "MainMenu";
 
     void Awake()
     {
-        if (Instance != null && Instance != this) Destroy(gameObject);
-        else Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        else
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
     }
 
     void Start()
     {
-        // Garante que comece escondido e não clicável
         Show(false);
-        
         if (resumeButton) resumeButton.onClick.AddListener(OnResumeClicked);
         if (menuButton) menuButton.onClick.AddListener(OnMenuClicked);
+        
+        // Inscrever para eventos de input
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.InputActions.UI.Cancel.performed += OnCancelPressed;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Limpar eventos
+        if (InputManager.Instance != null && InputManager.Instance.InputActions != null)
+        {
+            InputManager.Instance.InputActions.UI.Cancel.performed -= OnCancelPressed;
+        }
+    }
+
+    void Update()
+    {
+        // Se estivermos no menu principal, não fazer nada.
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName) return;
+
+        if (!IsDeathScreenActive) return;
+        
+        if (deathScreenGroup == null || deathScreenGroup.alpha < 0.9f) return;
+        
+        // Manter seleção do botão (similar ao PauseMenuManager)
+        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
+        {
+            bool isMouseMoving = Mouse.current != null && Mouse.current.delta.IsActuated(0.1f);
+            if (!isMouseMoving && resumeButton != null && resumeButton.interactable)
+            {
+                EventSystem.current.SetSelectedGameObject(resumeButton.gameObject);
+            }
+        }
     }
 
     void OnEnable()
@@ -43,6 +86,17 @@ public class DeathScreenManager : MonoBehaviour
         HealthSystem.OnPlayerDied -= HandlePlayerDeath;
     }
 
+    private void OnCancelPressed(InputAction.CallbackContext context)
+    {
+        // Se estivermos no menu principal, não fazer nada.
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName) return;
+
+        if (IsDeathScreenActive)
+        {
+            StartCoroutine(SelectButtonLater(resumeButton));
+        }
+    }
+
     private void HandlePlayerDeath()
     {
         StartCoroutine(ShowDeathScreenRoutine());
@@ -50,100 +104,101 @@ public class DeathScreenManager : MonoBehaviour
 
     private IEnumerator ShowDeathScreenRoutine()
     {
-        // Espera o drama da morte
+        // Não ativar se estiver no menu principal
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName) yield break;
+        
         yield return new WaitForSeconds(delayBeforeScreen);
 
-        // --- ATIVAÇÃO ROBUSTA ---
-        // 1. Mostra a tela e habilita interações
+        Time.timeScale = 0f; 
+        IsDeathScreenActive = true;
+
+        // Mostrar UI primeiro
         Show(true);
 
-        // 2. Destrava o cursor (igual ao PauseManager)
+        if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
         SetCursorLocked(false);
 
-        // 3. Troca o Input para UI (para o player não andar no fundo)
-        if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
-
-        // 4. Seleciona o primeiro botão automaticamente (Vital para teclado/controle)
         StartCoroutine(SelectButtonLater(resumeButton));
     }
 
-    // Função auxiliar para controlar visibilidade e interação (Baseada no PauseMenuManager)
     void Show(bool visible)
     {
         if (!deathScreenGroup) return;
-        
-        deathScreenGroup.alpha = visible ? 1f : 0f; // Transparência
-        deathScreenGroup.interactable = visible;    // Pode clicar?
-        deathScreenGroup.blocksRaycasts = visible;  // Bloqueia cliques atrás?
-        
+        deathScreenGroup.alpha = visible ? 1f : 0f;
+        deathScreenGroup.interactable = visible;
+        deathScreenGroup.blocksRaycasts = visible;
     }
 
-    // Função auxiliar de cursor (Baseada no PauseMenuManager)
+    public void Hide()
+    {
+        IsDeathScreenActive = false;
+        Show(false);
+    }
+
+    // Método de limpeza para quando for para o menu principal
+    public void CleanupForMainMenu()
+    {
+        IsDeathScreenActive = false;
+        Time.timeScale = 1f;
+        Show(false);
+        SetCursorLocked(false);
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+    }
+
     void SetCursorLocked(bool locked)
     {
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !locked;
     }
 
-    // Corrotina para garantir o foco no botão (Baseada no PauseMenuManager)
     private IEnumerator SelectButtonLater(Button button)
     {
-        yield return null; // Espera um frame para a UI "existir" pro sistema
-        if (button != null && EventSystem.current != null)
+        yield return null; 
+        if (button != null && EventSystem.current != null && button.interactable)
         {
-            EventSystem.current.SetSelectedGameObject(null); // Limpa seleção anterior
-            EventSystem.current.SetSelectedGameObject(button.gameObject); // Seleciona o novo
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(button.gameObject);
         }
     }
 
     public void OnResumeClicked()
     {
+        if (!IsDeathScreenActive) return;
         StartCoroutine(ReloadAndLoadSave());
     }
 
     private IEnumerator ReloadAndLoadSave()
     {
-        // Garante que o tempo esteja normal antes de carregar
+        IsDeathScreenActive = false;
         Time.timeScale = 1f;
+        Hide();
 
-        // Esconde a tela para não ficar piscando durante o load
-        Show(false); 
-
-        // 1. Recarrega a cena
         AsyncOperation op = SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
         yield return new WaitUntil(() => op.isDone);
 
-        // 2. Carrega o Save
-        if (SaveManager.Instance != null)
-        {
-            SaveManager.Instance.LoadGame();
-        }
+        if (SaveManager.Instance != null) SaveManager.Instance.LoadGame();
         
-        // 3. Restaura inputs e trava cursor
         if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
         SetCursorLocked(true);
     }
 
-public void Hide()
-    {
-        Show(false);
-    }
-
     public void OnMenuClicked()
     {
-        Time.timeScale = 1f; 
+        if (!IsDeathScreenActive) return;
+        
+        // Chama a limpeza para o menu principal
+        CleanupForMainMenu();
 
-        // --- ADIÇÃO: Esconde a tela antes de sair ---
-        Show(false); 
-        // ------------------------------------------
-
-        if (PlayerPersistent.Instance != null)
+        // Usar TransitionManager se disponível (similar ao PauseMenuManager)
+        if (TransitionManager.Instance != null)
         {
-            Destroy(PlayerPersistent.Instance.gameObject);
+            TransitionManager.Instance.ReturnToMainMenu();
         }
-
-        SceneManager.LoadScene("MainMenu");
+        else
+        {
+            if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
     }    
-
-
 }
