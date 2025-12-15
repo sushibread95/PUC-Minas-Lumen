@@ -86,18 +86,16 @@ public class LockOnSystem : MonoBehaviour
         if (IsLockedOn) SetCameraLock(false);
     }
 
-    void Update()
-    {
-        // --- CLÁUSULA DE GUARDA MESTRA (INTEGRADA) ---
-        // Se o input não existir, OU o Pause estiver aberto, OU o Inventário estiver aberto...
-        if (input == null || 
-           (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
-           (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
+        void Update()
         {
-            if (IsLockedOn) ClearTarget(); // Desliga o lock se pausar
-            return; 
-        }
-        // ---------------------------------------------
+            if (input == null || 
+            (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive) ||
+            (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+            (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
+            {
+                if (IsLockedOn) ClearTarget(); // Desliga o lock se pausar/morrer
+                return; 
+            }
         
         // Lógica original de Lock-On
         if (lockOnAction != null && lockOnAction.WasPressedThisFrame()) 

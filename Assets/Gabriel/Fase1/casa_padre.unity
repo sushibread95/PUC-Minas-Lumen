@@ -5726,6 +5726,7 @@ MonoBehaviour:
   - Ele saiu com pressa. Esta chave abre a sacristia
   - "mas o port\xE3o do castelo precisa de mais uma..."
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!4 &1273644340
 Transform:
   m_ObjectHideFlags: 0
@@ -6123,6 +6124,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
+      propertyPath: npcID
+      value: 26976561-92f5-4869-b44a-8396fecd1d27
+      objectReference: {fileID: 0}
     - target: {fileID: 9052856044335744377, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.892358
@@ -6344,6 +6349,10 @@ PrefabInstance:
     - target: {fileID: 7337675488407051168, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
+      propertyPath: npcID
+      value: e2548a3f-92d9-4df9-95f0-0414aa4c3e06
       objectReference: {fileID: 0}
     - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: rotaParaAbrir

@@ -25,8 +25,6 @@ public class EnemyMeleeHitbox : MonoBehaviour
     {
         // 1. O Debug Definitivo: O que diabos essa mão está tocando?
         // Se isso não aparecer no console, a física do projeto está desligada para essas layers.
-        Debug.Log($"[FÍSICA DETECTADA] Mão encostou em: {other.gameObject.name} (Layer: {LayerMask.LayerToName(other.gameObject.layer)})");
-
         // Trava de tempo para teste
         if (Time.time < lastHitTime + debugHitCooldown) return;
 

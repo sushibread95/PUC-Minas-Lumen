@@ -1,88 +1,147 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(Collider))]
 public class MeleeWeapon : MonoBehaviour
 {
-    [Header("Configura��o")]
+    [Header("Configuração")]
     public ProjectileOwner ownerType = ProjectileOwner.Player;
-    public LayerMask targetLayers; // Configure para pegar "Enemy" (se for player) ou "Player" (se for inimigo)
+    public LayerMask targetLayers; 
 
-    private Collider hitBox;
+    [Header("Detecção de Colisão (Raycast)")]
+    public Transform basePoint; 
+    public Transform tipPoint; 
+    public int raycastResolution = 5; 
+
     private float currentDamage;
-    private List<GameObject> hitTargets = new List<GameObject>(); // Para n�o bater 2x no mesmo inimigo no mesmo swing
-    private bool isAttacking = false;
+    private List<GameObject> hitTargets = new List<GameObject>(); 
+    
+    // Agora separamos: "Rastreando" vs "Causando Dano"
+    private bool isDealingDamage = false; 
+
+    private Vector3[] previousPoints;
+    private bool initialized = false;
 
     void Awake()
     {
-        hitBox = GetComponent<Collider>();
-        hitBox.isTrigger = true;
-        hitBox.enabled = false; // Come�a desligado
+        // Garante que a física normal não atrapalhe
+        Collider c = GetComponent<Collider>();
+        if(c) c.enabled = false;
+        
+        // Auto-configuração de falha
+        if (basePoint == null && c != null) { /* Lógica de auto-setup (opcional) */ }
     }
 
-    // Chamado pelo PlayerController quando equipa a arma
+    void Start()
+    {
+        // Inicializa o array uma única vez
+        previousPoints = new Vector3[raycastResolution];
+        if (basePoint && tipPoint)
+        {
+            for (int i = 0; i < raycastResolution; i++)
+            {
+                previousPoints[i] = Vector3.Lerp(basePoint.position, tipPoint.position, (float)i / (raycastResolution - 1));
+            }
+        }
+        initialized = true;
+    }
+
     public void Initialize(float damageStats, ProjectileOwner owner)
     {
-        // O dano final �: Dano da Arma + Dano do Player (For�a)
         this.currentDamage = damageStats;
         this.ownerType = owner;
     }
 
-    // Liga a �rea de dano (Chamado na anima��o)
+    // Chamado quando o ataque começa (dano valendo!)
     public void EnableHitbox()
     {
-        hitTargets.Clear(); // Limpa a lista de quem j� apanhou neste golpe
-        hitBox.enabled = true;
-        isAttacking = true;
+        hitTargets.Clear();
+        isDealingDamage = true;
+        // NÃO resetamos mais os previousPoints aqui. Usamos o rastro contínuo do LateUpdate.
     }
 
-    // Desliga a �rea de dano
+    // Chamado quando o ataque termina
     public void DisableHitbox()
     {
-        hitBox.enabled = false;
-        isAttacking = false;
+        isDealingDamage = false;
     }
 
-    private void OnTriggerEnter(Collider other)
+    // O Segredo: Rastreia SEMPRE, Dano só quando isDealingDamage é true
+    void LateUpdate()
     {
-        if (!isAttacking) return;
+        if (!initialized || basePoint == null || tipPoint == null) return;
 
-        // Verifica se est� na layer certa (usando bitwise operation ou CompareTag)
-        if (((1 << other.gameObject.layer) & targetLayers) != 0)
+        // Garante redimensionamento se mudar no inspector
+        if (previousPoints.Length != raycastResolution) previousPoints = new Vector3[raycastResolution];
+
+        for (int i = 0; i < raycastResolution; i++)
         {
-            // Evita dano duplo no mesmo frame/ataque
-            if (hitTargets.Contains(other.gameObject)) return;
+            float t = (raycastResolution > 1) ? (float)i / (raycastResolution - 1) : 0f;
+            Vector3 currentPointPos = Vector3.Lerp(basePoint.position, tipPoint.position, t);
+            
+            // Pega onde estava no último frame
+            Vector3 previousPointPos = previousPoints[i];
+            
+            // Só processa colisão se a espada se moveu
+            Vector3 direction = currentPointPos - previousPointPos;
+            float distance = direction.magnitude;
 
-            // Tenta causar dano
-            // 1. Procura HealthSystem (Player)
-            HealthSystem playerHp = other.GetComponent<HealthSystem>();
-            if (playerHp != null && ownerType == ProjectileOwner.Enemy)
+            if (distance > 0.001f)
+            {
+                // A MÁGICA: Só checa colisão e dá dano se isDealingDamage for TRUE
+                if (isDealingDamage)
+                {
+                    RaycastHit[] hits = Physics.RaycastAll(previousPointPos, direction.normalized, distance, targetLayers);
+                    foreach (RaycastHit hit in hits)
+                    {
+                        CheckDamage(hit.collider);
+                    }
+                     // Debug visual: Vermelho = Matando, Branco = Apenas Rastreando
+                    Debug.DrawLine(previousPointPos, currentPointPos, Color.red, 0.5f);
+                }
+                else
+                {
+                    // Debug para você ver que ele está rastreando sempre
+                    Debug.DrawLine(previousPointPos, currentPointPos, Color.white, 0.1f);
+                }
+            }
+
+            // Atualiza o ponto anterior para o próximo frame (ISSO RODA SEMPRE)
+            previousPoints[i] = currentPointPos;
+        }
+    }
+
+    private void CheckDamage(Collider other)
+    {
+        if (hitTargets.Contains(other.gameObject)) return;
+
+        // Lógica de Player
+        if (ownerType == ProjectileOwner.Player)
+        {
+            EnemyHealth enemyHp = other.GetComponentInParent<EnemyHealth>();
+            if (enemyHp != null)
+            {
+                // Evita bater em si mesmo se a layer estiver errada
+                if (enemyHp.gameObject == transform.root.gameObject) return;
+
+                Effect dmgEffect = new Effect { effectType = Effect.EffectType.physical, power = currentDamage };
+                if (enemyHp.ApplyEffect(new Effect[] { dmgEffect }))
+                {
+                    hitTargets.Add(other.gameObject);
+                    if (HealthSystem.Instance != null) HealthSystem.Instance.RestoreMana(5f);
+                    Debug.Log($"<color=yellow>HIT CONFIRMADO:</color> {enemyHp.name}");
+                }
+            }
+        }
+        // Lógica de Inimigo
+        else if (ownerType == ProjectileOwner.Enemy)
+        {
+            HealthSystem playerHp = other.GetComponentInParent<HealthSystem>();
+            if (playerHp != null)
             {
                 Effect dmgEffect = new Effect { effectType = Effect.EffectType.physical, power = currentDamage };
                 if (playerHp.ApplyEffect(new Effect[] { dmgEffect }))
                 {
                     hitTargets.Add(other.gameObject);
-                    // Tocar som de hit aqui
-                    Debug.Log("Acertou o Player!");
-                }
-            }
-
-            // 2. Procura EnemyHealth (Inimigo)
-            EnemyHealth enemyHp = other.GetComponent<EnemyHealth>();
-            if (enemyHp != null && ownerType == ProjectileOwner.Player)
-            {
-                Effect dmgEffect = new Effect { effectType = Effect.EffectType.physical, power = currentDamage };
-                if (enemyHp.ApplyEffect(new Effect[] { dmgEffect }))
-                {
-                    hitTargets.Add(other.gameObject);
-
-                    // RECUPERA MANA AO ACERTAR (Sua mec�nica!)
-                    if (HealthSystem.Instance != null)
-                    {
-                        HealthSystem.Instance.RestoreMana(5f); // Valor fixo ou vari�vel
-                    }
-
-                    Debug.Log("Acertou o Inimigo!");
                 }
             }
         }

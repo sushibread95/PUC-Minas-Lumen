@@ -8,10 +8,6 @@ public class InputManager : MonoBehaviour
     // A "Fonte da Verdade". A ÚNICA instância de input no jogo.
     public PlayerInputActions InputActions { get; private set; }
 
-    // Nomes dos mapas (para evitar erros de digitação)
-    //private string MAP_PLAYER = "Player";
-    //private string MAP_UI = "UI";
-
     void Awake()
     {
         // 1. Singleton + DontDestroyOnLoad
@@ -32,23 +28,48 @@ public class InputManager : MonoBehaviour
 
     public void SwitchToGameplayMap()
     {
-        Debug.LogWarning("INPUT MANAGER: Trocando para o Mapa 'Player'");
+        Debug.Log("🎮 INPUT MANAGER: Trocando para o Mapa 'Player'");
         InputActions.Player.Enable();
         InputActions.UI.Disable();
     }
 
     public void SwitchToUIMap()
     {
-        Debug.LogWarning("INPUT MANAGER: Trocando para o Mapa 'UI'");
+        Debug.Log("📋 INPUT MANAGER: Trocando para o Mapa 'UI'");
         InputActions.UI.Enable();
         InputActions.Player.Disable();
     }
 
-    // Segurança (boa prática)
+    // ✅ CORREÇÃO CRÍTICA: Destruição Apropriada
     private void OnDestroy()
     {
-        // Desliga os mapas se o manager for destruído
-        InputActions?.Player.Disable();
-        InputActions?.UI.Disable();
+        Debug.Log("⚠️ InputManager sendo destruído. Limpando InputActions...");
+        
+        if (InputActions != null)
+        {
+            // Desabilita os mapas primeiro
+            InputActions.Player.Disable();
+            InputActions.UI.Disable();
+            
+            // Destroi o asset (isso libera os recursos)
+            InputActions.Dispose();
+            InputActions = null;
+        }
+        
+        // Limpa a referência do Singleton
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    // ✅ ADICIONAL: Limpeza ao desabilitar (segurança extra)
+    private void OnDisable()
+    {
+        if (InputActions != null)
+        {
+            InputActions.Player.Disable();
+            InputActions.UI.Disable();
+        }
     }
 }

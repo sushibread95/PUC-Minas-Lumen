@@ -45,31 +45,40 @@ public class TransitionManager : MonoBehaviour
         TransitionToScene(sceneName, spawnPointID);
     }
 
-    private IEnumerator LoadSceneRoutine(string sceneName)
+private IEnumerator LoadSceneRoutine(string sceneName)
+{
+    // 1. Ativa Loading Screen (se houver)
+    if (loadingScreenObject) loadingScreenObject.SetActive(true);
+
+    // 2. Garante que o tempo esteja normal antes de carregar
+    Time.timeScale = 1f;
+
+    // 3. Carrega a cena de forma assíncrona
+    AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
+    
+    while (!op.isDone)
     {
-        // 1. Ativa Loading Screen (se houver)
-        if (loadingScreenObject) loadingScreenObject.SetActive(true);
-
-        // 2. Garante que o tempo esteja normal antes de carregar
-        Time.timeScale = 1f;
-
-        // 3. Carrega a cena de forma assíncrona
-        AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
-        
-        // Impede a ativação imediata se quiser fazer fade-in/out (opcional)
-        // op.allowSceneActivation = false; 
-
-        while (!op.isDone)
-        {
-            // Aqui você pode atualizar uma barra de progresso: op.progress
-            yield return null;
-        }
-
-        // 4. Cena carregada!
-        // O SceneEntrance da nova cena vai ler o 'targetSpawnPointID' no Start()
-        
-        if (loadingScreenObject) loadingScreenObject.SetActive(false);
+        // Aqui você pode atualizar uma barra de progresso: op.progress
+        yield return null;
     }
+
+    // 4. ✅ CORREÇÃO: Cena carregada - Força Input para Gameplay
+    yield return null; // Espera 1 frame para garantir que tudo foi inicializado
+    
+    if (InputManager.Instance != null)
+    {
+        InputManager.Instance.SwitchToGameplayMap();
+        Debug.Log("🎮 TransitionManager: Forçou Input para Gameplay após carregar cena!");
+    }
+    
+    // 5. ✅ Garante cursor travado (para gameplay)
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
+    
+    // 6. Desliga Loading Screen
+    if (loadingScreenObject) loadingScreenObject.SetActive(false);
+}
+
 
     // Método utilitário para voltar ao Menu com limpeza total
 

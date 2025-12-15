@@ -122,23 +122,18 @@ public class QuestManager : MonoBehaviour
 
 QuestDefinition def = GetQuestDefinition(questData.questID);
         
-        // Dar Recompensas
         if (def != null)
         {
-            // 1. Dar XP (Agora funciona!)
             if (LevelingSystem.Instance != null && def.xpReward > 0)
             {
                 LevelingSystem.Instance.AddQuestXP(def.xpReward);
             }
 
-            // 2. Dar Ouro (Agora funciona!)
             if (PlayerStats.Instance != null && def.goldReward > 0)
             {
                 PlayerStats.Instance.AddGold(def.goldReward);
             }
 
-            // 3. Dar Itens (Se tiver InventoryManager)
-            // foreach(var itemID in def.itemRewardIDs) InventoryManager.Instance.AddItem(itemID);
             
             if (UIFeedbackManager.Instance != null) 
                 UIFeedbackManager.Instance.ShowNotification($"Quest Completada: {def.title}!", 4f);

@@ -755,7 +755,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b8ebf4241e8f5047ba193ba6811acb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  npcID: 40a957f8-e4d1-4982-a8ab-2a9a3426876c
+  npcID: 6124775d-4a3e-47de-bad4-50b60cfb8cdb
   enemyTypeID: inimigo_corrompido
   xpReward: 50
   decisionUIObject: {fileID: 6521154626577292667}

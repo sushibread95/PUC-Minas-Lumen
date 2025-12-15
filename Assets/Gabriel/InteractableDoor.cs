@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class InteractableDoor : MonoBehaviour, IInteractable
@@ -48,13 +49,13 @@ public class InteractableDoor : MonoBehaviour, IInteractable
     }
 
     // --- LÓGICA DE CHEGADA (Vinda do antigo SceneEntrance) ---
-    private void HandleArrival()
-    {
-        // Se eu não tenho ID de chegada, sou apenas uma porta de saída. Ignora.
-        if (string.IsNullOrEmpty(mySpawnID)) return;
+private void HandleArrival()
+{
+    // Se eu não tenho ID de chegada, sou apenas uma porta de saída. Ignora.
+    if (string.IsNullOrEmpty(mySpawnID)) return;
 
-        // Se o TransitionManager não existir ou o ID não bater, tchau.
-if (TransitionManager.Instance != null)
+    // Se o TransitionManager não existir ou o ID não bater, tchau.
+    if (TransitionManager.Instance != null)
     {
         string target = TransitionManager.Instance.targetSpawnPointID;
         
@@ -62,26 +63,22 @@ if (TransitionManager.Instance != null)
         {
             if (mySpawnID != "fase1_spawn") return;
 
-            // --- ADIÇÃO CRÍTICA: IMPEDE O SEQUESTRO ---
             // Se não tem ID (target vazio), é "Novo Jogo".
-            // Mas se o Player JÁ EXISTE, não é Novo Jogo (é uma transição que já foi resolvida
-            // por outra porta que limpou o ID). Então, não faça nada.
+            // Mas se o Player JÁ EXISTE, não é Novo Jogo
             if (PlayerPersistent.Instance != null) return;
-            // -------------------------------------------
         }
         else if (target != mySpawnID)
         {
             return; 
         }
     }
-        else
-        {
-            // Fallback sem manager
-            if (mySpawnID != "fase1_spawn") return;
-        }
+    else
+    {
+        // Fallback sem manager
+        if (mySpawnID != "fase1_spawn") return;
+    }
 
         // --- DEFINIR POSIÇÃO ---
-        // Se tivermos um spawnPoint configurado, usamos ele. Se não, usamos a própria porta (arriscado!)
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
 
@@ -100,11 +97,32 @@ if (TransitionManager.Instance != null)
             Instantiate(playerPrefab, pos, rot);
         }
 
-        // Limpa o Manager
-        if (TransitionManager.Instance != null) TransitionManager.Instance.targetSpawnPointID = null;
-    }
+                StartCoroutine(ForceGameplayInputAfterSpawn());
 
-    // --- LÓGICA DE INTERAÇÃO (Igual ao anterior) ---
+            // Limpa o Manager
+            if (TransitionManager.Instance != null) 
+                TransitionManager.Instance.targetSpawnPointID = null;
+        }     
+
+     
+        private IEnumerator ForceGameplayInputAfterSpawn()
+        {
+            // Espera 2 frames para garantir que o Player foi completamente inicializado
+            yield return null;
+            yield return null;
+            
+            if (InputManager.Instance != null)
+            {
+                InputManager.Instance.SwitchToGameplayMap();
+                Debug.Log("🎮 InteractableDoor: Forçou Input para Gameplay após spawn!");
+            }
+            
+            // Garante que o cursor fique travado
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+
     public string GetInteractText()
     {
         if (doorType == DoorType.SceneTransition) return "Entrar";

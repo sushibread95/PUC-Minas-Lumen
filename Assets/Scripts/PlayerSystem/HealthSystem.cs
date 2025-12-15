@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Necessário para carregar o Menu
+using UnityEngine.SceneManagement; // NECESSÁRIO para carregar cenas
 using UnityEngine.UI;
 using System.Collections;
 using System; 
@@ -22,12 +22,18 @@ public class HealthSystem : MonoBehaviour
 
     [Header("Identity")]
     private PlayerControllerSystem playerController;
-    public ProjectileOwner ownerType = ProjectileOwner.None; // Geralmente 'Player' neste script
+    public ProjectileOwner ownerType = ProjectileOwner.None; 
 
     [Header("Animation")]
     public Animator animator; 
     public string deathTrigger = "Die";
     public string hurtTrigger = "Hurt"; 
+
+    [Header("Death Settings (NOVO)")]
+    [Tooltip("Tempo de espera (animação) antes de reiniciar a cena")]
+    public float deathDelay = 4.0f; 
+    [Tooltip("Nome da cena de Game Over. Deixe vazio para apenas REINICIAR a fase atual.")]
+    public string sceneAfterDeath = ""; 
 
     [Header("Bleed Out / Morte")]
     public bool isDead = false;
@@ -36,7 +42,7 @@ public class HealthSystem : MonoBehaviour
     private float bleedOutTimer = 0f;
     private bool isInBleedOut = false;
 
-    private CorruptedNPC corruptedNPC; // Referência opcional caso usado em NPC
+    private CorruptedNPC corruptedNPC; 
 
     private void Awake()
     {
@@ -45,7 +51,6 @@ public class HealthSystem : MonoBehaviour
         
         if (animator == null) animator = GetComponentInChildren<Animator>();
 
-        // Lógica de Singleton apenas se for o Player
         if (playerController != null)
         {
             if (Instance != null && Instance != this) Destroy(gameObject);
@@ -55,7 +60,6 @@ public class HealthSystem : MonoBehaviour
 
     private void Start()
     {
-        // Se for Player, pega stats do PlayerStats. Se for NPC genérico, usa 100.
         if (playerController != null && PlayerStats.Instance != null)
         {
             currentHealth = PlayerStats.Instance.maxHealth;
@@ -66,51 +70,37 @@ public class HealthSystem : MonoBehaviour
             currentHealth = 100f;
         }
 
-        // Conecta com o HUD
         if (HUDManager.Instance != null && playerController != null)
         {
             HUDManager.Instance.AssignSlidersTo(this);
         }
     }
 
-    // --- DETECÇÃO DE DANO ---
-    // 1. Detecta Magias e Armas (Is Trigger)
     private void OnTriggerEnter(Collider other)
     {
         HandleHit(other.gameObject);
     }
 
-    // 2. Detecta Colisões Físicas
     private void OnCollisionEnter(Collision collision)
     {
         HandleHit(collision.gameObject);
     }
 
-    // Lógica unificada de recebimento de impacto
     private void HandleHit(GameObject attacker)
     {
         if (isDead) return;
         if (isInBleedOut) return;
-
-        // Verifica se o Player está rolando (Invulnerável)
         if (playerController != null && playerController.IsInvulnerable()) return;
 
-        // Tenta extrair o dano do objeto que bateu
         EffectsLibrary effects = attacker.GetComponent<EffectsLibrary>();
         Projectile projectile = attacker.GetComponent<Projectile>();
 
-        if (effects == null) return; // Se não tem efeito, ignora
+        if (effects == null) return; 
 
-        // Fogo Amigo: Se for o próprio projétil do player, ignora
-        if (projectile != null && projectile.owner == this.ownerType)
-        {
-            return; 
-        }
+        if (projectile != null && projectile.owner == this.ownerType) return; 
 
-        // Aplica o dano efetivamente
         ApplyEffect(effects.effects);
     }
-    // -----------------------------------------------------------
 
     private void Update()
     {
@@ -118,7 +108,6 @@ public class HealthSystem : MonoBehaviour
 
         UpdateUIBars();
 
-        // Checagem de Vida Zero
         if (currentHealth <= 0f && !isInBleedOut)
         {
             if (corruptedNPC != null)
@@ -128,14 +117,12 @@ public class HealthSystem : MonoBehaviour
             }
             else if (playerController != null) 
             {
-                // Inicia Sangramento do Player
                 isInBleedOut = true;
                 if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(true);
                 bleedOutTimer = bleedOutDuration;
             }
         }
 
-        // Lógica de Sangramento (Contagem regressiva para Game Over)
         if (isInBleedOut)
         {
             bleedOutTimer -= Time.deltaTime;
@@ -154,7 +141,6 @@ public class HealthSystem : MonoBehaviour
         currentHealth += amount;
         if (currentHealth > maxH) currentHealth = maxH;
         
-        // Se curar durante o sangramento, salva o player
         if (isInBleedOut && currentHealth > 0)
         {
             isInBleedOut = false;
@@ -174,7 +160,6 @@ public class HealthSystem : MonoBehaviour
 
     public bool ApplyEffect(Effect[] effectToApply)
     {
-        // 1. Checa se tem Mana suficiente (para magias de custo)
         foreach (var effect in effectToApply)
         {
             if (effect.effectType == Effect.EffectType.magic)
@@ -185,12 +170,10 @@ public class HealthSystem : MonoBehaviour
 
         bool tookDamage = false; 
 
-        // 2. Aplica os efeitos
         foreach (var effect in effectToApply)
         {
             float finalPower = effect.power;
 
-            // Se for dano físico no Player, aplica defesa
             if (effect.effectType == Effect.EffectType.physical && playerController != null && PlayerStats.Instance != null)
             {
                 finalPower = Mathf.Max(1f, finalPower - PlayerStats.Instance.defense);
@@ -209,7 +192,6 @@ public class HealthSystem : MonoBehaviour
             }
         }
 
-        // Toca animação de Hurt se tomou dano e não está morrendo
         if (tookDamage && !isDead && !isInBleedOut && animator != null)
         {
             animator.SetTrigger(hurtTrigger);
@@ -225,7 +207,6 @@ public class HealthSystem : MonoBehaviour
 
         if (playerController != null)
         {
-            // Inicia a sequencia de Game Over Imediata
             StartCoroutine(PlayerDeathRoutine());
         }
         else
@@ -234,36 +215,37 @@ public class HealthSystem : MonoBehaviour
         }
     }
 
-    // --- AQUI ESTÁ A MUDANÇA (LoadScene direto) ---
+    // --- AQUI ESTÁ A LÓGICA DE RELOAD AUTOMÁTICO ---
     private IEnumerator PlayerDeathRoutine()
     {
-        // 1. Trava Inputs (Segurança)
-        if (InputManager.Instance != null) InputManager.Instance.SwitchToUIMap();
-        
-        // 2. Tenta tocar o início da animação de morte (Visual)
+        // 1. Toca Animação
         if (animator != null)
         {
             animator.SetLayerWeight(1, 0f); 
             animator.SetTrigger(deathTrigger);
         }
 
-        // 3. Avisa eventos (para quem estiver ouvindo, logs, analytics)
+        // 2. Avisa outros scripts (ex: inimigos param de atacar)
         OnPlayerDied?.Invoke();
 
-        // 4. Espera um único frame para garantir que a engine processou a morte
-        yield return null; 
+        // 3. Espera o player "curtir" a animação de morte
+        yield return new WaitForSeconds(deathDelay);
 
-        // 5. Destrói o Player Persistente
-        // ISSO É IMPORTANTE: Para não voltar pro menu com um player "Zumbi" ativo.
-        // Como o script está no Player, 'gameObject' refere-se ao próprio Player.
-        Destroy(gameObject);
+        // 4. DESTRÓI O PLAYER PERSISTENTE
+        // Isso é vital! Se não destruir, ao recarregar a cena haverá dois players
+        // ou o player nascerá morto.
+        if (PlayerPersistent.Instance != null)
+        {
+            Destroy(PlayerPersistent.Instance.gameObject);
+        }
 
-        // 6. Carrega o Menu Principal imediatamente
-        SceneManager.LoadScene("MainMenu");
+        // 5. Carrega a Cena
+        // Se o nome da cena estiver vazio, recarrega a atual (Restart)
+        string targetScene = string.IsNullOrEmpty(sceneAfterDeath) ? SceneManager.GetActiveScene().name : sceneAfterDeath;
+        SceneManager.LoadScene(targetScene);
     }
     // ----------------------------------------------
 
-    // Auxiliares de UI
     public void SetSliders(Slider hp, Slider mana, Slider bleed)
     {
         this.healthBar = hp;

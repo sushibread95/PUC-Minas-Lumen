@@ -7016,6 +7016,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 855782999}
+  - {fileID: 872599827}
   - {fileID: 1118728205}
   - {fileID: 947845056}
   - {fileID: 1234556259}
@@ -7096,6 +7097,7 @@ MonoBehaviour:
     de...
   - Enxofre?
   speakerName: Priscila
+  triggerOnlyOnce: 1
 --- !u!1001 &342963420
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13484,37 +13486,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4443176452565504, guid: 001f495511ded714e8b30d0394b5de47, type: 3}
   m_PrefabInstance: {fileID: 559420662}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &576157243
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 576157244}
-  m_Layer: 0
-  m_Name: WayPoint (7)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &576157244
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 576157243}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 34.329998, y: -0.93520975, z: 61.72}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &599843944
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13981,6 +13952,7 @@ MonoBehaviour:
   - "Disse que \xE9 para nossa prote\xE7\xE3o."
   - Estamos presos aqui fora com eles.
   speakerName: Priscilla
+  triggerOnlyOnce: 1
 --- !u!4 &646609754
 Transform:
   m_ObjectHideFlags: 0
@@ -15019,7 +14991,7 @@ Transform:
   m_GameObject: {fileID: 855782998}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.21, y: -0.42, z: 15.63}
+  m_LocalPosition: {x: 0.27, y: -1.19, z: 12.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15042,6 +15014,7 @@ MonoBehaviour:
   - AH! Os olhos dele...
   - "n\xE3o h\xE1 nada l\xE1 dentro!"
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &855783001
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15094,6 +15067,80 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1646607130}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &872599826
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 872599827}
+  - component: {fileID: 872599829}
+  - component: {fileID: 872599828}
+  m_Layer: 0
+  m_Name: dialog1 (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &872599827
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872599826}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.01, y: -0.77, z: 14.21}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 329839143}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &872599828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872599826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84e248ab8e943484f97b335b244f6cf4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lines:
+  - "Esconda-se atr\xE1s de objetos apertando Control"
+  - "ou LUTE! Mire com bot\xE3o do meio do mouse e ataque usando sua espada com o
+    bot\xE3o esquerdo"
+  - "Use seus poderes m\xE1gicos com Q"
+  - "Desvie dos ataques usando a barra de espa\xE7o"
+  speakerName: 
+  triggerOnlyOnce: 1
+--- !u!65 &872599829
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 872599826}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5.76, y: 1, z: 1.36}
+  m_Center: {x: 0, y: 0, z: 0.81}
 --- !u!1 &879361899
 GameObject:
   m_ObjectHideFlags: 0
@@ -16028,6 +16075,7 @@ MonoBehaviour:
   lines:
   - Me lembro que a casa do padre Samuel ficava por aqui...
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &947845058
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16953,6 +17001,7 @@ MonoBehaviour:
   - "Ele n\xE3o conseguiu subir a montanha a tempo... "
   - Faltam duas!
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &1118728207
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17220,6 +17269,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1176157404}
   - component: {fileID: 1176157405}
+  - component: {fileID: 1176157407}
+  - component: {fileID: 1176157406}
   m_Layer: 0
   m_Name: SPAWN_fase1
   m_TagString: Untagged
@@ -17268,6 +17319,47 @@ MonoBehaviour:
   openAnimationTrigger: Open
   lockedSound: {fileID: 0}
   unlockSound: {fileID: 0}
+--- !u!114 &1176157406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176157402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84e248ab8e943484f97b335b244f6cf4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lines:
+  - "Passe os di\xE1logos clicando com o bot\xE3o esquerdo do mouse"
+  - Posso me movimentar com WASD e olhar em volta com o mouse.
+  - "Tem uma pessoa inconsciente aqui\t"
+  - "Um bilhete e uma po\xE7\xE3o, posso colet\xE1-los com F"
+  - "Para ler o bilhete e usar a po\xE7\xE3o, abro meu invent\xE1rio com Tab"
+  speakerName: 
+  triggerOnlyOnce: 1
+--- !u!65 &1176157407
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176157402}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1202605487
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17663,6 +17755,7 @@ MonoBehaviour:
   - Talvez eu deva me esconder...
   - Preciso encontrar essas chaves e chegar logo ao castelo do meu pai
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &1234556261
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -24355,37 +24448,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1646607130}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1519662967
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1519662968}
-  m_Layer: 0
-  m_Name: WayPoint (8)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1519662968
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519662967}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 33.11, y: -0.18, z: 76.21}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1524401477
 GameObject:
   m_ObjectHideFlags: 0
@@ -24435,6 +24497,7 @@ MonoBehaviour:
   - "O mercado est\xE1 infestado de maldi\xE7\xE3o..."
   - "D\xE1 pra ver a igreja!"
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &1524401480
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -29974,6 +30037,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
+      propertyPath: npcID
+      value: d2c6fa0d-71d3-4024-820f-5b2888443814
+      objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: interactionRange
       value: 5
       objectReference: {fileID: 0}
@@ -34945,6 +35012,7 @@ MonoBehaviour:
   - "Muitas pessoas amaldi\xE7oadas andando pela pra\xE7a do mercado..."
   - Vejo a igreja daqui...
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!65 &1669632196
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -34966,37 +35034,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 4.2075005, y: 1, z: 2.2803988}
   m_Center: {x: 2.7581465, y: 0.000000007660886, z: -0.21544825}
---- !u!1 &1676646916
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1676646917}
-  m_Layer: 0
-  m_Name: WayPoint (9)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1676646917
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1676646916}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 34.329998, y: -0.93520975, z: 69.06}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1690521133
 GameObject:
   m_ObjectHideFlags: 0
@@ -36983,9 +37020,6 @@ SceneRoots:
   - {fileID: 16093287}
   - {fileID: 329839143}
   - {fileID: 1646607130}
-  - {fileID: 1519662968}
-  - {fileID: 576157244}
-  - {fileID: 1676646917}
   - {fileID: 1451723}
   - {fileID: 691397755}
   - {fileID: 1436807148}

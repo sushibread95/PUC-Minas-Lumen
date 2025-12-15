@@ -79,8 +79,7 @@ public class PlayerControllerSystem : MonoBehaviour
     public float invulnerableDuration = 0.3f;
     private bool _isInvulnerable = false;
 
-[Header("Footstep Settings")]
-    // Mudamos de AudioClip único para AudioClip[] (Array)
+    [Header("Footstep Settings")]
     public AudioClip[] walkSounds; 
     public AudioClip[] jogSounds;
     public AudioClip[] sneakSounds;
@@ -161,26 +160,33 @@ public class PlayerControllerSystem : MonoBehaviour
         }
 
         if (SaveManager.Instance != null) SaveManager.Instance.RegisterPlayer(this.transform);
+        
+        // Garante que o input está no modo correto
+        StartCoroutine(EnsureGameplayInputActive());
     }
 
     void Update()
     {
-        // 1. Cláusula de Guarda
-        if (input == null ||
-           (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
-           (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) ||
-           (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen) ||
-           (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)||
-           (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive))
-        {
-            return;
-        }
 
-        // 2. Mouse (Alt)
+        if ((PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
+            (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) ||
+            (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen) ||
+            (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)) 
+            //(DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive))
+        {
+             // Se estiver na tela de morte, garante que o cursor aparece
+             if (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive)
+             {
+                 if (Cursor.lockState == CursorLockMode.Locked)
+                 {
+                     LockCursor(false);
+                 }
+             }
+             return;
+        }
         
         // --- CORREÇÃO DE SEGURANÇA (BLINDAGEM) ---
         // Se a cena ativa for "MainMenu", encerramos o Update aqui.
-        // Isso impede que o Player trave o cursor ou processe movimento se ele persistir por engano no Menu.
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu") 
         {
             return;
@@ -189,28 +195,49 @@ public class PlayerControllerSystem : MonoBehaviour
         if (isGrabbed)
         {
             HandleGrabInput();
-            return; // TRAVA TUDO: Não anda, não ataca, não abre menu.
+            return; 
         }
-        // ------------------------------------------
 
+        // 2. Controle do Cursor (Alt para liberar)
         bool isAltPressed = Keyboard.current != null && Keyboard.current.altKey.isPressed;
-        if (isAltPressed) LockCursor(false);
-        else if (lockOn == null || !lockOn.IsLockedOn) LockCursor(true);
+        if (isAltPressed) 
+        {
+            LockCursor(false);
+        }
+        else if (lockOn == null || !lockOn.IsLockedOn) 
+        {
+            LockCursor(true);
+        }
 
         float dt = Time.deltaTime;
         Vector2 moveInput = input.Player.Move.ReadValue<Vector2>();
 
-        // Toggles
-        if (toggleCrouch) { if (input.Player.Crouch.WasPressedThisFrame()) _crouchToggled = !_crouchToggled; }
-        else { _crouchToggled = input.Player.Crouch.IsPressed(); }
+        // Toggles (Agachar/Esgueirar/Correr)
+        if (toggleCrouch) 
+        { 
+            if (input.Player.Crouch.WasPressedThisFrame()) 
+                _crouchToggled = !_crouchToggled; 
+        }
+        else 
+        { 
+            _crouchToggled = input.Player.Crouch.IsPressed(); 
+        }
 
-        if (toggleSneak) { if (input.Player.SneakSlow.WasPressedThisFrame()) _sneakToggled = !_sneakToggled; }
-        else { _sneakToggled = input.Player.SneakSlow.IsPressed(); }
+        if (toggleSneak) 
+        { 
+            if (input.Player.SneakSlow.WasPressedThisFrame()) 
+                _sneakToggled = !_sneakToggled; 
+        }
+        else 
+        { 
+            _sneakToggled = input.Player.SneakSlow.IsPressed(); 
+        }
 
         bool sprintHeld = false;
         if (sprintAction != null)
         {
-            if (sprintAction.WasPressedThisFrame()) _sprintToggled = !_sprintToggled;
+            if (sprintAction.WasPressedThisFrame()) 
+                _sprintToggled = !_sprintToggled;
             sprintHeld = _sprintToggled;
         }
 
@@ -222,53 +249,76 @@ public class PlayerControllerSystem : MonoBehaviour
         if (dodgePressed && Time.time >= _nextDodgeTime && !_isDodging)
         {
             Vector3 dodgeDir = GetInputDirection(moveInput);
-            if (dodgeDir.sqrMagnitude < 0.0001f) dodgeDir = -transform.forward;
+            if (dodgeDir.sqrMagnitude < 0.0001f) 
+                dodgeDir = -transform.forward;
             StartCoroutine(DodgeRoutine(dodgeDir.normalized));
             return;
         }
 
-        // MOVIMENTO E STEALTH
-        HandleMove(dt, moveInput, _crouchToggled, _sneakToggled, sprintHeld);
-
-        // --- COMBATE HÍBRIDO (Melee Mouse + Magias Q/E/R) ---
-
-        // 1. Ataque Melee / Backstab (Botão Esquerdo)
-        if (attackMeleePressed && Time.time >= nextSpellTime && spellRoutine == null && !_isDodging)
+        // COMBATE HÍBRIDO (Melee + Magias)
+        if (attackMeleePressed && Time.time >= nextSpellTime && 
+            spellRoutine == null && !_isDodging)
         {
-            // Prioridade: Tenta Backstab se estiver agachado
             if (_crouchToggled && TryBackstab())
             {
-                // Se deu certo, o TryBackstab já tocou animação e aplicou dano
+                // Backstab executado
             }
-            // Se não, ataque normal com arma
             else if (currentWeaponData != null)
             {
                 spellRoutine = StartCoroutine(MeleeAttackRoutine());
             }
-            else
-            {
-                Debug.Log("Sem arma equipada. (Adicione lógica de soco se quiser)");
-            }
         }
 
-        // 2. Magias (Q, E, R)
+        // Magias (Q, E, R)
         if (Time.time >= nextSpellTime && spellRoutine == null && !_isDodging)
         {
-            if (castQAction != null && castQAction.WasPressedThisFrame()) TryCastSpellSlot(0);
-            else if (castEAction != null && castEAction.WasPressedThisFrame()) TryCastSpellSlot(1);
-            else if (castRAction != null && castRAction.WasPressedThisFrame()) TryCastSpellSlot(2);
+            if (castQAction != null && castQAction.WasPressedThisFrame()) 
+                TryCastSpellSlot(0);
+            else if (castEAction != null && castEAction.WasPressedThisFrame()) 
+                TryCastSpellSlot(1);
+            else if (castRAction != null && castRAction.WasPressedThisFrame()) 
+                TryCastSpellSlot(2);
         }
 
-        // Animator Params
+        // Animator Params (Estados Booleanos)
         if (animator)
         {
-            if (groundedHash != 0) animator.SetBool(groundedHash, isGrounded);
-            if (crouchHash != 0) animator.SetBool(crouchHash, _crouchToggled);
+            if (groundedHash != 0) 
+                animator.SetBool(groundedHash, isGrounded);
+            if (crouchHash != 0) 
+                animator.SetBool(crouchHash, _crouchToggled);
         }
 
+        // --- MOVIMENTO FÍSICO (A LINHA QUE FALTAVA) ---
+        HandleMove(dt, moveInput, _crouchToggled, _sneakToggled, sprintHeld);
+        
+        // Sons de Passos
         HandleFootsteps(dt, moveInput.magnitude, _crouchToggled, _sneakToggled, sprintHeld);
+    }
 
-
+    private IEnumerator EnsureGameplayInputActive()
+    {
+        // Espera alguns frames para garantir que tudo foi inicializado
+        yield return new WaitForSeconds(0.2f);
+        
+        if (InputManager.Instance == null || input == null) yield break;
+        
+        // Verifica se o mapa Player está ativo
+        bool playerMapActive = input.Player.enabled;
+        bool uiMapActive = input.UI.enabled;
+        
+        // Se estiver no mapa errado, corrige
+        if (!playerMapActive && uiMapActive)
+        {
+            Debug.LogWarning("⚠️ Input estava no mapa UI! Corrigindo para Gameplay...");
+            InputManager.Instance.SwitchToGameplayMap();
+        }
+        
+        // Garante cursor travado se não estiver em menu
+        if (PauseMenuManager.Instance == null || !PauseMenuManager.Instance.IsPaused)
+        {
+             LockCursor(true);
+        }
     }
 
     // --- BACKSTAB ---
@@ -450,12 +500,14 @@ public class PlayerControllerSystem : MonoBehaviour
 
     public void LockCursor(bool locked) { Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None; Cursor.visible = !locked; }
     public void TeleportToPosition(Vector3 position) { if (cc) { cc.enabled = false; transform.position = position; cc.enabled = true; } }
+    
     private Vector3 GetInputDirection(Vector2 moveInput)
     {
         Vector3 f = playerCamera ? playerCamera.transform.forward : transform.forward; f.y = 0; f.Normalize();
         Vector3 r = playerCamera ? playerCamera.transform.right : transform.right; r.y = 0; r.Normalize();
         return f * moveInput.y + r * moveInput.x;
     }
+    
     IEnumerator DodgeRoutine(Vector3 dir)
     {
         _isDodging = true; _nextDodgeTime = Time.time + dodgeCooldown;
@@ -518,7 +570,8 @@ public class PlayerControllerSystem : MonoBehaviour
 
     IEnumerator Invulnerability(float duration) { _isInvulnerable = true; yield return new WaitForSeconds(duration); _isInvulnerable = false; }
     public bool IsInvulnerable() => _isInvulnerable;
-private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)
+    
+    private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouching, bool isSneaking, bool isSprinting)
     {
         if (inputMagnitude > 0.1f && isGrounded && Time.time >= nextStepTime)
         {
@@ -549,5 +602,4 @@ private void HandleFootsteps(float deltaTime, float inputMagnitude, bool isCrouc
             nextStepTime = 0f;
         }
     }
-    
-    }
+}

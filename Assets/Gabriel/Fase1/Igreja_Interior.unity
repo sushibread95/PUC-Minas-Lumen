@@ -10186,6 +10186,7 @@ MonoBehaviour:
   - "O caminho est\xE1 livre para o castelo"
   - "Que a luz me proteja do que h\xE1 l\xE1 dentro"
   speakerName: 
+  triggerOnlyOnce: 1
 --- !u!4 &442636109
 Transform:
   m_ObjectHideFlags: 0
@@ -15290,6 +15291,10 @@ PrefabInstance:
     - target: {fileID: 7337675488407051168, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
+      propertyPath: npcID
+      value: 61544869-6bcc-4633-87e7-13c495627416
       objectReference: {fileID: 0}
     - target: {fileID: 9052856044335744377, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
       propertyPath: m_LocalPosition.x
@@ -20960,6 +20965,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
+      propertyPath: npcID
+      value: 49cf17a8-b46e-4ebb-bbc9-967d40a01b47
+      objectReference: {fileID: 0}
     - target: {fileID: 9052856044335744377, guid: d34e1020ccbf8cf4a8065ecef3454267, type: 3}
       propertyPath: m_LocalPosition.x
       value: -9.820666
@@ -21235,6 +21244,10 @@ PrefabInstance:
     - target: {fileID: 7337675488407051168, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
+      propertyPath: npcID
+      value: 22dff873-3f5c-48f6-8aef-8a1ca436c3c0
       objectReference: {fileID: 0}
     - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: rotaParaAbrir
