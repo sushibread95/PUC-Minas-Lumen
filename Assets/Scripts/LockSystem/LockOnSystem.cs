@@ -58,9 +58,10 @@ public class LockOnSystem : MonoBehaviour
         // Auto-detecta componentes da câmera para desabilitar
         if (autoFindCinemachineProviders)
         {
-             var providers = Object.FindObjectsByType<Behaviour>(FindObjectsSortMode.None)
+             var providers = Object.FindObjectsByType<Behaviour>(FindObjectsInactive.Exclude)
                 .Where(b => b != null && (b.GetType().Name.Contains("CinemachineInput") || b.GetType().Name.Contains("InputAxisController"))) 
                 .ToArray();
+                
             if (providers.Length > 0) disableWhileLocked = providers;
         }
     }

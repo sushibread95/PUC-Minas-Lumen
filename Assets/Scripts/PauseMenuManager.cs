@@ -23,7 +23,6 @@ public class PauseMenuManager : MonoBehaviour
     public string mainMenuSceneName = "MainMenu";
 
     public bool IsPaused { get; private set; }
-    private GameObject lastSelectedGameObject;
 
     void Awake()
     {
@@ -115,7 +114,6 @@ public class PauseMenuManager : MonoBehaviour
          SetCursorLocked(lockCursorInGameplay); 
          IsPaused = false; 
          if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null); 
-         lastSelectedGameObject = null;
          Show(false); 
     }
 
@@ -126,7 +124,6 @@ public class PauseMenuManager : MonoBehaviour
         Show(false);
         SetCursorLocked(false);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
-        lastSelectedGameObject = null;
     }
 
     public void ForceHide() { CleanupForMainMenu(); }

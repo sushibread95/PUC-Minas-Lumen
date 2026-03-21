@@ -82,15 +82,15 @@ public class DebugConsole : MonoBehaviour
         }
     }
 
-    // --- FUNÇÕES DE BOTÃO (MODIFICADORES) ---
-    // Arraste estas funções para os botões [+] e [-] na Unity
+    // --- FUNï¿½ï¿½ES DE BOTï¿½O (MODIFICADORES) ---
+    // Arraste estas funï¿½ï¿½es para os botï¿½es [+] e [-] na Unity
 
     public void ModifyLevel(int amount)
     {
         if (PlayerStats.Instance == null) return;
 
         PlayerStats.Instance.level += amount;
-        if (PlayerStats.Instance.level < 1) PlayerStats.Instance.level = 1; // Mínimo lv 1
+        if (PlayerStats.Instance.level < 1) PlayerStats.Instance.level = 1; // Mï¿½nimo lv 1
 
         if (LevelingSystem.Instance != null)
             LevelingSystem.Instance.currentLevel = PlayerStats.Instance.level;
@@ -103,7 +103,7 @@ public class DebugConsole : MonoBehaviour
         if (PlayerStats.Instance == null) return;
         PlayerStats.Instance.maxHealth += amount;
 
-        // Atualiza o HealthSystem também
+        // Atualiza o HealthSystem tambï¿½m
         if (HealthSystem.Instance != null)
         {
             HealthSystem.Instance.UpdateMaxStats(PlayerStats.Instance.maxHealth, PlayerStats.Instance.maxMana);
@@ -188,7 +188,7 @@ public class DebugConsole : MonoBehaviour
 
     private void SpawnEnemy(GameObject prefab)
     {
-        PlayerControllerSystem player = Object.FindFirstObjectByType<PlayerControllerSystem>();
+        PlayerControllerSystem player = Object.FindAnyObjectByType<PlayerControllerSystem>();
         if (player != null)
         {
             Vector3 spawnPos = player.transform.position + player.transform.forward * 4f;

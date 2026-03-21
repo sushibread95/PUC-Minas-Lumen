@@ -18,7 +18,7 @@ public class ChoiceUI : MonoBehaviour
             if (_instance == null)
             {
                 // Procura o objeto na cena, *incluindo objetos inativos* (o 'true')
-                _instance = Object.FindFirstObjectByType<ChoiceUI>(FindObjectsInactive.Include);              
+                _instance = Object.FindAnyObjectByType<ChoiceUI>(FindObjectsInactive.Include);              
             }
             return _instance;
         }

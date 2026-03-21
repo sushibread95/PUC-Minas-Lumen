@@ -31,7 +31,7 @@ public class LockOnReticle : MonoBehaviour
         if (lockOn == null)
         {
             // Procura o script na cena (lento, mas só roda uma vez até achar)
-            lockOn = FindFirstObjectByType<LockOnSystem>(); 
+            lockOn = FindAnyObjectByType<LockOnSystem>(); 
             if (lockOn == null) return; // Player não nasceu? Aborta.
         }
 
