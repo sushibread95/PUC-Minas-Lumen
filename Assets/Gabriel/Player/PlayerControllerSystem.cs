@@ -602,4 +602,26 @@ public class PlayerControllerSystem : MonoBehaviour
             nextStepTime = 0f;
         }
     }
+
+    public void InterruptActions()
+    {
+        // 1. Para qualquer ataque ou magia que esteja acontecendo
+        if (spellRoutine != null)
+        {
+            StopCoroutine(spellRoutine);
+            spellRoutine = null;
+        }
+
+        // 2. Desliga a Hitbox FORÇADAMENTE (Previne o Bug do Sabre de Luz)
+        if (equippedWeaponInstance != null) 
+        {
+            equippedWeaponInstance.DisableHitbox();
+        }
+
+        // 3. Destrava o movimento do personagem
+        _isDodging = false;
+        moveLockUntil = 0f;
+        
+        // Opcional: Reseta os triggers de ataque no Animator aqui se precisar
+    }
 }

@@ -23,7 +23,7 @@ public class InventoryController : MonoBehaviour
     // Propriedade para checar se está visível (baseado no painel)
     public bool IsInventoryOpen => inventoryPanel != null && inventoryPanel.activeInHierarchy;
 
-    void Awake()
+void Awake()
     {
         if (Instance != null && Instance != this)
         {
@@ -32,10 +32,10 @@ public class InventoryController : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // CORREÇÃO: Removido o DontDestroyOnLoad(gameObject). 
+            // Se ele for um elemento de UI filho, ele sobrevive pegando carona no DontDestroyOnLoad do Canvas Pai!
         }
     }
-
     void OnEnable()
     {
         InventoryManager.OnInventoryChanged += UpdateInventoryUI;

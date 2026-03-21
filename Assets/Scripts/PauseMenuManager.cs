@@ -130,20 +130,43 @@ public class PauseMenuManager : MonoBehaviour
 
     public void SaveGame() { if (SaveManager.Instance != null) SaveManager.Instance.SaveGame(); }
 
-    public void QuitToMainMenu()
+public void QuitToMainMenu()
     {
-        CleanupForMainMenu();
-        if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
-        SceneManager.LoadScene(mainMenuSceneName);
+        // 1. Esconde o menu de pause instantaneamente e destrava o tempo
+        ResumeCleanup(); 
+
+        // 2. Passa a responsabilidade para o TransitionManager (que já tem tela de loading e destrói o Player corretamente)
+        if (TransitionManager.Instance != null)
+        {
+            TransitionManager.Instance.ReturnToMainMenu();
+        }
+        else
+        {
+            // Fallback de segurança caso esteja testando a cena isolada
+            if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
+            SceneManager.LoadSceneAsync(mainMenuSceneName);
+        }
     }
 
     public void RestartScene()
     {
+        // 1. Esconde o menu de pause instantaneamente e destrava o tempo
         ResumeCleanup(); 
-        if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
 
+        // 2. Destrói o Player atual para não duplicar
+        if (PlayerPersistent.Instance != null) Destroy(PlayerPersistent.Instance.gameObject);
+
+        // 3. Usa o TransitionManager para recarregar a fase atual de forma assíncrona, travando o mouse certinho
+        if (TransitionManager.Instance != null)
+        {
+            TransitionManager.Instance.TransitionToScene(SceneManager.GetActiveScene().name, "", true);
+        }
+        else
+        {
+            // Fallback de segurança
+            SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().name);
+        }
+    }
     public void QuitGame() { Application.Quit(); }
     
     void Show(bool visible)

@@ -11,17 +11,24 @@ public class QuickSlotInput : MonoBehaviour
         // Precisamos pegar o input do Start()
     }
 
+// Substitua o seu Start e EnableInputs por isto:
     void Start()
     {
-        if (InputManager.Instance == null)
-        {
-            Debug.LogError("QuickSlotInput não encontrou InputManager!");
-            return;
-        }
-        input = InputManager.Instance.InputActions;
-        EnableInputs();
+        // Vazio. Deixe o OnEnable fazer o trabalho de ligar os inputs.
     }
 
+    void EnableInputs()
+    {
+        if (input == null) return;
+
+        DisableInputs(); // <-- SEGURANÃ‡A: Garante que nunca haverÃ¡ inscriÃ§Ã£o dupla!
+
+        input.Player.QuickSlot1.performed += OnQuickSlot1;
+        input.Player.QuickSlot2.performed += OnQuickSlot2;
+        input.Player.QuickSlot3.performed += OnQuickSlot3;
+        input.Player.QuickSlot4.performed += OnQuickSlot4;
+        input.Player.ToggleQuickSlots.performed += TogglePanel;
+    }
     void OnEnable()
     {
         EnableInputs();
@@ -30,17 +37,6 @@ public class QuickSlotInput : MonoBehaviour
     void OnDisable()
     {
         DisableInputs();
-    }
-
-    void EnableInputs()
-    {
-        if (input == null) return;
-
-        input.Player.QuickSlot1.performed += OnQuickSlot1;
-        input.Player.QuickSlot2.performed += OnQuickSlot2;
-        input.Player.QuickSlot3.performed += OnQuickSlot3;
-        input.Player.QuickSlot4.performed += OnQuickSlot4;
-        input.Player.ToggleQuickSlots.performed += TogglePanel;
     }
 
     void DisableInputs()
@@ -54,7 +50,7 @@ public class QuickSlotInput : MonoBehaviour
         input.Player.ToggleQuickSlots.performed -= TogglePanel;
     }
 
-    // Funções separadas para garantir que o 'unsubscribe' funcione
+    // Funï¿½ï¿½es separadas para garantir que o 'unsubscribe' funcione
     private void OnQuickSlot1(InputAction.CallbackContext ctx) { UseQuickSlot(0); }
     private void OnQuickSlot2(InputAction.CallbackContext ctx) { UseQuickSlot(1); }
     private void OnQuickSlot3(InputAction.CallbackContext ctx) { UseQuickSlot(2); }

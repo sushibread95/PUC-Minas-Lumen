@@ -160,37 +160,49 @@ public class SaveManager : MonoBehaviour
     }
     
     private IEnumerator TeleportPlayerAfterSceneLoad()
+{
+    // Em vez de esperar 1 frame (yield return null), nós dizemos para a Unity:
+    // "Fique em loop aguardando ATÉ que o PlayerPersistent apareça na cena!"
+    // Limitamos a umas tentativas para não criar um loop infinito se algo der muito errado.
+    
+    int maxWaitFrames = 300; // Limite de 5 segundos a 60fps
+    int currentFrames = 0;
+
+    while (PlayerPersistent.Instance == null && currentFrames < maxWaitFrames)
     {
-        yield return null; 
+        currentFrames++;
+        yield return null;
+    }
 
-        // Tenta encontrar o Player Persistente
-        Transform targetTransform = registeredPlayerTransform;
+    Transform targetTransform = registeredPlayerTransform;
 
-        if (targetTransform == null && PlayerPersistent.Instance != null)
+    if (targetTransform == null && PlayerPersistent.Instance != null)
+    {
+        targetTransform = PlayerPersistent.Instance.transform;
+        RegisterPlayer(targetTransform); 
+    }
+
+    if (targetTransform != null)
+    {
+        var pc = targetTransform.GetComponent<PlayerControllerSystem>();
+        var cc = targetTransform.GetComponent<CharacterController>();
+
+        if (pc != null)
         {
-            targetTransform = PlayerPersistent.Instance.transform;
-            RegisterPlayer(targetTransform); 
-        }
-
-        if (targetTransform != null)
-        {
-            var pc = targetTransform.GetComponent<PlayerControllerSystem>();
-            var cc = targetTransform.GetComponent<CharacterController>();
-
-            if (pc != null)
-            {
-                Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
-                
-                // Desliga CC para teleportar seguro
-                if (cc) cc.enabled = false;
-                pc.TeleportToPosition(pos); // Seu método interno
-                targetTransform.position = pos; // Redundância direta
-                if (cc) cc.enabled = true;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("SaveManager: Player Persistente não encontrado para Load.");
+            Vector3 pos = new Vector3(gameData.playerPosX, gameData.playerPosY, gameData.playerPosZ);
+            
+            // O seu teletransporte brilhante
+            if (cc) cc.enabled = false;
+            pc.TeleportToPosition(pos); 
+            targetTransform.position = pos; 
+            if (cc) cc.enabled = true;
+            
+            Debug.Log("SaveManager: Player teleportado com sucesso para a posição do save!");
         }
     }
+    else
+    {
+        Debug.LogWarning("SaveManager: Falha crítica. Player Persistente não foi encontrado mesmo após aguardar.");
+    }
+}
 }

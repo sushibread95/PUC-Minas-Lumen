@@ -45,35 +45,35 @@ public class QuestManager : MonoBehaviour
         UpdateQuestProgress(ObjectiveType.Collect, itemID, quantity);
     }
 
-    private void UpdateQuestProgress(ObjectiveType type, string targetID, int amount)
+private void UpdateQuestProgress(ObjectiveType type, string targetID, int amount)
     {
         bool progressMade = false;
 
-        foreach (var questData in activeQuests)
+        // CORREÇÃO CRÍTICA: For reverso para podermos remover quests completadas da lista com segurança
+        for (int i = activeQuests.Count - 1; i >= 0; i--)
         {
+            var questData = activeQuests[i];
+
             if (questData.isCompleted) continue;
 
             QuestDefinition definition = GetQuestDefinition(questData.questID);
             if (definition == null) continue;
 
-            // Pega o passo atual
             if (questData.currentStepIndex >= definition.steps.Count) continue;
             QuestStep currentStep = definition.steps[questData.currentStepIndex];
 
-            // Verifica se o evento corresponde ao objetivo atual
             if (currentStep.type == type && currentStep.targetID == targetID)
             {
                 questData.currentAmount += amount;
                 
-                // Checa se completou o passo
                 if (questData.currentAmount >= currentStep.amountRequired)
                 {
                     questData.currentStepIndex++;
-                    questData.currentAmount = 0; // Reseta contador para o próximo passo
+                    questData.currentAmount = 0; 
                     
-                    // Checa se a quest acabou
                     if (questData.currentStepIndex >= definition.steps.Count)
                     {
+                        // Agora isso é 100% seguro!
                         CompleteQuest(questData);
                     }
                 }
@@ -84,12 +84,10 @@ public class QuestManager : MonoBehaviour
         if (progressMade)
         {
             GameEvents.TriggerQuestProgressChanged();
-            // Opcional: Tocar SFX ou mostrar Toast
             if (UIFeedbackManager.Instance != null) 
                 UIFeedbackManager.Instance.ShowNotification("Quest Atualizada!", 2f);
         }
     }
-
     public void AcceptQuest(string questID)
     {
         // Evita duplicatas

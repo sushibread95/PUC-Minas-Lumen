@@ -50,7 +50,7 @@ public class UIFeedbackManager : MonoBehaviour
 
     void ShowSaveNotification()
     {
-        ShowNotification("Salvando...", defaultDuration);
+        ShowNotification("Jogo Salvo!", defaultDuration);
     }
 
     public void ShowNotification(string message, float duration)

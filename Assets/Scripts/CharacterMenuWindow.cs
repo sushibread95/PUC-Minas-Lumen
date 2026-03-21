@@ -60,9 +60,12 @@ public class CharacterMenuWindow : MonoBehaviour
     {
         if (menuPanelObject == null || !menuPanelObject.activeSelf) return;
         
-        // Fallback de teclado para abas
-        if (Keyboard.current.eKey.wasPressedThisFrame) ChangeTab(1);
-        if (Keyboard.current.qKey.wasPressedThisFrame) ChangeTab(-1);
+        // CORREÇÃO: Garante que existe um teclado conectado antes de tentar ler a tecla
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.eKey.wasPressedThisFrame) ChangeTab(1);
+            if (Keyboard.current.qKey.wasPressedThisFrame) ChangeTab(-1);
+        }
     }
 
     public void ToggleMenu()

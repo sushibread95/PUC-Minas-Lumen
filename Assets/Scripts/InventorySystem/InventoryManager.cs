@@ -1,6 +1,3 @@
-// Nome do arquivo: InventoryManager.cs
-// CÓDIGO COMPLETO (COM A ADIÇÃO DE 'HasItem')
-
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -71,22 +68,36 @@ public class InventoryManager : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
-    public void RemoveItem(Objects itemToRemove)
+public void RemoveItem(Objects itemToRemove)
     {
         InventoryItem entry = items.Find(x => x.item == itemToRemove);
         if (entry != null)
         {
             entry.quantity--;
             if (entry.quantity <= 0)
+            {
                 items.Remove(entry);
+                
+                bool quickSlotChanged = false;
+                for (int i = 0; i < quickSlots.Length; i++)
+                {
+                    if (quickSlots[i] == itemToRemove)
+                    {
+                        quickSlots[i] = null;
+                        quickSlotChanged = true;
+                    }
+                }
+                if (quickSlotChanged)
+                {
+                    OnQuickSlotsChanged?.Invoke();
+                }
+            }
+            
             OnInventoryChanged?.Invoke();
         }
+        
     }
 
-    // --- FUNÇÃO ADICIONADA (PARA CORRIGIR O ERRO CS1061) ---
-    // (Pode colocar isso logo abaixo da função 'RemoveItem')
-    //
-    // Verifica se o inventário contém um item específico.
     public bool HasItem(Objects itemToCheck)
     {
         if (itemToCheck == null) return false;
@@ -94,10 +105,9 @@ public class InventoryManager : MonoBehaviour
         // Procura na lista de itens
         InventoryItem entry = items.Find(x => x.item == itemToCheck);
 
-        // Retorna true se encontrou (entry != null)
+        // Retorna true se encontrou
         return entry != null;
     }
-    // --- FIM DA ADIÇÃO ---
 
     public void UseItem(Objects itemToUse, GameObject user)
     {

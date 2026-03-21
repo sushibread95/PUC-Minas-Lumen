@@ -86,7 +86,7 @@ public class HealthSystem : MonoBehaviour
         HandleHit(collision.gameObject);
     }
 
-    private void HandleHit(GameObject attacker)
+    public void HandleHit(GameObject attacker)
     {
         if (isDead) return;
         if (isInBleedOut) return;
@@ -239,11 +239,20 @@ public class HealthSystem : MonoBehaviour
             Destroy(PlayerPersistent.Instance.gameObject);
         }
 
-        // 5. Carrega a Cena
-        // Se o nome da cena estiver vazio, recarrega a atual (Restart)
         string targetScene = string.IsNullOrEmpty(sceneAfterDeath) ? SceneManager.GetActiveScene().name : sceneAfterDeath;
-        SceneManager.LoadScene(targetScene);
-    }
+        
+        if (TransitionManager.Instance != null)
+        {
+            // O TransitionManager cuida de tela de loading, resetar o tempo e travar o mouse para a nova tentativa!
+            TransitionManager.Instance.TransitionToScene(targetScene, "", true);
+        }
+        else
+        {
+            // Fallback de segurança apenas para testes
+            SceneManager.LoadSceneAsync(targetScene);
+        }
+        
+        }
     // ----------------------------------------------
 
     public void SetSliders(Slider hp, Slider mana, Slider bleed)
