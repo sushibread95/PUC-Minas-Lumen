@@ -132,19 +132,22 @@ public class EnemyHealth : MonoBehaviour
     }
 
     // --- MUDANÇA PRINCIPAL AQUI ---
-    private void EnterFallenState()
+private void EnterFallenState()
     {
         isFallen = true;
         if (animator != null) animator.SetBool(fallenBool, true);
         if (lockOnTarget != null) lockOnTarget.enabled = false;
         
+        // NOVO: Aborta qualquer ataque imediatamente!
+        EnemyAIController ai = GetComponent<EnemyAIController>();
+        if (ai != null) ai.AbortCombat();
+
         // AVISA O GERENTE QUE CAIU!
         if (corruptedNPC != null)
         {
             corruptedNPC.EntrarEmNocaute();
         }
-    }
-    
+    }    
     // Método público para forçar o estado caído ao carregar o save
     public void ForceFallenStateOnLoad()
     {
@@ -181,7 +184,7 @@ public class EnemyHealth : MonoBehaviour
         if (lockOnTarget != null) lockOnTarget.enabled = true;
     }
 
-    private void Kill()
+private void Kill()
     {
         if (isDead) return;
         isDead = true;
@@ -189,7 +192,15 @@ public class EnemyHealth : MonoBehaviour
         HealthSystem.TriggerEnemyKilled();
         if (lockOnTarget != null) lockOnTarget.enabled = false;
         isFallen = false; 
-        
+
+        // NOVO: Corta a inteligência e a hitbox no milissegundo da morte (não espera 3s!)
+        EnemyAIController ai = GetComponent<EnemyAIController>();
+        if (ai != null) 
+        {
+            ai.AbortCombat();
+            ai.enabled = false; // Desliga o Update da IA de vez
+        }
+
         if (animator != null)
         {
             animator.SetBool(fallenBool, false); 
@@ -198,7 +209,6 @@ public class EnemyHealth : MonoBehaviour
         
         StartCoroutine(DeathRoutine());
     }
-
     private IEnumerator DeathRoutine()
     {
         if (healthBarSlider != null) healthBarSlider.gameObject.SetActive(false);

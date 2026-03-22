@@ -19355,7 +19355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelAmbience: {fileID: 8300000, guid: d49f3184d27043a4e850bc6ff1294de1, type: 3}
-  volume: 0.5
+  forceStopMusic: 0
 --- !u!4 &1440983756
 Transform:
   m_ObjectHideFlags: 0
@@ -30190,6 +30190,14 @@ PrefabInstance:
       propertyPath: m_AnchorMin.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5645078577382264731, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
+      propertyPath: enemyHealth
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5645078577382264731, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
+      propertyPath: playerHealth
+      value: 
+      objectReference: {fileID: 4987815280272050368, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
     - target: {fileID: 6376576628400656235, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: m_AnimatePhysics
       value: 1
@@ -30200,7 +30208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: npcID
-      value: d2c6fa0d-71d3-4024-820f-5b2888443814
+      value: 8062cbd9-3a47-44a2-82fd-61cdc47d2d7d
       objectReference: {fileID: 0}
     - target: {fileID: 8794855621032663350, guid: 4cd95813e28d40a458b5be54f7db0bfc, type: 3}
       propertyPath: interactionRange

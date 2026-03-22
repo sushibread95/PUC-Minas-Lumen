@@ -86,22 +86,34 @@ public class HealthSystem : MonoBehaviour
         HandleHit(collision.gameObject);
     }
 
-    public void HandleHit(GameObject attacker)
+        public void HandleHit(GameObject attacker)
     {
-        if (isDead) return;
-        if (isInBleedOut) return;
+        // 1. Trava do Player: Se você já morreu, não faz sentido processar mais dano.
+        if (isDead || isInBleedOut) return;
+        
+        // 2. Trava de Esquiva (Invulnerabilidade)
         if (playerController != null && playerController.IsInvulnerable()) return;
+
+        EnemyAIController enemyAI = attacker.GetComponentInParent<EnemyAIController>();
+        EnemyHealth enemyHealth = attacker.GetComponentInParent<EnemyHealth>();
+
+        if (enemyAI != null && enemyAI.isPurified) return; 
+
+        if (enemyHealth != null)
+        {
+            if (enemyHealth.isDead || enemyHealth.isFallen) return;
+        }
 
         EffectsLibrary effects = attacker.GetComponent<EffectsLibrary>();
         Projectile projectile = attacker.GetComponent<Projectile>();
 
         if (effects == null) return; 
-
         if (projectile != null && projectile.owner == this.ownerType) return; 
 
         ApplyEffect(effects.effects);
     }
-
+    
+    
     private void Update()
     {
         if (isDead) return;

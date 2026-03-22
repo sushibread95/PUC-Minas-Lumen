@@ -316,7 +316,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1adf0195edc3d34bae27cc4a1d0abe1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentHealth: 40
+  currentHealth: 100
   currentMana: 30
   ownerType: 1
   animator: {fileID: 0}
@@ -445,7 +445,7 @@ MonoBehaviour:
   physicalAttack: 5
   magicAttack: 10
   defense: 0
-  maxHealth: 50
+  maxHealth: 100
   maxMana: 30
   spellCastSpeedMod: 1
   currentGold: 0

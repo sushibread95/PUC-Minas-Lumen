@@ -90,10 +90,9 @@ public class EnemyAIController : MonoBehaviour
 
     void Update()
     {
-        if (isPurified) return;
+        if (isPurified || (enemyHealth != null && enemyHealth.isDead)) return;
 
         UpdateAnimatorMovement();
-
         if (playerTarget == null) return;
 
         if (enemyHealth != null && enemyHealth.isFallen &&
@@ -259,4 +258,21 @@ public class EnemyAIController : MonoBehaviour
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, hearingRange);
     }
+
+// --- SISTEMA DE INTERRUPÇÃO DO INIMIGO ---
+    public void AbortCombat()
+    {
+        StopAllCoroutines(); // Cancela o soco que estava sendo preparado
+        
+        if (meleeHitbox != null) 
+        {
+            meleeHitbox.DisableHitbox(); // Força a arma a desligar o dano
+        }
+        
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true; // Freia o inimigo instantaneamente
+        }
+    }
+
 }
