@@ -21,8 +21,26 @@ public class PlayerControllerSystem : MonoBehaviour
     private int speedHash, groundedHash, crouchHash, moveXHash, moveYHash;
 
     [Header("Refs")]
-    private Camera playerCamera;
+    [SerializeField] private Camera playerCamera;
+    [SerializeField] private bool autoFindMainCamera = true;
     public LockOnSystem lockOn;
+
+    [Header("Camera Based Movement")]
+    [SerializeField] private bool useCameraBasedMovement = true;
+    [Tooltip("Deixe desmarcado quando usar Cinemachine Orbital Follow. Isso impede o movimento do player de girar a câmera.")]
+    [SerializeField] private bool rotatePlayerRootToMoveDirection = false;
+    [SerializeField] private float playerRotationSpeed = 15f;
+
+    [Header("Visual Model Rotation")]
+    [SerializeField] private Transform characterVisualRoot;
+    [SerializeField] private bool autoFindVisualRoot = true;
+    [SerializeField] private bool rotateVisualToMoveDirection = true;
+    [SerializeField] private bool rotateVisualToLockOnTarget = true;
+    [SerializeField] private bool forceVisualRootToFollowPlayerRotation = false;
+    [SerializeField] private bool disableAnimatorRootMotion = true;
+    [SerializeField] private float visualRotationSpeed = 20f;
+    [SerializeField] private Vector3 visualRotationOffset = Vector3.zero;
+
 
     [Header("Move")]
     public float jogSpeed = 4f;
@@ -118,6 +136,9 @@ public class PlayerControllerSystem : MonoBehaviour
     private bool _isDodging = false;
     private float nextSpellTime = 0f;
 
+    private Vector3 visualLookDirection;
+    private bool hasVisualLookDirection;
+
     void Awake()
     {
         cc = GetComponent<CharacterController>();
@@ -129,6 +150,11 @@ public class PlayerControllerSystem : MonoBehaviour
         if (!string.IsNullOrEmpty(speedParam)) speedHash = Animator.StringToHash(speedParam);
         if (!string.IsNullOrEmpty(groundedParam)) groundedHash = Animator.StringToHash(groundedParam);
         if (!string.IsNullOrEmpty(crouchBoolParam)) crouchHash = Animator.StringToHash(crouchBoolParam);
+        ResolveVisualRoot();
+
+        if (animator != null && disableAnimatorRootMotion)
+            animator.applyRootMotion = false;
+
         if (!string.IsNullOrEmpty(moveXParam)) moveXHash = Animator.StringToHash(moveXParam);
         if (!string.IsNullOrEmpty(moveYParam)) moveYHash = Animator.StringToHash(moveYParam);
     }
@@ -142,7 +168,7 @@ public class PlayerControllerSystem : MonoBehaviour
             return;
         }
 
-        playerCamera = GetComponentInChildren<Camera>();
+        ResolvePlayerCamera();
         input = InputManager.Instance.InputActions;
 
         // Correção: Usando .Get() para garantir acesso ao mapa
@@ -211,6 +237,8 @@ public class PlayerControllerSystem : MonoBehaviour
 
         float dt = Time.deltaTime;
         Vector2 moveInput = input.Player.Move.ReadValue<Vector2>();
+
+        ResolvePlayerCamera();
 
         // Toggles (Agachar/Esgueirar/Correr)
         if (toggleCrouch) 
@@ -295,6 +323,11 @@ public class PlayerControllerSystem : MonoBehaviour
         // Sons de Passos
         HandleFootsteps(dt, moveInput.magnitude, _crouchToggled, _sneakToggled, sprintHeld);
     }
+    void LateUpdate()
+    {
+        UpdateVisualRootRotation(Time.deltaTime);
+    }
+
 
     private IEnumerator EnsureGameplayInputActive()
     {
@@ -443,15 +476,25 @@ public class PlayerControllerSystem : MonoBehaviour
         if (Time.time < moveLockUntil || _isDodging) moveInput = Vector2.zero;
 
         Vector3 camForward, camRight;
-        if (playerCamera)
+        if (useCameraBasedMovement && playerCamera)
         {
-            Vector3 f = playerCamera.transform.forward; f.y = 0f; camForward = f.normalized;
-            Vector3 r = playerCamera.transform.right; r.y = 0f; camRight = r.normalized;
+            Vector3 f = playerCamera.transform.forward;
+            f.y = 0f;
+            camForward = f.sqrMagnitude > 0.001f ? f.normalized : transform.forward;
+
+            Vector3 r = playerCamera.transform.right;
+            r.y = 0f;
+            camRight = r.sqrMagnitude > 0.001f ? r.normalized : transform.right;
         }
-        else { camForward = transform.forward; camRight = transform.right; }
+        else
+        {
+            camForward = transform.forward;
+            camRight = transform.right;
+        }
 
         Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
         float inputMag = Mathf.Clamp01(inputDir.magnitude);
+        Vector3 desiredMoveDir = inputMag > 0.001f ? inputDir.normalized : Vector3.zero;
 
         float targetSpeed = walkSpeed;
         visibilityFactor = 1.0f;
@@ -460,12 +503,20 @@ public class PlayerControllerSystem : MonoBehaviour
         else if (sneakHeld) { targetSpeed = sneakSpeed; visibilityFactor = 0.75f; }
         else if (sprintHeld && inputMag > 0.01f) { targetSpeed = sprintSpeed; visibilityFactor = 1.2f; }
 
-        Vector3 horizMove = inputDir.normalized * (targetSpeed * inputMag);
+        Vector3 horizMove = desiredMoveDir * (targetSpeed * inputMag);
 
+        // Movimento livre: por padrão gira apenas o modelo visual, não o root do Player.
+        // Isso evita que o Cinemachine Orbital Follow receba rotação do alvo e comece a girar junto com o W/A/S/D.
         if ((lockOn == null || !lockOn.IsLockedOn) && inputMag > 0.001f)
         {
-            Quaternion look = Quaternion.LookRotation(inputDir, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, 15f * dt);
+            visualLookDirection = desiredMoveDir;
+            hasVisualLookDirection = true;
+
+            if (rotatePlayerRootToMoveDirection)
+            {
+                Quaternion look = Quaternion.LookRotation(desiredMoveDir, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, look, playerRotationSpeed * dt);
+            }
         }
 
         if (isGrounded && velocity.y < 0f) velocity.y = -2f;
@@ -479,8 +530,9 @@ public class PlayerControllerSystem : MonoBehaviour
         {
             float norm = Mathf.Max(0.01f, sprintSpeed);
             Vector3 horizVel = new Vector3(velocity.x, 0f, velocity.z);
-            float moveX = Vector3.Dot(transform.right, horizVel) / norm;
-            float moveY = Vector3.Dot(transform.forward, horizVel) / norm;
+            Transform animReference = characterVisualRoot != null ? characterVisualRoot : transform;
+            float moveX = Vector3.Dot(animReference.right, horizVel) / norm;
+            float moveY = Vector3.Dot(animReference.forward, horizVel) / norm;
             if (speedHash != 0) animator.SetFloat(speedHash, horizVel.magnitude / norm, animDampTime, Time.deltaTime);
             if (moveXHash != 0) animator.SetFloat(moveXHash, moveX, animDampTime, Time.deltaTime);
             if (moveYHash != 0) animator.SetFloat(moveYHash, moveY, animDampTime, Time.deltaTime);
@@ -497,6 +549,68 @@ public class PlayerControllerSystem : MonoBehaviour
         float stanceNoiseMod = crouchHeld ? 0.2f : (sneakHeld ? 0.5f : (sprintHeld ? 1.5f : 1.0f));
         noiseLevel = Mathf.Lerp(noiseLevel, inputMag * stanceNoiseMod, dt * 5f);
     }
+
+    #region Visual Helpers
+
+    // Encontra automaticamente o objeto visual da personagem, normalmente o filho que possui o Animator.
+    private void ResolveVisualRoot()
+    {
+        if (characterVisualRoot != null || !autoFindVisualRoot)
+            return;
+
+        if (animator != null)
+            characterVisualRoot = animator.transform;
+    }
+
+    // Gira apenas o modelo visual. O root do Player fica estável para não puxar a câmera junto.
+    private void UpdateVisualRootRotation(float dt)
+    {
+        ResolveVisualRoot();
+
+        if (characterVisualRoot == null)
+            return;
+
+        Vector3 targetDirection = Vector3.zero;
+
+        if (lockOn != null && lockOn.IsLockedOn && rotateVisualToLockOnTarget && lockOn.CurrentAimPoint != null)
+        {
+            targetDirection = lockOn.CurrentAimPoint.position - characterVisualRoot.position;
+            targetDirection.y = 0f;
+        }
+        else if (rotateVisualToMoveDirection && hasVisualLookDirection)
+        {
+            targetDirection = visualLookDirection;
+        }
+        else if (forceVisualRootToFollowPlayerRotation)
+        {
+            targetDirection = transform.forward;
+        }
+
+        if (targetDirection.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(targetDirection.normalized, Vector3.up) * Quaternion.Euler(visualRotationOffset);
+        characterVisualRoot.rotation = Quaternion.Slerp(characterVisualRoot.rotation, targetRotation, visualRotationSpeed * dt);
+    }
+
+    #endregion
+
+    #region Camera Helpers
+
+    // Atualiza a referência da câmera principal quando ela está fora do Player ou muda entre cenas.
+    private void ResolvePlayerCamera()
+    {
+        if (playerCamera != null || !autoFindMainCamera)
+            return;
+
+        if (Camera.main != null)
+            playerCamera = Camera.main;
+    }
+
+    // Mantido apenas para compatibilidade: a rotação visual agora é tratada sem girar o root do Player.
+    private void RotatePlayerWithCameraView(float dt) { }
+
+    #endregion
 
     public void LockCursor(bool locked) { Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None; Cursor.visible = !locked; }
     public void TeleportToPosition(Vector3 position) { if (cc) { cc.enabled = false; transform.position = position; cc.enabled = true; } }
