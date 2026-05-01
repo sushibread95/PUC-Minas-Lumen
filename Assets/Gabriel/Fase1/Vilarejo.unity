@@ -373,13 +373,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 0
   doorID: porta_trancada
-  targetSceneName: 
-  targetSpawnID: 
-  mySpawnID: 
-  spawnPoint: {fileID: 0}
-  playerPrefab: {fileID: 0}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 0}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 1
   lockedMessage: Emperrou!
@@ -5874,13 +5871,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 0
   doorID: vilarejo_porta_padre
-  targetSceneName: casa_padre
-  targetSpawnID: PortaCasaPadreInterior
-  mySpawnID: PortaCasaPadre
-  spawnPoint: {fileID: 1341091402}
-  playerPrefab: {fileID: 0}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 1278308055}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 11400000, guid: 88ccbf73e424b53438249b6803b32540, type: 2}
   consumeKeyOnUse: 1
   lockedMessage: Preciso de uma chave
@@ -6703,6 +6697,118 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 6b0df067d8acef346aae1d839098fcbb, type: 3}
+--- !u!1 &306822643
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 306822644}
+  - component: {fileID: 306822647}
+  - component: {fileID: 306822646}
+  - component: {fileID: 306822645}
+  m_Layer: 0
+  m_Name: modeloArena
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &306822644
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306822643}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 20, y: 1, z: 20}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 623202950}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &306822645
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306822643}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &306822646
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306822643}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &306822647
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306822643}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &313187934 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1965111700925438, guid: 39360cdd17f538f4ea04f12d50ae4614, type: 3}
@@ -6818,13 +6924,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 0
   doorID: porta_trancada
-  targetSceneName: 
-  targetSpawnID: 
-  mySpawnID: 
-  spawnPoint: {fileID: 0}
-  playerPrefab: {fileID: 0}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 0}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 1
   lockedMessage: Emperrou!
@@ -12721,13 +12824,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 0
   doorID: porta_igreja
-  targetSceneName: Igreja_Interior
-  targetSpawnID: porta_igreja_interior
-  mySpawnID: igreja_exterior
-  spawnPoint: {fileID: 1162941385}
-  playerPrefab: {fileID: 0}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 0}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 11400000, guid: 385f99436813e5a43b993d2a31ffde7f, type: 2}
   consumeKeyOnUse: 1
   lockedMessage: Preciso da chave da sacristia!
@@ -13662,6 +13762,38 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 559760424589720692, guid: 856d74eef521ca745a2bd0aae998a4d0, type: 3}
+--- !u!1 &623202949
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 623202950}
+  m_Layer: 0
+  m_Name: ArenaORG
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &623202950
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623202949}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 128.12846, y: -0, z: -128.08151}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 306822644}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &631167067
 GameObject:
   m_ObjectHideFlags: 0
@@ -16865,13 +16997,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 0
   doorID: porta_pref_ex
-  targetSceneName: casa_prefeito
-  targetSpawnID: porta_pref_interior
-  mySpawnID: porta_pref_exterior
-  spawnPoint: {fileID: 1441294140}
-  playerPrefab: {fileID: 0}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 0}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 0
   lockedMessage: 
@@ -17423,13 +17552,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3292f34a63c4bdb49827bdd9872bb27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doorType: 1
   doorID: 
-  targetSceneName: 
-  targetSpawnID: 
-  mySpawnID: fase1_spawn
-  spawnPoint: {fileID: 1176157404}
-  playerPrefab: {fileID: 8535882707540630953, guid: c016716a2e2c1204fa4630a2599f0396, type: 3}
+  interactText: Interagir
+  teleportWaypoint: {fileID: 0}
+  matchWaypointRotation: 1
   requiredKey: {fileID: 0}
   consumeKeyOnUse: 0
   lockedMessage: Preciso de uma chave
@@ -18468,6 +18594,37 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 6b0df067d8acef346aae1d839098fcbb, type: 3}
+--- !u!1 &1278308054
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1278308055}
+  m_Layer: 0
+  m_Name: WaypointArena
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1278308055
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1278308054}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 128.12846, y: 0.5, z: -128.08151}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1279538629
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37242,3 +37399,5 @@ SceneRoots:
   - {fileID: 646609754}
   - {fileID: 631167068}
   - {fileID: 1440983756}
+  - {fileID: 623202950}
+  - {fileID: 1278308055}
