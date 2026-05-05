@@ -7,42 +7,100 @@ using UnityEngine.InputSystem.Controls;
 [RequireComponent(typeof(HealthSystem))]
 public class PlayerControllerSystem : MonoBehaviour
 {
-    [Header("Animation")]
+    #region Inspector - References
+
+    [Header("REFERÊNCIAS PRINCIPAIS")]
+    [Tooltip("Animator do modelo visual da personagem. Normalmente fica no objeto filho Priscilla.")]
     public Animator animator;
+
+    [Tooltip("Câmera principal usada para calcular movimento relativo à visão.")]
+    [SerializeField] private Camera playerCamera;
+
+    [Tooltip("Procura Camera.main automaticamente quando Player Camera estiver vazio.")]
+    [SerializeField] private bool autoFindMainCamera = true;
+
+    [Tooltip("Sistema de lock-on usado pelo movimento, câmera e combate.")]
+    public LockOnSystem lockOn;
+
+    [Tooltip("Canhão/ponto de disparo usado pelas magias.")]
+    [SerializeField] private Cannon cannon;
+
+    private HealthSystem healthSystem;
+
+    #endregion
+
+    #region Inspector - Animation
+
+    [Header("ANIMAÇÃO")]
+    [Tooltip("Suavização dos parâmetros enviados ao Animator.")]
     public float animDampTime = 0.1f;
 
-    [Header("Animation Params")]
+    [Header("ANIMAÇÃO - PARÂMETROS")]
+    [Tooltip("Nome do parâmetro Float de velocidade no Animator.")]
     public string speedParam = "Speed";
+
+    [Tooltip("Nome do parâmetro Bool de chão no Animator.")]
     public string groundedParam = "Grounded";
+
+    [Tooltip("Nome do parâmetro Bool de agachamento no Animator.")]
     public string crouchBoolParam = "IsCrouching";
+
+    [Tooltip("Nome do parâmetro Float de movimento lateral no Animator.")]
     public string moveXParam = "MoveX";
+
+    [Tooltip("Nome do parâmetro Float de movimento frontal no Animator.")]
     public string moveYParam = "MoveY";
 
     private int speedHash, groundedHash, crouchHash, moveXHash, moveYHash;
 
-    [Header("Refs")]
-    [SerializeField] private Camera playerCamera;
-    [SerializeField] private bool autoFindMainCamera = true;
-    public LockOnSystem lockOn;
+    #endregion
 
-    [Header("Camera Based Movement")]
+    #region Inspector - Camera Movement
+
+    [Header("CÂMERA E MOVIMENTO")]
+    [Tooltip("Move o player usando a direção horizontal da câmera.")]
     [SerializeField] private bool useCameraBasedMovement = true;
-    [Tooltip("Deixe desmarcado quando usar Cinemachine Orbital Follow. Isso impede o movimento do player de girar a câmera.")]
+
+    [Tooltip("Deixe desmarcado com Cinemachine Orbital Follow. O root do Player não deve girar ao andar para não puxar a câmera junto.")]
     [SerializeField] private bool rotatePlayerRootToMoveDirection = false;
+
+    [Tooltip("Velocidade usada apenas se Rotate Player Root To Move Direction estiver ligado.")]
     [SerializeField] private float playerRotationSpeed = 15f;
 
-    [Header("Visual Model Rotation")]
+    #endregion
+
+    #region Inspector - Visual Rotation
+
+    [Header("MODELO VISUAL")]
+    [Tooltip("Objeto visual que deve virar ao andar. Use Priscilla, não o Player raiz.")]
     [SerializeField] private Transform characterVisualRoot;
+
+    [Tooltip("Procura automaticamente o objeto do Animator como modelo visual.")]
     [SerializeField] private bool autoFindVisualRoot = true;
+
+    [Tooltip("Faz o modelo visual virar para a direção do movimento.")]
     [SerializeField] private bool rotateVisualToMoveDirection = true;
+
+    [Tooltip("Faz o modelo visual olhar para o alvo durante lock-on.")]
     [SerializeField] private bool rotateVisualToLockOnTarget = true;
+
+    [Tooltip("Força o modelo visual a copiar a rotação do Player. Normalmente deve ficar desmarcado.")]
     [SerializeField] private bool forceVisualRootToFollowPlayerRotation = false;
+
+    [Tooltip("Desliga root motion para impedir a animação de brigar com CharacterController/movimento.")]
     [SerializeField] private bool disableAnimatorRootMotion = true;
+
+    [Tooltip("Velocidade de rotação do modelo visual.")]
     [SerializeField] private float visualRotationSpeed = 20f;
+
+    [Tooltip("Correção de eixo caso o modelo fique virado de lado. Ex.: Y = 90 ou -90.")]
     [SerializeField] private Vector3 visualRotationOffset = Vector3.zero;
 
+    #endregion
 
-    [Header("Move")]
+    #region Inspector - Movement
+
+    [Header("MOVIMENTO")]
     public float jogSpeed = 4f;
     public float walkSpeed = 2f;
     public float sprintSpeed = 5f;
@@ -51,41 +109,59 @@ public class PlayerControllerSystem : MonoBehaviour
     public float gravity = -9.81f;
     [Range(0f, 1f)] public float airControl = 0.7f;
 
-    [Header("Toggles")]
+    [Header("MOVIMENTO - ALTERNÂNCIAS")]
     public bool toggleSneak = true;
     public bool toggleCrouch = true;
 
-    [Header("Crouch & Stealth (Base 1.60m)")]
+    [Header("AGACHAR E STEALTH")]
     public float standHeight = 1.6f;
     public float crouchHeight = 0.9f;
     public Vector3 standCenter = new Vector3(0, 0.8f, 0);
     public Vector3 crouchCenter = new Vector3(0, 0.45f, 0);
     public float crouchLerp = 15f;
 
-    [Header("Stealth Data (Read-Only)")]
-    public float noiseLevel;
-    public float visibilityFactor;
+    [HideInInspector] public float noiseLevel;
+    [HideInInspector] public float visibilityFactor;
 
-    [Header("Backstab / Stealth Kill")]
+    #endregion
+
+    #region Inspector - Lock-On Movement
+
+    [Header("LOCK-ON - MOVIMENTO")]
+    [Tooltip("Usa movimento relativo ao alvo durante lock-on: W/S aproxima/afasta e A/D faz strafe lateral.")]
+    [SerializeField] private bool useLockOnMovement = true;
+
+    [Tooltip("Distância mínima em que W deixa de empurrar o player contra o inimigo.")]
+    [SerializeField] private float lockOnCloseStopDistance = 1.65f;
+
+    [Tooltip("Suavização do input durante lock-on para reduzir tremedeira perto do inimigo.")]
+    [SerializeField] private float lockOnInputSmooth = 14f;
+
+    [SerializeField] private float lockOnForwardSpeedMultiplier = 1f;
+    [SerializeField] private float lockOnBackwardSpeedMultiplier = 0.85f;
+    [SerializeField] private float lockOnStrafeSpeedMultiplier = 0.9f;
+    [SerializeField] private bool blockForwardWhenTooClose = true;
+
+    #endregion
+
+    #region Inspector - Combat
+
+    [Header("COMBATE - BACKSTAB")]
     public float backstabRange = 1.5f;
     [Range(0f, 1f)] public float backstabAngle = 0.5f;
     public float backstabDamage = 9999f;
     public string backstabTrigger = "Backstab";
     public LayerMask enemyLayer;
 
-    [Header("Melee Combat")]
+    [Header("COMBATE - ARMA")]
     public WeaponItem currentWeaponData;
     public MeleeWeapon equippedWeaponInstance;
 
-    [Header("Spells (Slots Q, E, R)")]
+    [Header("COMBATE - MAGIAS Q/E/R")]
     [Tooltip("Elemento 0 = Tecla Q | Elemento 1 = Tecla E | Elemento 2 = Tecla R")]
     [SerializeField] private Spell[] spells;
 
-    [Header("Components")]
-    [SerializeField] private Cannon cannon;
-    private HealthSystem healthSystem;
-
-    [Header("Dodge")]
+    [Header("COMBATE - DODGE")]
     public string dodgeTriggerParam = "DodgeTrigger";
     public float dodgeDistance = 4f;
     public float dodgeDuration = 0.28f;
@@ -93,24 +169,35 @@ public class PlayerControllerSystem : MonoBehaviour
     public AnimationCurve dodgeSpeedCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
     public float dodgeLockTime = 0.25f;
 
-    [Header("Invulnerability")]
+    [Header("COMBATE - INVULNERABILIDADE")]
     public float invulnerableDuration = 0.3f;
     private bool _isInvulnerable = false;
 
-    [Header("Footstep Settings")]
-    public AudioClip[] walkSounds; 
+    #endregion
+
+    #region Inspector - Audio
+
+    [Header("ÁUDIO - PASSOS")]
+    public AudioClip[] walkSounds;
     public AudioClip[] jogSounds;
     public AudioClip[] sneakSounds;
-    public float stepInterval = 0.5f;    
+    public float stepInterval = 0.5f;
 
-    [Header("Controller Defaults")]
+    #endregion
+
+    #region Inspector - Setup
+
+    [Header("SETUP INICIAL")]
     public bool applyControllerDefaultsOnStart = true;
 
-    [Header("Status - Grabbed")]
-    public bool isGrabbed = false;
-    public float struggleValue = 0f;
-    public float struggleGoal = 100f;
+    [Header("GRAB - CONFIGURAÇÃO")]
+    [SerializeField] private float struggleGoal = 100f;
+
+    [HideInInspector] public bool isGrabbed = false;
+    [HideInInspector] public float struggleValue = 0f;
     private EnemyGrabber currentGrabber;
+
+    #endregion
 
     // Internals
     private float nextStepTime = 0f;
@@ -138,6 +225,7 @@ public class PlayerControllerSystem : MonoBehaviour
 
     private Vector3 visualLookDirection;
     private bool hasVisualLookDirection;
+    private Vector2 smoothedLockMoveInput;
 
     void Awake()
     {
@@ -475,25 +563,37 @@ public class PlayerControllerSystem : MonoBehaviour
     {
         if (Time.time < moveLockUntil || _isDodging) moveInput = Vector2.zero;
 
-        Vector3 camForward, camRight;
-        if (useCameraBasedMovement && playerCamera)
-        {
-            Vector3 f = playerCamera.transform.forward;
-            f.y = 0f;
-            camForward = f.sqrMagnitude > 0.001f ? f.normalized : transform.forward;
+        Vector3 inputDir;
+        float inputMag;
+        float lockOnSpeedMultiplier = 1f;
 
-            Vector3 r = playerCamera.transform.right;
-            r.y = 0f;
-            camRight = r.sqrMagnitude > 0.001f ? r.normalized : transform.right;
+        if (TryBuildLockOnMoveDirection(moveInput, dt, out inputDir, out inputMag, out lockOnSpeedMultiplier))
+        {
+            // Movimento de lock-on: o player se move em relação ao alvo, sem girar a câmera.
         }
         else
         {
-            camForward = transform.forward;
-            camRight = transform.right;
+            Vector3 camForward, camRight;
+            if (useCameraBasedMovement && playerCamera)
+            {
+                Vector3 f = playerCamera.transform.forward;
+                f.y = 0f;
+                camForward = f.sqrMagnitude > 0.001f ? f.normalized : transform.forward;
+
+                Vector3 r = playerCamera.transform.right;
+                r.y = 0f;
+                camRight = r.sqrMagnitude > 0.001f ? r.normalized : transform.right;
+            }
+            else
+            {
+                camForward = transform.forward;
+                camRight = transform.right;
+            }
+
+            inputDir = camForward * moveInput.y + camRight * moveInput.x;
+            inputMag = Mathf.Clamp01(inputDir.magnitude);
         }
 
-        Vector3 inputDir = camForward * moveInput.y + camRight * moveInput.x;
-        float inputMag = Mathf.Clamp01(inputDir.magnitude);
         Vector3 desiredMoveDir = inputMag > 0.001f ? inputDir.normalized : Vector3.zero;
 
         float targetSpeed = walkSpeed;
@@ -503,6 +603,7 @@ public class PlayerControllerSystem : MonoBehaviour
         else if (sneakHeld) { targetSpeed = sneakSpeed; visibilityFactor = 0.75f; }
         else if (sprintHeld && inputMag > 0.01f) { targetSpeed = sprintSpeed; visibilityFactor = 1.2f; }
 
+        targetSpeed *= lockOnSpeedMultiplier;
         Vector3 horizMove = desiredMoveDir * (targetSpeed * inputMag);
 
         // Movimento livre: por padrão gira apenas o modelo visual, não o root do Player.
@@ -549,6 +650,58 @@ public class PlayerControllerSystem : MonoBehaviour
         float stanceNoiseMod = crouchHeld ? 0.2f : (sneakHeld ? 0.5f : (sprintHeld ? 1.5f : 1.0f));
         noiseLevel = Mathf.Lerp(noiseLevel, inputMag * stanceNoiseMod, dt * 5f);
     }
+
+    #region Lock-On Movement Helpers
+
+    // Cria movimento estável durante lock-on: W/S aproxima/afasta e A/D orbita o alvo.
+    private bool TryBuildLockOnMoveDirection(Vector2 rawInput, float dt, out Vector3 inputDir, out float inputMag, out float speedMultiplier)
+    {
+        inputDir = Vector3.zero;
+        inputMag = 0f;
+        speedMultiplier = 1f;
+
+        if (!useLockOnMovement || lockOn == null || !lockOn.IsLockedOn || lockOn.CurrentAimPoint == null)
+        {
+            smoothedLockMoveInput = Vector2.zero;
+            return false;
+        }
+
+        Vector3 toTarget = lockOn.CurrentAimPoint.position - transform.position;
+        toTarget.y = 0f;
+
+        float distanceToTarget = toTarget.magnitude;
+        if (distanceToTarget < 0.001f)
+            return false;
+
+        Vector2 adjustedInput = rawInput;
+
+        // Evita que o W empurre o CharacterController contra o inimigo quando já está perto demais.
+        if (blockForwardWhenTooClose && distanceToTarget <= lockOnCloseStopDistance && adjustedInput.y > 0f)
+            adjustedInput.y = 0f;
+
+        float t = 1f - Mathf.Exp(-Mathf.Max(0.01f, lockOnInputSmooth) * dt);
+        smoothedLockMoveInput = Vector2.Lerp(smoothedLockMoveInput, adjustedInput, t);
+
+        Vector3 forwardToTarget = toTarget.normalized;
+        Vector3 rightAroundTarget = Vector3.Cross(Vector3.up, forwardToTarget).normalized;
+
+        inputDir = forwardToTarget * smoothedLockMoveInput.y + rightAroundTarget * smoothedLockMoveInput.x;
+        inputMag = Mathf.Clamp01(inputDir.magnitude);
+
+        float absX = Mathf.Abs(smoothedLockMoveInput.x);
+        float absY = Mathf.Abs(smoothedLockMoveInput.y);
+
+        if (absX > absY)
+            speedMultiplier = lockOnStrafeSpeedMultiplier;
+        else if (smoothedLockMoveInput.y < -0.01f)
+            speedMultiplier = lockOnBackwardSpeedMultiplier;
+        else
+            speedMultiplier = lockOnForwardSpeedMultiplier;
+
+        return true;
+    }
+
+    #endregion
 
     #region Visual Helpers
 
@@ -617,6 +770,20 @@ public class PlayerControllerSystem : MonoBehaviour
     
     private Vector3 GetInputDirection(Vector2 moveInput)
     {
+        if (useLockOnMovement && lockOn != null && lockOn.IsLockedOn && lockOn.CurrentAimPoint != null)
+        {
+            Vector3 toTarget = lockOn.CurrentAimPoint.position - transform.position;
+            toTarget.y = 0f;
+
+            if (toTarget.sqrMagnitude > 0.001f)
+            {
+                Vector3 forwardToTarget = toTarget.normalized;
+                Vector3 rightAroundTarget = Vector3.Cross(Vector3.up, forwardToTarget).normalized;
+                Vector3 lockDirection = forwardToTarget * moveInput.y + rightAroundTarget * moveInput.x;
+                return lockDirection.sqrMagnitude > 0.001f ? lockDirection.normalized : -forwardToTarget;
+            }
+        }
+
         Vector3 f = playerCamera ? playerCamera.transform.forward : transform.forward; f.y = 0; f.Normalize();
         Vector3 r = playerCamera ? playerCamera.transform.right : transform.right; r.y = 0; r.Normalize();
         return f * moveInput.y + r * moveInput.x;

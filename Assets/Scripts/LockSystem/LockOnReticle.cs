@@ -3,75 +3,163 @@ using UnityEngine.UI;
 
 public class LockOnReticle : MonoBehaviour
 {
-    [Header("Dynamic References")]
-    public Camera cam;
-    public LockOnSystem lockOn;
-    
-    [Header("Settings")]
-    public Image img;
-    public Vector2 screenOffset = new Vector2(0, 0); 
-
-    void Awake()
+    private enum ReticleMode
     {
-        if (!img) img = GetComponent<Image>();
-        // Começa desligado para não mostrar uma mira parada no meio do nada
-        if (img) img.enabled = false;
+        TargetAimPoint,
+        ScreenCenterWhileLocked
     }
 
-    void LateUpdate()
+    #region Inspector - References
+
+    [Header("REFERÊNCIAS")]
+    [SerializeField] private Camera cam;
+    [SerializeField] private LockOnSystem lockOn;
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private RectTransform canvasRect;
+    [SerializeField] private Image img;
+
+    #endregion
+
+    #region Inspector - Display
+
+    [Header("RETÍCULA")]
+    [Tooltip("Target Aim Point prende a retícula no objeto vazio do inimigo. Screen Center deixa a mira fixa no centro.")]
+    [SerializeField] private ReticleMode reticleMode = ReticleMode.TargetAimPoint;
+
+    [Tooltip("Offset final da retícula. Use 0,0 para ficar exatamente no AimPoint ou no centro.")]
+    [SerializeField] private Vector2 screenOffset = Vector2.zero;
+
+    [Tooltip("Suavização da retícula. Use 0 para resposta instantânea.")]
+    [SerializeField] private float positionSmooth = 20f;
+
+    [Tooltip("Esconde a retícula se o alvo estiver atrás da câmera ou fora da tela.")]
+    [SerializeField] private bool hideWhenTargetOffScreen = true;
+
+    #endregion
+
+    #region Runtime
+
+    private RectTransform imgRect;
+    private Vector2 currentAnchoredPosition;
+    private bool hasPosition;
+
+    #endregion
+
+    #region Unity Lifecycle
+
+    private void Awake()
     {
-        // 1. TENTA ACHAR A CÂMERA (Se perdeu)
+        CacheReferences();
+        SetVisible(false);
+    }
+
+    private void LateUpdate()
+    {
+        CacheReferences();
+        UpdateReticlePosition();
+    }
+
+    #endregion
+
+    #region Setup
+
+    // Busca referências necessárias para posicionar a retícula corretamente no Canvas.
+    private void CacheReferences()
+    {
+        if (img == null)
+            img = GetComponent<Image>();
+
+        if (imgRect == null && img != null)
+            imgRect = img.rectTransform;
+
+        if (canvas == null)
+            canvas = GetComponentInParent<Canvas>();
+
+        if (canvasRect == null && canvas != null)
+            canvasRect = canvas.transform as RectTransform;
+
         if (cam == null)
-        {
-            cam = Camera.main; // Procura quem tem a tag "MainCamera"
-            if (cam == null) return; // Ainda não nasceu? Aborta.
-        }
+            cam = Camera.main;
 
-        // 2. TENTA ACHAR O PLAYER (Se perdeu)
         if (lockOn == null)
-        {
-            // Procura o script na cena (lento, mas só roda uma vez até achar)
-            lockOn = FindAnyObjectByType<LockOnSystem>(); 
-            if (lockOn == null) return; // Player não nasceu? Aborta.
-        }
+            lockOn = FindAnyObjectByType<LockOnSystem>();
+    }
 
-        // 3. SEGURANÇA VISUAL
-        if (!img) return;
+    #endregion
 
-        // Se o sistema não estiver travado em ninguém, esconde a mira
-        if (!lockOn.IsLockedOn)
+    #region Reticle Logic
+
+    // Atualiza a retícula no AimPoint do inimigo ou no centro da tela.
+    private void UpdateReticlePosition()
+    {
+        if (img == null || imgRect == null || cam == null || lockOn == null || canvasRect == null)
+            return;
+
+        if (!lockOn.IsLockedOn || lockOn.CurrentAimPoint == null)
         {
-            if (img.enabled) img.enabled = false;
+            SetVisible(false);
+            hasPosition = false;
             return;
         }
 
-        // Se perdeu o alvo no meio do caminho, esconde
-        Transform aim = lockOn.CurrentAimPoint;
-        if (!aim)
+        Vector3 targetScreenPoint = cam.WorldToScreenPoint(lockOn.CurrentAimPoint.position);
+
+        if (ShouldHideForTargetScreenPoint(targetScreenPoint))
         {
-            if (img.enabled) img.enabled = false;
+            SetVisible(false);
             return;
         }
 
-        // 4. CÁLCULO DE POSIÇÃO
-        Vector3 sp = cam.WorldToScreenPoint(aim.position);
-        
-        // Verifica se o alvo está na frente da câmera (Z > 0)
-        bool onScreen = sp.z > 0f; 
-        
-        // Verifica se está dentro da resolução da tela (opcional, mas bom pra evitar glitche na borda)
-        if (onScreen)
+        Vector2 desiredPosition = reticleMode == ReticleMode.ScreenCenterWhileLocked
+            ? GetCanvasLocalPoint(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f))
+            : GetCanvasLocalPoint(targetScreenPoint);
+
+        desiredPosition += screenOffset;
+
+        if (!hasPosition || positionSmooth <= 0f)
         {
-            if (!img.enabled) img.enabled = true;
-            
-            // Lógica para Canvas Overlay (Padrão)
-            // Se o Pivot do RectTransform for 0.5, 0.5 (Centro), precisamos subtrair metade da tela
-            // SE o Canvas for Screen Space - Camera, a lógica muda um pouco, mas tente esta primeiro:
-            img.rectTransform.anchoredPosition = (Vector2)sp - new Vector2(Screen.width * 0.5f, Screen.height * 0.5f) + screenOffset;
+            currentAnchoredPosition = desiredPosition;
+            hasPosition = true;
         }
         else
         {
-            if (img.enabled) img.enabled = false;
+            float t = 1f - Mathf.Exp(-positionSmooth * Time.deltaTime);
+            currentAnchoredPosition = Vector2.Lerp(currentAnchoredPosition, desiredPosition, t);
         }
+
+        imgRect.anchoredPosition = currentAnchoredPosition;
+        SetVisible(true);
     }
+
+    private bool ShouldHideForTargetScreenPoint(Vector3 screenPoint)
+    {
+        if (!hideWhenTargetOffScreen)
+            return false;
+
+        if (screenPoint.z <= 0f)
+            return true;
+
+        return screenPoint.x < 0f || screenPoint.x > Screen.width ||
+               screenPoint.y < 0f || screenPoint.y > Screen.height;
+    }
+
+    private Vector2 GetCanvasLocalPoint(Vector2 screenPoint)
+    {
+        Camera eventCamera = null;
+        if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            eventCamera = canvas.worldCamera != null ? canvas.worldCamera : cam;
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, eventCamera, out Vector2 localPoint))
+            return localPoint;
+
+        return Vector2.zero;
+    }
+
+    private void SetVisible(bool visible)
+    {
+        if (img != null && img.enabled != visible)
+            img.enabled = visible;
+    }
+
+    #endregion
 }

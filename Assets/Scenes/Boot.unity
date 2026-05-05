@@ -1812,8 +1812,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cam: {fileID: 0}
   lockOn: {fileID: 0}
+  canvas: {fileID: 0}
+  canvasRect: {fileID: 0}
   img: {fileID: 0}
+  reticleMode: 0
   screenOffset: {x: 0, y: 0}
+  positionSmooth: 20
+  hideWhenTargetOffScreen: 1
 --- !u!114 &277707498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8970,6 +8975,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0da2af658c3f094cb9fc68a94253622, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  saveFileName: savegame.json
+  enableDebugHotkeys: 1
+  autoApplyDataOnSceneLoaded: 1
 --- !u!4 &1232490771
 Transform:
   m_ObjectHideFlags: 0

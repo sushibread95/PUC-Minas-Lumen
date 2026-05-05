@@ -1,59 +1,94 @@
+using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections.Generic;
-using System.Linq;
 
 public class LockOnSystem : MonoBehaviour
 {
-    #region Inspector - References
+    #region Inspector - Referências
 
-    [Header("Refs")]
-    public Camera cam;
+    [Header("REFERÊNCIAS PRINCIPAIS")]
+    [Tooltip("Câmera principal da cena. Use a MainCamera que tem o CinemachineBrain.")]
+    [SerializeField] private Camera cam;
 
-    [Tooltip("Transform que deve girar para encarar o alvo. Normalmente é o objeto raiz do Player.")]
-    public Transform rotateRoot;
+    [Tooltip("Objeto raiz que deve virar para o alvo. Normalmente é o Player.")]
+    [SerializeField] private Transform rotateRoot;
 
-    #endregion
+    [Tooltip("Cinemachine Orbital Follow da câmera de gameplay.")]
+    [SerializeField] private CinemachineOrbitalFollow orbitalFollow;
 
-    #region Inspector - Detection
-
-    [Header("Detection")]
-    public float searchRadius = 20f;
-    [Range(0f, 1f)] public float minDot = 0.2f;
-    public LayerMask enemyMask = ~0;
-    public LayerMask obstructionMask = 0;
-    public bool drawDebug = false;
+    [Tooltip("Input Axis Controller da Cinemachine Camera. Será desligado durante o lock-on.")]
+    [SerializeField] private CinemachineInputAxisController cameraInputAxisController;
 
     #endregion
 
-    #region Inspector - Target Switching
+    #region Inspector - Detecção
 
-    [Header("Switch Target")]
+    [Header("DETECÇÃO DE ALVO")]
+    [SerializeField] private float searchRadius = 20f;
+    [Range(0f, 1f)] [SerializeField] private float minScreenDot = 0.2f;
+    [SerializeField] private LayerMask enemyMask = ~0;
+    [SerializeField] private LayerMask obstructionMask = 0;
+
+    [Header("LIMITES DO LOCK")]
+    [SerializeField] private bool clearLockWhenTooFar = true;
+    [SerializeField] private float maxLockDistance = 18f;
+    [SerializeField] private bool clearLockWhenTargetDiesOrDisables = true;
+
+    #endregion
+
+    #region Inspector - Câmera Durante Lock
+
+    [Header("CÂMERA DURANTE LOCK")]
+    [Tooltip("Desliga o input manual da Cinemachine enquanto estiver travado no alvo.")]
+    [SerializeField] private bool disableCameraInputWhileLocked = true;
+
+    [Tooltip("Força o Input Axis Controller a continuar desligado enquanto o lock estiver ativo.")]
+    [SerializeField] private bool enforceInputDisableEveryFrame = true;
+
+    [Tooltip("Controla a órbita horizontal da câmera por ângulo direto em vez de usar o mouse.")]
+    [SerializeField] private bool driveOrbitalHorizontalAxis = true;
+
+    [Tooltip("Offset da órbita. Use 180 para câmera atrás do player olhando para o inimigo. Use 0 se ficar invertido no seu rig.")]
+    [SerializeField] private float lockOrbitYawOffset = 180f;
+
+    [Tooltip("Velocidade da câmera para alinhar com o alvo durante o lock-on.")]
+    [SerializeField] private float lockOrbitYawSpeed = 540f;
+
+    [Tooltip("Mantém a altura vertical da câmera congelada quando entra no lock-on.")]
+    [SerializeField] private bool freezeVerticalAxisWhileLocked = true;
+
+    [Tooltip("Evita que a câmera tente corrigir agressivamente quando o player está colado no inimigo.")]
+    [SerializeField] private float closeRangeSoftDistance = 1.35f;
+
+    [Range(0.1f, 1f)]
+    [SerializeField] private float closeRangeYawMultiplier = 0.45f;
+
+    #endregion
+
+    #region Inspector - Player Durante Lock
+
+    [Header("PLAYER DURANTE LOCK")]
+    [SerializeField] private bool rotatePlayerTowardTargetWhileLocked = true;
+    [SerializeField] private float rotateSpeedDegPerSec = 540f;
+
+    #endregion
+
+    #region Inspector - Troca de Alvo
+
+    [Header("TROCA DE ALVO")]
+    [Tooltip("Deixe desligado por enquanto para evitar conflito com mouse durante lock.")]
     [SerializeField] private bool allowTargetSwitchWhileLocked = false;
-    public float switchCooldown = 0.25f;
-    public float lookSwitchDeadzone = 0.5f;
+    [SerializeField] private float switchCooldown = 0.25f;
+    [SerializeField] private float lookSwitchDeadzone = 0.65f;
 
     #endregion
 
-    #region Inspector - Camera Lock
+    #region Inspector - Debug
 
-    [Header("Camera Lock")]
-    [Tooltip("Desativa o input da Cinemachine enquanto o lock-on estiver ativo.")]
-    public bool lockCameraWhileLocked = true;
-
-    [Tooltip("Procura automaticamente componentes de input da Cinemachine para desativar durante o lock-on.")]
-    public bool autoFindCinemachineProviders = true;
-
-    [Tooltip("Componentes desativados enquanto o lock-on estiver ativo. Normalmente: Cinemachine Input Axis Controller.")]
-    public Behaviour[] disableWhileLocked;
-
-    #endregion
-
-    #region Inspector - Player Facing
-
-    [Header("Player Facing While Locked")]
-    public bool rotatePlayerTowardTargetWhileLocked = true;
-    public float rotateSpeedDegPerSec = 540f;
+    [Header("DEBUG")]
+    [SerializeField] private bool drawDebug = false;
+    [SerializeField, HideInInspector] private bool logCameraSetup = false;
 
     #endregion
 
@@ -63,42 +98,39 @@ public class LockOnSystem : MonoBehaviour
     private InputAction lockOnAction;
     private InputAction lookAction;
 
-    public LockOnTarget current;
-    private float nextSwitchTime = 0f;
+    private bool cachedCameraInputState;
+    private bool hasCachedCameraInputState;
+    private bool hasStoredAxes;
+    private float storedVerticalAxis;
 
+    private float nextSwitchTime;
+
+    public LockOnTarget current;
     public bool IsLockedOn => current != null;
-    public Transform CurrentAimPoint => current ? current.Pivot : null;
+    public Transform CurrentAimPoint => current != null ? current.AimPoint : null;
 
     #endregion
 
-    #region Unity Events
+    #region Unity Lifecycle
 
     private void Reset()
     {
-        if (!cam)
-            cam = Camera.main;
-
-        if (!rotateRoot)
-            rotateRoot = transform;
+        cam = Camera.main;
+        rotateRoot = transform;
+        AutoFindCameraComponents();
     }
 
     private void Awake()
     {
-        if (!cam)
-            cam = Camera.main;
-
-        if (!rotateRoot)
-            rotateRoot = transform;
-
-        if (autoFindCinemachineProviders)
-            FindCinemachineInputProviders();
+        CacheBasicReferences();
+        AutoFindCameraComponents();
     }
 
     private void Start()
     {
         if (InputManager.Instance == null)
         {
-            Debug.LogError("InputManager.Instance é NULO. O LockOnSystem não consegue pegar os inputs.");
+            Debug.LogError($"[{nameof(LockOnSystem)}] InputManager.Instance é nulo. Lock-on desativado.");
             enabled = false;
             return;
         }
@@ -106,17 +138,14 @@ public class LockOnSystem : MonoBehaviour
         input = InputManager.Instance.InputActions;
         lockOnAction = input.FindAction("LockOn", false);
         lookAction = input.FindAction("Look", false);
-    }
 
-    private void OnDisable()
-    {
-        ClearTarget();
-        SetCameraInputLocked(false);
+        if (lockOnAction == null)
+            Debug.LogWarning($"[{nameof(LockOnSystem)}] A action 'LockOn' não foi encontrada no InputActions.");
     }
 
     private void Update()
     {
-        if (ShouldBlockLockOn())
+        if (ShouldCancelLockState())
         {
             if (IsLockedOn)
                 ClearTarget();
@@ -124,30 +153,159 @@ public class LockOnSystem : MonoBehaviour
             return;
         }
 
-        HandleLockToggleInput();
+        if (lockOnAction != null && lockOnAction.WasPressedThisFrame())
+        {
+            if (IsLockedOn)
+                ClearTarget();
+            else
+                AcquireTarget();
+        }
 
         if (!IsLockedOn)
             return;
 
         if (!TargetIsValid(current))
         {
-            ClearTarget();
+            if (clearLockWhenTargetDiesOrDisables)
+                ClearTarget();
             return;
         }
 
+        if (clearLockWhenTooFar && rotateRoot != null && CurrentAimPoint != null)
+        {
+            float distance = Vector3.Distance(rotateRoot.position, CurrentAimPoint.position);
+            if (distance > maxLockDistance)
+            {
+                ClearTarget();
+                return;
+            }
+        }
+
         if (rotatePlayerTowardTargetWhileLocked)
-            FaceTargetYawOnly(current.Pivot.position);
+            FaceTargetYawOnly(CurrentAimPoint.position);
 
         if (allowTargetSwitchWhileLocked)
             HandleTargetSwitchInput();
     }
 
+    private void LateUpdate()
+    {
+        if (!IsLockedOn)
+            return;
+
+        if (disableCameraInputWhileLocked && enforceInputDisableEveryFrame)
+            SetCameraInputEnabled(false);
+
+        if (driveOrbitalHorizontalAxis)
+            DriveOrbitalAxisDirectly();
+    }
+
+    private void OnDisable()
+    {
+        ClearTarget();
+    }
+
+    private void OnDestroy()
+    {
+        RestoreCameraInput();
+    }
+
     #endregion
 
-    #region Input
+    #region Setup
 
-    // Bloqueia o lock-on quando menus ou telas de sistema estão abertas.
-    private bool ShouldBlockLockOn()
+    // Busca referências principais sem depender de objetos da cena de boot.
+    private void CacheBasicReferences()
+    {
+        if (cam == null)
+            cam = Camera.main;
+
+        if (rotateRoot == null)
+            rotateRoot = transform;
+    }
+
+    // Encontra a câmera Cinemachine ativa, se os campos não foram configurados manualmente.
+    private void AutoFindCameraComponents()
+    {
+        if (orbitalFollow == null)
+            orbitalFollow = FindFirstObjectByType<CinemachineOrbitalFollow>();
+
+        if (cameraInputAxisController == null)
+            cameraInputAxisController = FindFirstObjectByType<CinemachineInputAxisController>();
+
+        if (logCameraSetup)
+        {
+            Debug.Log($"[{nameof(LockOnSystem)}] OrbitalFollow: {orbitalFollow}, InputAxis: {cameraInputAxisController}");
+        }
+    }
+
+    #endregion
+
+    #region Lock State
+
+    // Procura e trava no melhor alvo disponível.
+    private void AcquireTarget()
+    {
+        CacheBasicReferences();
+        AutoFindCameraComponents();
+
+        LockOnTarget best = FindBestTarget();
+        if (best == null)
+            return;
+
+        current = best;
+        StoreCameraStateForLock();
+        SetCameraInputEnabled(false);
+    }
+
+    // Remove o alvo atual e devolve o controle manual da câmera.
+    public void ClearTarget()
+    {
+        current = null;
+        hasStoredAxes = false;
+        RestoreCameraInput();
+    }
+
+    // Salva estado da câmera para restaurar input e manter altura vertical estável no lock.
+    private void StoreCameraStateForLock()
+    {
+        if (cameraInputAxisController != null && !hasCachedCameraInputState)
+        {
+            cachedCameraInputState = cameraInputAxisController.enabled;
+            hasCachedCameraInputState = true;
+        }
+
+        if (orbitalFollow != null)
+        {
+            storedVerticalAxis = orbitalFollow.VerticalAxis.Value;
+            hasStoredAxes = true;
+        }
+    }
+
+    // Desliga apenas o input da câmera. Não mexe no InputManager nem no PlayerInput do personagem.
+    private void SetCameraInputEnabled(bool enabledState)
+    {
+        if (!disableCameraInputWhileLocked)
+            return;
+
+        if (cameraInputAxisController == null)
+            AutoFindCameraComponents();
+
+        if (cameraInputAxisController != null)
+            cameraInputAxisController.enabled = enabledState;
+    }
+
+    // Restaura o controle manual da câmera quando sai do lock.
+    private void RestoreCameraInput()
+    {
+        if (cameraInputAxisController != null && hasCachedCameraInputState)
+            cameraInputAxisController.enabled = cachedCameraInputState;
+
+        hasCachedCameraInputState = false;
+    }
+
+    // Estados em que o lock-on não deve continuar ativo.
+    private bool ShouldCancelLockState()
     {
         if (input == null)
             return true;
@@ -167,61 +325,14 @@ public class LockOnSystem : MonoBehaviour
         return false;
     }
 
-    // Liga ou desliga o alvo travado.
-    private void HandleLockToggleInput()
-    {
-        if (lockOnAction == null)
-            return;
-
-        if (!lockOnAction.WasPressedThisFrame())
-            return;
-
-        if (!IsLockedOn)
-            AcquireTarget();
-        else
-            ClearTarget();
-    }
-
-    // Troca o alvo travado usando o eixo horizontal do Look, se habilitado.
-    private void HandleTargetSwitchInput()
-    {
-        if (lookAction == null || Time.time < nextSwitchTime)
-            return;
-
-        Vector2 look = lookAction.ReadValue<Vector2>();
-        float x = look.x;
-
-        if (Mathf.Abs(x) < lookSwitchDeadzone)
-            return;
-
-        TrySwitchTarget(Mathf.Sign(x));
-        nextSwitchTime = Time.time + switchCooldown;
-    }
-
     #endregion
 
-    #region Lock-On Core
+    #region Target Detection
 
-    // Procura e trava no melhor alvo disponível.
-    private void AcquireTarget()
-    {
-        LockOnTarget best = FindBestTarget();
-        current = best;
-        SetCameraInputLocked(current != null);
-    }
-
-    // Remove o alvo travado e libera o input da câmera.
-    public void ClearTarget()
-    {
-        current = null;
-        SetCameraInputLocked(false);
-    }
-
-    // Encontra o alvo com melhor pontuação dentro do campo de visão da câmera.
+    // Escolhe o alvo com melhor posição na tela, distância e prioridade.
     private LockOnTarget FindBestTarget()
     {
         List<LockOnTarget> targets = OverlapTargets();
-
         if (targets.Count == 0 || cam == null)
             return null;
 
@@ -231,20 +342,24 @@ public class LockOnSystem : MonoBehaviour
         for (int i = 0; i < targets.Count; i++)
         {
             LockOnTarget target = targets[i];
-
             if (!TargetIsValid(target))
                 continue;
 
-            Vector3 toTarget = (target.Pivot.position - cam.transform.position).normalized;
-            float dot = Vector3.Dot(cam.transform.forward, toTarget);
-
-            if (dot < minDot)
+            Vector3 toTargetFromCamera = (target.AimPoint.position - cam.transform.position).normalized;
+            float dot = Vector3.Dot(cam.transform.forward, toTargetFromCamera);
+            if (dot < minScreenDot)
                 continue;
 
-            float distance = Vector3.Distance(GetSearchOrigin(), target.Pivot.position);
-            float score = dot * 1.5f + (1f / Mathf.Max(1f, distance)) + target.priority * 0.25f;
+            float distance = rotateRoot != null
+                ? Vector3.Distance(rotateRoot.position, target.AimPoint.position)
+                : Vector3.Distance(transform.position, target.AimPoint.position);
 
-            if (score > bestScore && HasLineOfSight(target.Pivot.position))
+            Vector3 viewport = cam.WorldToViewportPoint(target.AimPoint.position);
+            float centerError = Mathf.Abs(viewport.x - 0.5f) + Mathf.Abs(viewport.y - 0.5f);
+
+            float score = dot * 2f - centerError + (1f / Mathf.Max(1f, distance)) + target.priority * 0.25f;
+
+            if (score > bestScore && HasLineOfSight(target.AimPoint.position))
             {
                 bestScore = score;
                 best = target;
@@ -254,98 +369,151 @@ public class LockOnSystem : MonoBehaviour
         return best;
     }
 
-    // Troca para o alvo mais adequado à esquerda ou direita da câmera.
+    // Coleta alvos próximos usando colliders do inimigo.
+    private List<LockOnTarget> OverlapTargets()
+    {
+        List<LockOnTarget> results = new List<LockOnTarget>();
+        Collider[] colliders = Physics.OverlapSphere(transform.position, searchRadius, enemyMask, QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            LockOnTarget target = colliders[i].GetComponentInParent<LockOnTarget>();
+            if (target != null && !results.Contains(target))
+                results.Add(target);
+        }
+
+        return results;
+    }
+
+    private bool TargetIsValid(LockOnTarget target)
+    {
+        if (target == null)
+            return false;
+
+        if (!target.IsTargetable)
+            return false;
+
+        if (target.AimPoint == null)
+            return false;
+
+        return target.gameObject.activeInHierarchy;
+    }
+
+    private bool HasLineOfSight(Vector3 worldPos)
+    {
+        if (cam == null || obstructionMask.value == 0)
+            return true;
+
+        Vector3 origin = cam.transform.position;
+        Vector3 direction = worldPos - origin;
+        float distance = direction.magnitude;
+
+        if (distance <= 0.001f)
+            return true;
+
+        return !Physics.Raycast(origin, direction.normalized, distance, obstructionMask, QueryTriggerInteraction.Ignore);
+    }
+
+    #endregion
+
+    #region Target Switch
+
+    // Troca alvo pelo eixo horizontal, caso a opção esteja ativa.
+    private void HandleTargetSwitchInput()
+    {
+        if (lookAction == null || Time.time < nextSwitchTime)
+            return;
+
+        Vector2 look = lookAction.ReadValue<Vector2>();
+        if (Mathf.Abs(look.x) < lookSwitchDeadzone)
+            return;
+
+        TrySwitchTarget(Mathf.Sign(look.x));
+        nextSwitchTime = Time.time + switchCooldown;
+    }
+
     private void TrySwitchTarget(float direction)
     {
         List<LockOnTarget> targets = OverlapTargets();
-
         if (targets.Count == 0 || cam == null)
             return;
 
         LockOnTarget candidate = null;
         float bestScore = float.NegativeInfinity;
-
         Vector3 camRight = cam.transform.right;
         Vector3 camForward = cam.transform.forward;
 
         for (int i = 0; i < targets.Count; i++)
         {
             LockOnTarget target = targets[i];
-
             if (target == current || !TargetIsValid(target))
                 continue;
 
-            Vector3 toTarget = (target.Pivot.position - cam.transform.position).normalized;
+            Vector3 toTarget = (target.AimPoint.position - cam.transform.position).normalized;
             float lateral = Vector3.Dot(camRight, toTarget);
             float facing = Mathf.Max(0f, Vector3.Dot(camForward, toTarget));
 
             if (Mathf.Sign(lateral) != Mathf.Sign(direction))
                 continue;
 
-            float score = Mathf.Abs(lateral) + facing;
-
-            if (score > bestScore && HasLineOfSight(target.Pivot.position))
+            float score = Mathf.Abs(lateral) + facing + target.priority * 0.1f;
+            if (score > bestScore && HasLineOfSight(target.AimPoint.position))
             {
                 bestScore = score;
                 candidate = target;
             }
         }
 
-        if (candidate == null)
-            return;
-
-        current = candidate;
-        SetCameraInputLocked(true);
+        if (candidate != null)
+            current = candidate;
     }
 
     #endregion
 
-    #region Camera Lock
+    #region Camera Driver
 
-    // Procura componentes de input da Cinemachine para desativar durante o lock-on.
-    private void FindCinemachineInputProviders()
+    // Define a órbita horizontal diretamente pela direção Player -> Inimigo.
+    private void DriveOrbitalAxisDirectly()
     {
-        Behaviour[] providers = Object.FindObjectsByType<Behaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
-            .Where(b => b != null &&
-                        (b.GetType().Name.Contains("CinemachineInput") ||
-                         b.GetType().Name.Contains("InputAxisController")))
-            .ToArray();
-
-        if (providers.Length > 0)
-            disableWhileLocked = providers;
-    }
-
-    // Trava ou libera apenas o input da câmera, sem mover o CameraTarget para o inimigo.
-    private void SetCameraInputLocked(bool locked)
-    {
-        if (!lockCameraWhileLocked || disableWhileLocked == null)
+        if (orbitalFollow == null || rotateRoot == null || CurrentAimPoint == null)
             return;
 
-        for (int i = 0; i < disableWhileLocked.Length; i++)
-        {
-            Behaviour provider = disableWhileLocked[i];
+        Vector3 toTarget = CurrentAimPoint.position - rotateRoot.position;
+        toTarget.y = 0f;
 
-            if (provider == null)
-                continue;
+        if (toTarget.sqrMagnitude < 0.001f)
+            return;
 
-            provider.enabled = !locked;
-        }
+        float desiredYaw = Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg + lockOrbitYawOffset;
+        float currentYaw = orbitalFollow.HorizontalAxis.Value;
+
+        float distance = toTarget.magnitude;
+        float speed = lockOrbitYawSpeed;
+
+        if (distance <= closeRangeSoftDistance)
+            speed *= closeRangeYawMultiplier;
+
+        float nextYaw = Mathf.MoveTowardsAngle(currentYaw, desiredYaw, speed * Time.deltaTime);
+        orbitalFollow.HorizontalAxis.Value = nextYaw;
+
+        if (freezeVerticalAxisWhileLocked && hasStoredAxes)
+            orbitalFollow.VerticalAxis.Value = storedVerticalAxis;
     }
 
     #endregion
 
     #region Player Facing
 
-    // Gira o Player apenas no eixo Y para encarar o alvo travado.
+    // Gira apenas o eixo Y do player para encarar o AimPoint.
     private void FaceTargetYawOnly(Vector3 targetPosition)
     {
-        if (!rotateRoot)
+        if (rotateRoot == null)
             return;
 
         Vector3 direction = targetPosition - rotateRoot.position;
         direction.y = 0f;
 
-        if (direction.sqrMagnitude < 0.0001f)
+        if (direction.sqrMagnitude < 0.001f)
             return;
 
         Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
@@ -358,72 +526,7 @@ public class LockOnSystem : MonoBehaviour
 
     #endregion
 
-    #region Target Search
-
-    // Coleta alvos dentro do raio de busca usando a layer de inimigos.
-    private List<LockOnTarget> OverlapTargets()
-    {
-        List<LockOnTarget> results = new List<LockOnTarget>();
-        Collider[] colliders = Physics.OverlapSphere(GetSearchOrigin(), searchRadius, enemyMask, QueryTriggerInteraction.Collide);
-
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            LockOnTarget target = colliders[i].GetComponentInParent<LockOnTarget>();
-
-            if (target != null && !results.Contains(target))
-                results.Add(target);
-        }
-
-        return results;
-    }
-
-    // Define a origem da busca de alvos.
-    private Vector3 GetSearchOrigin()
-    {
-        if (rotateRoot != null)
-            return rotateRoot.position;
-
-        return transform.position;
-    }
-
-    // Verifica se o alvo ainda pode ser usado pelo lock-on.
-    private bool TargetIsValid(LockOnTarget target)
-    {
-        if (!target)
-            return false;
-
-        if (!target.enabled)
-            return false;
-
-        if (!target.Pivot)
-            return false;
-
-        return true;
-    }
-
-    // Verifica se existe obstáculo entre a câmera e o alvo.
-    private bool HasLineOfSight(Vector3 worldPosition)
-    {
-        if (!cam)
-            return true;
-
-        if (obstructionMask.value == 0)
-            return true;
-
-        Vector3 origin = cam.transform.position;
-        Vector3 direction = worldPosition - origin;
-        float distance = direction.magnitude;
-
-        if (distance <= 0.001f)
-            return true;
-
-        direction /= distance;
-        return !Physics.Raycast(origin, direction, distance, obstructionMask, QueryTriggerInteraction.Ignore);
-    }
-
-    #endregion
-
-    #region Debug
+    #region Gizmos
 
     private void OnDrawGizmosSelected()
     {
@@ -431,12 +534,13 @@ public class LockOnSystem : MonoBehaviour
             return;
 
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(GetSearchOrigin(), searchRadius);
+        Gizmos.DrawWireSphere(transform.position, searchRadius);
 
-        if (current && current.Pivot)
+        if (current != null && current.AimPoint != null)
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(current.Pivot.position, 0.2f);
+            Gizmos.DrawWireSphere(current.AimPoint.position, 0.18f);
+            Gizmos.DrawLine(transform.position, current.AimPoint.position);
         }
     }
 
