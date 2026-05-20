@@ -73,7 +73,7 @@ public class InteractableDoor : MonoBehaviour, IInteractable
         if (requiredKey == null || !consumeKeyOnUse)
             return;
 
-        if (InventoryManager.Instance != null) ;
+        if (InventoryManager.Instance != null) 
             InventoryManager.Instance.RemoveItem(requiredKey);
     }
 

@@ -112,6 +112,15 @@ public class PlayerControllerSystem : MonoBehaviour
     [Header("MOVIMENTO - ALTERNÂNCIAS")]
     public bool toggleSneak = true;
     public bool toggleCrouch = true;
+    [Tooltip("Quando desmarcado, Sprint funciona segurando Shift. Quando marcado, Sprint alterna liga/desliga ao apertar.")]
+    [SerializeField] private bool toggleSprint = false;
+
+    [Header("MOVIMENTO - BLOQUEIO DE INPUT")]
+    [Tooltip("Pequeno atraso ao fechar pause/inventário/diálogo para limpar inputs pressionados durante menus.")]
+    [SerializeField] private float inputResumeDelay = 0.12f;
+
+    [Tooltip("Zera sprint e movimento quando gameplay fica bloqueado por pause, inventário, diálogo ou morte.")]
+    [SerializeField] private bool resetMovementStateWhenInputBlocked = true;
 
     [Header("AGACHAR E STEALTH")]
     public float standHeight = 1.6f;
@@ -226,6 +235,7 @@ public class PlayerControllerSystem : MonoBehaviour
     private Vector3 visualLookDirection;
     private bool hasVisualLookDirection;
     private Vector2 smoothedLockMoveInput;
+    private float inputBlockedUntil = 0f;
 
     void Awake()
     {
@@ -281,28 +291,23 @@ public class PlayerControllerSystem : MonoBehaviour
 
     void Update()
     {
-
-        if ((PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) ||
-            (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) ||
-            (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen) ||
-            (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)) 
-            //(DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive))
+        if (IsGameplayInputBlocked())
         {
-             // Se estiver na tela de morte, garante que o cursor aparece
-             if (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive)
-             {
-                 if (Cursor.lockState == CursorLockMode.Locked)
-                 {
-                     LockCursor(false);
-                 }
-             }
-             return;
+            HandleGameplayInputBlocked();
+            return;
+        }
+
+        if (Time.unscaledTime < inputBlockedUntil)
+        {
+            HandleGameplayInputResumeBuffer();
+            return;
         }
         
         // --- CORREÇÃO DE SEGURANÇA (BLINDAGEM) ---
         // Se a cena ativa for "MainMenu", encerramos o Update aqui.
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu") 
         {
+            HandleGameplayInputBlocked();
             return;
         }
 
@@ -352,9 +357,18 @@ public class PlayerControllerSystem : MonoBehaviour
         bool sprintHeld = false;
         if (sprintAction != null)
         {
-            if (sprintAction.WasPressedThisFrame()) 
-                _sprintToggled = !_sprintToggled;
-            sprintHeld = _sprintToggled;
+            if (toggleSprint)
+            {
+                if (sprintAction.WasPressedThisFrame())
+                    _sprintToggled = !_sprintToggled;
+
+                sprintHeld = _sprintToggled;
+            }
+            else
+            {
+                _sprintToggled = false;
+                sprintHeld = sprintAction.IsPressed();
+            }
         }
 
         // Inputs de Combate
@@ -416,6 +430,70 @@ public class PlayerControllerSystem : MonoBehaviour
         UpdateVisualRootRotation(Time.deltaTime);
     }
 
+
+    #region Input Block Helpers
+
+    // Verifica se gameplay deve ignorar input por causa de menus, diálogo, morte ou pause.
+    private bool IsGameplayInputBlocked()
+    {
+        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused)
+            return true;
+
+        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
+            return true;
+
+        if (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen)
+            return true;
+
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
+            return true;
+
+        if (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive)
+            return true;
+
+        return false;
+    }
+
+    // Limpa estados momentâneos para inputs não ficarem presos ao pausar/despausar.
+    private void HandleGameplayInputBlocked()
+    {
+        inputBlockedUntil = Time.unscaledTime + Mathf.Max(0f, inputResumeDelay);
+
+        if (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive)
+            LockCursor(false);
+
+        if (!resetMovementStateWhenInputBlocked)
+            return;
+
+        ResetTransientMovementState();
+    }
+
+    // Mantém o player parado por alguns frames após fechar UI para evitar WasPressedThisFrame acumulado.
+    private void HandleGameplayInputResumeBuffer()
+    {
+        if (resetMovementStateWhenInputBlocked)
+            ResetTransientMovementState();
+    }
+
+    // Reseta apenas estados transitórios. Não altera agachar/esgueirar se eles forem toggles de gameplay.
+    private void ResetTransientMovementState()
+    {
+        _sprintToggled = false;
+        smoothedLockMoveInput = Vector2.zero;
+        nextStepTime = 0f;
+
+        velocity.x = 0f;
+        velocity.z = 0f;
+
+        if (animator)
+        {
+            if (speedHash != 0) animator.SetFloat(speedHash, 0f, animDampTime, Time.unscaledDeltaTime);
+            if (moveXHash != 0) animator.SetFloat(moveXHash, 0f, animDampTime, Time.unscaledDeltaTime);
+            if (moveYHash != 0) animator.SetFloat(moveYHash, 0f, animDampTime, Time.unscaledDeltaTime);
+        }
+    }
+
+    #endregion
 
     private IEnumerator EnsureGameplayInputActive()
     {

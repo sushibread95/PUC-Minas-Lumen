@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public class DeadState : IEnemyState
 {
     private readonly EnemyAIController controller;
@@ -11,12 +9,10 @@ public class DeadState : IEnemyState
 
     public void EnterState()
     {
-        controller.agent.isStopped = true;
-        controller.enabled = false;
+        controller.AbortCombat();
         if (controller.lockOnTarget != null)
-        {
-            controller.lockOnTarget.enabled = false;
-        }
+            controller.lockOnTarget.SetTargetable(false);
+        controller.enabled = false;
     }
 
     public void UpdateState() { }

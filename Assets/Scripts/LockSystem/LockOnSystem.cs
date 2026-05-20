@@ -8,7 +8,7 @@ public class LockOnSystem : MonoBehaviour
     #region Inspector - Referências
 
     [Header("REFERÊNCIAS PRINCIPAIS")]
-    [Tooltip("Câmera principal da cena. Use a MainCamera que tem o CinemachineBrain.")]
+    [Tooltip("Câmera principal da cena. Use a MainCamera que possui o CinemachineBrain.")]
     [SerializeField] private Camera cam;
 
     [Tooltip("Objeto raiz que deve virar para o alvo. Normalmente é o Player.")]
@@ -17,7 +17,7 @@ public class LockOnSystem : MonoBehaviour
     [Tooltip("Cinemachine Orbital Follow da câmera de gameplay.")]
     [SerializeField] private CinemachineOrbitalFollow orbitalFollow;
 
-    [Tooltip("Input Axis Controller da Cinemachine Camera. Será desligado durante o lock-on.")]
+    [Tooltip("Cinemachine Input Axis Controller da câmera. Ele é desligado somente durante o lock-on.")]
     [SerializeField] private CinemachineInputAxisController cameraInputAxisController;
 
     #endregion
@@ -26,7 +26,11 @@ public class LockOnSystem : MonoBehaviour
 
     [Header("DETECÇÃO DE ALVO")]
     [SerializeField] private float searchRadius = 20f;
-    [Range(0f, 1f)] [SerializeField] private float minScreenDot = 0.2f;
+
+    [Tooltip("Quanto o alvo precisa estar próximo do centro/frente da câmera para ser aceito.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minScreenDot = 0.15f;
+
     [SerializeField] private LayerMask enemyMask = ~0;
     [SerializeField] private LayerMask obstructionMask = 0;
 
@@ -37,28 +41,36 @@ public class LockOnSystem : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Input do Lock
+
+    [Header("INPUT DO LOCK")]
+    [Tooltip("Evita duplo toggle quando mais de um sistema de input tenta ler a mesma tecla no mesmo instante.")]
+    [SerializeField] private float lockToggleCooldown = 0.18f;
+
+    #endregion
+
     #region Inspector - Câmera Durante Lock
 
     [Header("CÂMERA DURANTE LOCK")]
-    [Tooltip("Desliga o input manual da Cinemachine enquanto estiver travado no alvo.")]
+    [Tooltip("Desliga o input manual da câmera enquanto estiver travado no alvo.")]
     [SerializeField] private bool disableCameraInputWhileLocked = true;
 
-    [Tooltip("Força o Input Axis Controller a continuar desligado enquanto o lock estiver ativo.")]
+    [Tooltip("Garante todo frame que o mouse não volte a controlar a câmera durante o lock.")]
     [SerializeField] private bool enforceInputDisableEveryFrame = true;
 
-    [Tooltip("Controla a órbita horizontal da câmera por ângulo direto em vez de usar o mouse.")]
+    [Tooltip("Controla diretamente o eixo horizontal do Orbital Follow durante o lock-on.")]
     [SerializeField] private bool driveOrbitalHorizontalAxis = true;
 
-    [Tooltip("Offset da órbita. Use 180 para câmera atrás do player olhando para o inimigo. Use 0 se ficar invertido no seu rig.")]
+    [Tooltip("Use 180 para a câmera ficar atrás do player olhando para o inimigo. Se ficar invertido no seu rig, teste 0.")]
     [SerializeField] private float lockOrbitYawOffset = 180f;
 
-    [Tooltip("Velocidade da câmera para alinhar com o alvo durante o lock-on.")]
+    [Tooltip("Velocidade com que a câmera alinha a órbita ao alvo durante o lock-on.")]
     [SerializeField] private float lockOrbitYawSpeed = 540f;
 
-    [Tooltip("Mantém a altura vertical da câmera congelada quando entra no lock-on.")]
+    [Tooltip("Mantém a altura vertical da câmera congelada ao entrar no lock-on.")]
     [SerializeField] private bool freezeVerticalAxisWhileLocked = true;
 
-    [Tooltip("Evita que a câmera tente corrigir agressivamente quando o player está colado no inimigo.")]
+    [Tooltip("Reduz a força de correção da câmera quando o player está muito perto do alvo.")]
     [SerializeField] private float closeRangeSoftDistance = 1.35f;
 
     [Range(0.1f, 1f)]
@@ -77,8 +89,9 @@ public class LockOnSystem : MonoBehaviour
     #region Inspector - Troca de Alvo
 
     [Header("TROCA DE ALVO")]
-    [Tooltip("Deixe desligado por enquanto para evitar conflito com mouse durante lock.")]
+    [Tooltip("Deixe desligado se o mouse estiver causando troca acidental de alvo.")]
     [SerializeField] private bool allowTargetSwitchWhileLocked = false;
+
     [SerializeField] private float switchCooldown = 0.25f;
     [SerializeField] private float lookSwitchDeadzone = 0.65f;
 
@@ -104,8 +117,10 @@ public class LockOnSystem : MonoBehaviour
     private float storedVerticalAxis;
 
     private float nextSwitchTime;
+    private float nextLockToggleTime;
 
-    public LockOnTarget current;
+    [HideInInspector] public LockOnTarget current;
+
     public bool IsLockedOn => current != null;
     public Transform CurrentAimPoint => current != null ? current.AimPoint : null;
 
@@ -153,13 +168,7 @@ public class LockOnSystem : MonoBehaviour
             return;
         }
 
-        if (lockOnAction != null && lockOnAction.WasPressedThisFrame())
-        {
-            if (IsLockedOn)
-                ClearTarget();
-            else
-                AcquireTarget();
-        }
+        HandleLockToggleInput();
 
         if (!IsLockedOn)
             return;
@@ -168,6 +177,7 @@ public class LockOnSystem : MonoBehaviour
         {
             if (clearLockWhenTargetDiesOrDisables)
                 ClearTarget();
+
             return;
         }
 
@@ -214,7 +224,7 @@ public class LockOnSystem : MonoBehaviour
 
     #region Setup
 
-    // Busca referências principais sem depender de objetos da cena de boot.
+    // Busca referências básicas sem depender da cena de boot.
     private void CacheBasicReferences()
     {
         if (cam == null)
@@ -224,7 +234,7 @@ public class LockOnSystem : MonoBehaviour
             rotateRoot = transform;
     }
 
-    // Encontra a câmera Cinemachine ativa, se os campos não foram configurados manualmente.
+    // Encontra componentes da câmera se não foram configurados manualmente.
     private void AutoFindCameraComponents()
     {
         if (orbitalFollow == null)
@@ -234,14 +244,32 @@ public class LockOnSystem : MonoBehaviour
             cameraInputAxisController = FindFirstObjectByType<CinemachineInputAxisController>();
 
         if (logCameraSetup)
-        {
             Debug.Log($"[{nameof(LockOnSystem)}] OrbitalFollow: {orbitalFollow}, InputAxis: {cameraInputAxisController}");
-        }
     }
 
     #endregion
 
     #region Lock State
+
+    // Lê o input de lock com proteção contra duplo toggle.
+    private void HandleLockToggleInput()
+    {
+        if (lockOnAction == null)
+            return;
+
+        if (!lockOnAction.WasPressedThisFrame())
+            return;
+
+        if (Time.unscaledTime < nextLockToggleTime)
+            return;
+
+        nextLockToggleTime = Time.unscaledTime + lockToggleCooldown;
+
+        if (IsLockedOn)
+            ClearTarget();
+        else
+            AcquireTarget();
+    }
 
     // Procura e trava no melhor alvo disponível.
     private void AcquireTarget()
@@ -266,10 +294,13 @@ public class LockOnSystem : MonoBehaviour
         RestoreCameraInput();
     }
 
-    // Salva estado da câmera para restaurar input e manter altura vertical estável no lock.
+    // Salva o estado da câmera em TODA entrada no lock-on.
     private void StoreCameraStateForLock()
     {
-        if (cameraInputAxisController != null && !hasCachedCameraInputState)
+        if (cameraInputAxisController == null)
+            AutoFindCameraComponents();
+
+        if (cameraInputAxisController != null)
         {
             cachedCameraInputState = cameraInputAxisController.enabled;
             hasCachedCameraInputState = true;
@@ -282,7 +313,7 @@ public class LockOnSystem : MonoBehaviour
         }
     }
 
-    // Desliga apenas o input da câmera. Não mexe no InputManager nem no PlayerInput do personagem.
+    // Desliga apenas o input da câmera. Não altera InputManager nem PlayerInput.
     private void SetCameraInputEnabled(bool enabledState)
     {
         if (!disableCameraInputWhileLocked)
@@ -295,11 +326,11 @@ public class LockOnSystem : MonoBehaviour
             cameraInputAxisController.enabled = enabledState;
     }
 
-    // Restaura o controle manual da câmera quando sai do lock.
+    // Restaura o controle manual da câmera. Se não houver cache, volta ligado por segurança.
     private void RestoreCameraInput()
     {
-        if (cameraInputAxisController != null && hasCachedCameraInputState)
-            cameraInputAxisController.enabled = cachedCameraInputState;
+        if (cameraInputAxisController != null)
+            cameraInputAxisController.enabled = hasCachedCameraInputState ? cachedCameraInputState : true;
 
         hasCachedCameraInputState = false;
     }
@@ -472,7 +503,7 @@ public class LockOnSystem : MonoBehaviour
 
     #region Camera Driver
 
-    // Define a órbita horizontal diretamente pela direção Player -> Inimigo.
+    // Define a órbita horizontal pela direção Player -> Inimigo.
     private void DriveOrbitalAxisDirectly()
     {
         if (orbitalFollow == null || rotateRoot == null || CurrentAimPoint == null)
@@ -493,8 +524,7 @@ public class LockOnSystem : MonoBehaviour
         if (distance <= closeRangeSoftDistance)
             speed *= closeRangeYawMultiplier;
 
-        float nextYaw = Mathf.MoveTowardsAngle(currentYaw, desiredYaw, speed * Time.deltaTime);
-        orbitalFollow.HorizontalAxis.Value = nextYaw;
+        orbitalFollow.HorizontalAxis.Value = Mathf.MoveTowardsAngle(currentYaw, desiredYaw, speed * Time.deltaTime);
 
         if (freezeVerticalAxisWhileLocked && hasStoredAxes)
             orbitalFollow.VerticalAxis.Value = storedVerticalAxis;

@@ -1,0 +1,30 @@
+ProjetoLumen - Enemy Animator/Hitbox Fix
+
+Arquivos principais:
+- EnemyAIController.cs
+
+Alterações:
+1. Corrigido warning "Parameter 'IsAlert' does not exist":
+   - O script agora verifica se o parâmetro existe no Animator antes de chamar SetBool/SetFloat.
+   - Se o Animator não tiver IsAlert, não aparece mais warning.
+   - Campo novo: Use Alert Bool Param.
+
+2. Campo para escolher os colliders de ataque:
+   - No EnemyAIController, configure Melee Attack Colliders.
+   - Arraste o collider trigger da mão/arma/soco do inimigo.
+   - O script desliga esses colliders no Start e liga somente na janela de ataque.
+
+3. Animation Events mantidos:
+   - No frame de impacto: Punch ou EnableMeleeHitboxFromAnimation.
+   - No fim do impacto: EndPunch ou DisableMeleeHitboxFromAnimation.
+
+Configuração recomendada:
+- Animator: mantenha Speed se o controller tiver esse parâmetro.
+- Se não usar IsAlert no Animator, pode deixar Use Alert Bool Param desmarcado.
+- Melee Hitbox: arraste o EnemyMeleeHitbox se você usa esse script para aplicar dano.
+- Melee Attack Colliders: arraste o collider trigger que deve ficar ativo durante o golpe.
+- Auto Disable Melee Colliders On Start: marcado.
+
+Observação:
+- Não removi o campo antigo attackTrigger; ele continua escondido por compatibilidade com prefabs antigos.
+- Não removi lógica de combate, ranged ou grabber.

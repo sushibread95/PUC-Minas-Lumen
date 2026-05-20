@@ -12,17 +12,17 @@ public class QuestManager : MonoBehaviour
 
     #region Inspector
 
-    [Header("Database")]
-    [Tooltip("Arraste todas as quests criadas no Inspector para o manager conhecê-las.")]
-    public List<QuestDefinition> allQuestsDatabase = new List<QuestDefinition>();
+    [Header("QUESTS - DATABASE")]
+    [Tooltip("Arraste aqui todas as QuestDefinition que o manager deve reconhecer.")]
+    [SerializeField] private List<QuestDefinition> allQuestsDatabase = new List<QuestDefinition>();
 
     #endregion
 
     #region Runtime State
 
-    private List<QuestSaveData> activeQuests = new List<QuestSaveData>();
-    private List<string> completedQuestIDs = new List<string>();
-    private bool eventsSubscribed;
+    private readonly List<QuestSaveData> activeQuests = new List<QuestSaveData>();
+    private readonly List<string> completedQuestIDs = new List<string>();
+    private bool eventsRegistered;
 
     #endregion
 
@@ -42,65 +42,74 @@ public class QuestManager : MonoBehaviour
 
     private void OnEnable()
     {
-        SubscribeEvents();
+        RegisterEvents();
     }
 
     private void OnDisable()
     {
-        UnsubscribeEvents();
+        UnregisterEvents();
     }
 
     private void OnDestroy()
     {
-        UnsubscribeEvents();
-
         if (Instance == this)
             Instance = null;
+
+        UnregisterEvents();
     }
 
     #endregion
 
-    #region Events
+    #region Event Registration
 
-    // Evita inscrição duplicada em eventos globais.
-    private void SubscribeEvents()
+    // Inscreve o QuestManager nos eventos globais sem duplicar listeners.
+    private void RegisterEvents()
     {
-        if (eventsSubscribed)
+        if (eventsRegistered)
             return;
 
         GameEvents.OnEnemyDeath += HandleEnemyDeath;
         GameEvents.OnItemObtained += HandleItemCollected;
-        eventsSubscribed = true;
+        eventsRegistered = true;
     }
 
-    // Remove inscrições para evitar progresso duplicado de quest.
-    private void UnsubscribeEvents()
+    // Remove inscrições para evitar progresso duplicado após troca de cena/reload.
+    private void UnregisterEvents()
     {
-        if (!eventsSubscribed)
+        if (!eventsRegistered)
             return;
 
         GameEvents.OnEnemyDeath -= HandleEnemyDeath;
         GameEvents.OnItemObtained -= HandleItemCollected;
-        eventsSubscribed = false;
+        eventsRegistered = false;
     }
 
     #endregion
 
-    #region Quest Progress
+    #region Quest Progress Events
 
+    // Atualiza objetivos de matar inimigos.
     private void HandleEnemyDeath(string enemyID)
     {
         UpdateQuestProgress(ObjectiveType.Kill, enemyID, 1);
     }
 
+    // Atualiza objetivos de coleta de itens.
     private void HandleItemCollected(string itemID, int quantity)
     {
         UpdateQuestProgress(ObjectiveType.Collect, itemID, quantity);
     }
 
-    // Atualiza o objetivo atual das quests ativas.
+    #endregion
+
+    #region Quest Progress Logic
+
+    // Avança o objetivo atual das quests ativas quando um evento compatível acontece.
     private void UpdateQuestProgress(ObjectiveType type, string targetID, int amount)
     {
+        if (string.IsNullOrWhiteSpace(targetID) || amount <= 0)
+            return;
+
         bool progressMade = false;
 
         for (int i = activeQuests.Count - 1; i >= 0; i--)
@@ -111,8 +120,7 @@ public class QuestManager : MonoBehaviour
                 continue;
 
             QuestDefinition definition = GetQuestDefinition(questData.questID);
-
-            if (definition == null || definition.steps == null)
+            if (definition == null || definition.steps == null || definition.steps.Count == 0)
                 continue;
 
             if (questData.currentStepIndex < 0 || questData.currentStepIndex >= definition.steps.Count)
@@ -124,37 +132,38 @@ public class QuestManager : MonoBehaviour
                 continue;
 
             questData.currentAmount += amount;
+
+            if (questData.currentAmount >= currentStep.amountRequired)
+            {
+                questData.currentStepIndex++;
+                questData.currentAmount = 0;
+
+                if (questData.currentStepIndex >= definition.steps.Count)
+                    CompleteQuest(questData);
+            }
+
             progressMade = true;
-
-            if (questData.currentAmount < currentStep.amountRequired)
-                continue;
-
-            questData.currentStepIndex++;
-            questData.currentAmount = 0;
-
-            if (questData.currentStepIndex >= definition.steps.Count)
-                CompleteQuest(questData);
         }
 
-        if (progressMade)
-            NotifyQuestProgressChanged("Quest Atualizada!", 2f);
-    }
-
-    #endregion
-
-    #region Public Quest API
-
-    // Aceita uma quest caso ela ainda não esteja ativa ou completa.
-    public void AcceptQuest(string questID)
-    {
-        if (string.IsNullOrEmpty(questID))
+        if (!progressMade)
             return;
 
-        if (activeQuests.Any(q => q.questID == questID) || completedQuestIDs.Contains(questID))
+        GameEvents.TriggerQuestProgressChanged();
+
+        if (UIFeedbackManager.Instance != null)
+            UIFeedbackManager.Instance.ShowNotification("Quest Atualizada!", 2f);
+    }
+
+    // Aceita uma quest se ela existir e ainda não estiver ativa/concluída.
+    public void AcceptQuest(string questID)
+    {
+        if (string.IsNullOrWhiteSpace(questID))
+            return;
+
+        if (activeQuests.Any(q => q != null && q.questID == questID) || completedQuestIDs.Contains(questID))
             return;
 
         QuestDefinition questDef = GetQuestDefinition(questID);
-
         if (questDef == null)
         {
             Debug.LogError($"QuestManager: Quest ID {questID} não encontrada no Database.");
@@ -162,23 +171,13 @@ public class QuestManager : MonoBehaviour
         }
 
         activeQuests.Add(new QuestSaveData(questID));
-        NotifyQuestProgressChanged($"Quest Iniciada: {questDef.title}", 3f);
+        GameEvents.TriggerQuestProgressChanged();
+
+        if (UIFeedbackManager.Instance != null)
+            UIFeedbackManager.Instance.ShowNotification($"Quest Iniciada: {questDef.title}", 3f);
     }
 
-    // Retorna a definição da quest pelo ID.
-    public QuestDefinition GetQuestDefinition(string id)
-    {
-        if (string.IsNullOrEmpty(id) || allQuestsDatabase == null)
-            return null;
-
-        return allQuestsDatabase.Find(q => q != null && q.questID == id);
-    }
-
-    #endregion
-
-    #region Completion
-
-    // Finaliza uma quest e aplica recompensas.
+    // Finaliza a quest, aplica recompensas e atualiza a UI.
     private void CompleteQuest(QuestSaveData questData)
     {
         if (questData == null)
@@ -192,7 +191,6 @@ public class QuestManager : MonoBehaviour
         activeQuests.Remove(questData);
 
         QuestDefinition def = GetQuestDefinition(questData.questID);
-
         if (def != null)
         {
             if (LevelingSystem.Instance != null && def.xpReward > 0)
@@ -201,55 +199,63 @@ public class QuestManager : MonoBehaviour
             if (PlayerStats.Instance != null && def.goldReward > 0)
                 PlayerStats.Instance.AddGold(def.goldReward);
 
-            NotifyQuestProgressChanged($"Quest Completada: {def.title}!", 4f);
+            if (UIFeedbackManager.Instance != null)
+                UIFeedbackManager.Instance.ShowNotification($"Quest Completada: {def.title}!", 4f);
         }
-        else
-        {
-            GameEvents.TriggerQuestProgressChanged();
-        }
+
+        GameEvents.TriggerQuestProgressChanged();
     }
 
     #endregion
 
-    #region Save & Load
+    #region Lookup
 
+    // Busca uma definição de quest pelo ID.
+    public QuestDefinition GetQuestDefinition(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id) || allQuestsDatabase == null)
+            return null;
+
+        return allQuestsDatabase.Find(q => q != null && q.questID == id);
+    }
+
+    #endregion
+
+    #region Save And Load
+
+    // Retorna cópia dos dados ativos para o save não modificar a lista interna por referência.
     public List<QuestSaveData> GetActiveQuestsSaveData()
     {
-        return activeQuests ?? new List<QuestSaveData>();
+        return new List<QuestSaveData>(activeQuests);
     }
 
+    // Retorna cópia dos IDs concluídos para o save.
     public List<string> GetCompletedQuestsSaveData()
     {
-        return completedQuestIDs ?? new List<string>();
+        return new List<string>(completedQuestIDs);
     }
 
-    // Carrega o estado salvo das quests.
+    // Carrega dados de quest salvos e atualiza a interface.
     public void LoadQuestData(List<QuestSaveData> active, List<string> completed)
     {
-        activeQuests = active ?? new List<QuestSaveData>();
-        completedQuestIDs = completed ?? new List<string>();
+        activeQuests.Clear();
+        completedQuestIDs.Clear();
+
+        if (active != null)
+            activeQuests.AddRange(active.Where(q => q != null));
+
+        if (completed != null)
+            completedQuestIDs.AddRange(completed.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct());
+
         GameEvents.TriggerQuestProgressChanged();
     }
 
-    // Limpa o estado runtime das quests.
+    // Limpa progresso de quests para novo jogo/debug.
     public void ResetState()
     {
         activeQuests.Clear();
         completedQuestIDs.Clear();
         GameEvents.TriggerQuestProgressChanged();
-    }
-
-    #endregion
-
-    #region Feedback
-
-    // Atualiza UI e feedback de quest.
-    private void NotifyQuestProgressChanged(string message, float duration)
-    {
-        GameEvents.TriggerQuestProgressChanged();
-
-        if (UIFeedbackManager.Instance != null && !string.IsNullOrEmpty(message))
-            UIFeedbackManager.Instance.ShowNotification(message, duration);
     }
 
     #endregion
