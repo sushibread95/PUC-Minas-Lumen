@@ -8,13 +8,23 @@ public class QuickSlotInput : MonoBehaviour
 
     void Awake()
     {
-        // Precisamos pegar o input do Start()
+        // O InputManager pode ainda não existir aqui; pegamos no Start.
     }
 
-// Substitua o seu Start e EnableInputs por isto:
     void Start()
     {
-        // Vazio. Deixe o OnEnable fazer o trabalho de ligar os inputs.
+        // CORREÇÃO CRÍTICA: o campo 'input' nunca era atribuído, então
+        // EnableInputs() sempre retornava no 'if (input == null)' e as
+        // teclas 1-4 ficavam mortas. Agora pegamos a referência e ligamos.
+        if (InputManager.Instance != null)
+        {
+            input = InputManager.Instance.InputActions;
+            EnableInputs();
+        }
+        else
+        {
+            Debug.LogError("QuickSlotInput: InputManager.Instance não encontrado. Quick slots desativados.");
+        }
     }
 
     void EnableInputs()

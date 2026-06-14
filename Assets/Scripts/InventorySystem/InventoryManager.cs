@@ -157,7 +157,9 @@ public void RemoveItem(Objects itemToRemove)
         OnQuickSlotsChanged?.Invoke();
     }
 
-    public object GetSaveData()
+    // CORREÇÃO: retorno tipado (era 'object') para o JsonUtility conseguir
+    // serializar o inventário dentro do GameData.
+    public InventorySaveData GetSaveData()
     {
         InventorySaveData saveData = new InventorySaveData();
         foreach (var entry in items)
@@ -175,25 +177,25 @@ public void RemoveItem(Objects itemToRemove)
         return saveData;
     }
 
-    public void LoadSaveData(object data)
+    // CORREÇÃO: parâmetro tipado (era 'object').
+    public void LoadSaveData(InventorySaveData saveData)
     {
-        InventorySaveData saveData = data as InventorySaveData;
         if (saveData == null) return;
         items.Clear();
         for (int i = 0; i < saveData.itemNames.Count; i++)
         {
-            Objects itemAsset = Resources.Load<Objects>("Items/" + saveData.itemNames[i]);
+            Objects itemAsset = LoadItemAsset(saveData.itemNames[i]);
             if (itemAsset != null)
                 items.Add(new InventoryItem(itemAsset, saveData.itemQuantities[i]));
             else
-                Debug.LogWarning($"Não foi possível carregar o item: {saveData.itemNames[i]}");
+                Debug.LogWarning($"InventoryManager: não foi possível carregar o item '{saveData.itemNames[i]}'. " +
+                                 "O ScriptableObject precisa estar em uma pasta 'Resources/Items/' (ou 'Resources/') com esse nome exato.");
         }
         for (int i = 0; i < saveData.quickSlotItemNames.Count && i < quickSlots.Length; i++)
         {
             if (!string.IsNullOrEmpty(saveData.quickSlotItemNames[i]))
             {
-                Objects itemAsset = Resources.Load<Objects>("Items/" + saveData.quickSlotItemNames[i]);
-                quickSlots[i] = itemAsset;
+                quickSlots[i] = LoadItemAsset(saveData.quickSlotItemNames[i]);
             }
             else
             {
@@ -202,5 +204,37 @@ public void RemoveItem(Objects itemToRemove)
         }
         OnInventoryChanged?.Invoke();
         OnQuickSlotsChanged?.Invoke();
+    }
+
+    // Cache nome->asset construído uma vez (Resources.LoadAll percorre subpastas).
+    private static Dictionary<string, Objects> _itemAssetCache;
+
+    // CORREÇÃO: tenta 'Resources/Items/<nome>' e 'Resources/<nome>' (rápido) e,
+    // como fallback robusto, varre TODAS as subpastas de Resources (ex.: Items/Chaves/),
+    // indexando por nome de arquivo. Sem isso, chaves em subpastas sumiam ao carregar.
+    private Objects LoadItemAsset(string itemName)
+    {
+        if (string.IsNullOrEmpty(itemName)) return null;
+
+        // 1) Tentativas diretas nos caminhos convencionais.
+        Objects itemAsset = Resources.Load<Objects>("Items/" + itemName);
+        if (itemAsset == null)
+            itemAsset = Resources.Load<Objects>(itemName);
+        if (itemAsset != null)
+            return itemAsset;
+
+        // 2) Fallback: indexa todos os Objects sob qualquer pasta Resources (recursivo).
+        if (_itemAssetCache == null)
+        {
+            _itemAssetCache = new Dictionary<string, Objects>();
+            foreach (Objects obj in Resources.LoadAll<Objects>(""))
+            {
+                if (obj != null && !_itemAssetCache.ContainsKey(obj.name))
+                    _itemAssetCache[obj.name] = obj;
+            }
+        }
+
+        _itemAssetCache.TryGetValue(itemName, out itemAsset);
+        return itemAsset;
     }
 }

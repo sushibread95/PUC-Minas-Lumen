@@ -40,21 +40,27 @@ public class DeathScreenManager : MonoBehaviour
         Show(false);
         if (resumeButton) resumeButton.onClick.AddListener(OnResumeClicked);
         if (menuButton) menuButton.onClick.AddListener(OnMenuClicked);
-        
-        // Pega a referência do InputManager
+
+        // CORREÇÃO CRÍTICA: o OnEnable inicial roda ANTES do Start, quando
+        // 'inputActions' ainda é nulo — então a inscrição em UI.Cancel nunca
+        // acontecia e o ESC na tela de morte ficava mudo. Agora a primeira
+        // inscrição é feita aqui, depois de obter a referência.
         if (InputManager.Instance != null)
         {
             inputActions = InputManager.Instance.InputActions;
+            inputActions.UI.Cancel.performed -= OnCancelPressed; // evita duplicar
+            inputActions.UI.Cancel.performed += OnCancelPressed;
         }
     }
 
     void OnEnable()
     {
         HealthSystem.OnPlayerDied += HandlePlayerDeath;
-        
-        // Inscreve nos eventos de input
+
+        // Reinscreve apenas em re-habilitações (na primeira vez, o Start cuida disso)
         if (inputActions != null)
         {
+            inputActions.UI.Cancel.performed -= OnCancelPressed; // evita duplicar
             inputActions.UI.Cancel.performed += OnCancelPressed;
         }
     }

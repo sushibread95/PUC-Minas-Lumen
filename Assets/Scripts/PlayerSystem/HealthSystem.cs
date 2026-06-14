@@ -9,8 +9,10 @@ public class HealthSystem : MonoBehaviour
     public static HealthSystem Instance { get; private set; }
 
     // Eventos Globais
-    public static event Action OnEnemyKilled;
-    public static event Action OnPlayerDied; 
+    // CORREÇÃO: o evento 'OnEnemyKilled' foi removido — era disparado mas não
+    // tinha NENHUM assinante no projeto. O fluxo real de morte para quests
+    // passa por GameEvents.OnEnemyDeath (via EnemyIdentity).
+    public static event Action OnPlayerDied;
 
     [Header("UI References")]
     private Slider healthBar;
@@ -55,6 +57,13 @@ public class HealthSystem : MonoBehaviour
         {
             if (Instance != null && Instance != this) Destroy(gameObject);
             else Instance = this;
+
+            // CORREÇÃO (autodano): se for o Player e ninguém configurou o
+            // ownerType no Inspector, define automaticamente como Player.
+            // Sem isso, a checagem 'projectile.owner == ownerType' no HandleHit
+            // não filtrava os projéteis do próprio jogador.
+            if (ownerType == ProjectileOwner.None)
+                ownerType = ProjectileOwner.Player;
         }
     }
 
@@ -306,8 +315,6 @@ public class HealthSystem : MonoBehaviour
         return true; 
     }
 
-    public static void TriggerEnemyKilled()
-    {
-        OnEnemyKilled?.Invoke();
-    }
+    // CORREÇÃO: TriggerEnemyKilled() removido junto com o evento OnEnemyKilled
+    // (não havia assinantes). Mortes para quest usam GameEvents.TriggerEnemyDeath.
 }

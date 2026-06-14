@@ -109,7 +109,11 @@ public class FinishableNPC : MonoBehaviour
     void Update()
     {
         if (!isPlayerClose || npcData == null) return;
-        
+
+        // CORREÇÃO: sem este null-check, o script lança NullReferenceException
+        // quando não há teclado conectado (ex.: jogando só com gamepad).
+        if (Keyboard.current == null) return;
+
         if (Keyboard.current.pKey.wasPressedThisFrame)
         {
             npcData.SerPurificado();

@@ -129,11 +129,28 @@ public class DialogueManager : MonoBehaviour
         // Restaura o tempo
         Time.timeScale = previousTimeScale;
 
+        // CORREÇÃO: antes restaurava input/cursor incondicionalmente. Se o
+        // diálogo terminasse com pause, menu, inventário ou tela de morte
+        // abertos, o cursor sumia e o input ia para o mapa errado. Agora só
+        // devolve o controle de gameplay se nenhuma outra UI estiver ativa.
+        if (IsAnotherUIActive())
+            return;
+
         // Restaura Input
         if (InputManager.Instance != null) InputManager.Instance.SwitchToGameplayMap();
-        
+
         // Restaura Cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    // Verifica se alguma UI de bloqueio (pause, menus, morte) está ativa.
+    private bool IsAnotherUIActive()
+    {
+        if (PauseMenuManager.Instance != null && PauseMenuManager.Instance.IsPaused) return true;
+        if (CharacterMenuWindow.Instance != null && CharacterMenuWindow.Instance.IsMenuOpen) return true;
+        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return true;
+        if (DeathScreenManager.Instance != null && DeathScreenManager.Instance.IsDeathScreenActive) return true;
+        return false;
     }
 }

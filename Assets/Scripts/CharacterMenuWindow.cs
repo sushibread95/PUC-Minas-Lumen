@@ -48,11 +48,35 @@ public class CharacterMenuWindow : MonoBehaviour
         if (InputManager.Instance != null)
         {
             input = InputManager.Instance.InputActions;
-            // Configura Q e E para trocar abas apenas se o menu estiver aberto
-            var uiMap = input.UI; // Usando referência direta ao mapa
-            uiMap.NextTab.performed += ctx => ChangeTab(1);
-            uiMap.PrevTab.performed += ctx => ChangeTab(-1);
+            // CORREÇÃO (vazamento de listener): antes eram lambdas, impossíveis
+            // de desinscrever. Como o InputActions vive no InputManager (DDOL),
+            // destruir/recriar esta janela acumulava callbacks apontando para
+            // objeto destruído (MissingReferenceException). Agora são métodos
+            // nomeados, removidos no OnDestroy.
+            input.UI.NextTab.performed += OnNextTabPerformed;
+            input.UI.PrevTab.performed += OnPrevTabPerformed;
         }
+    }
+
+    void OnDestroy()
+    {
+        if (input != null)
+        {
+            input.UI.NextTab.performed -= OnNextTabPerformed;
+            input.UI.PrevTab.performed -= OnPrevTabPerformed;
+        }
+
+        if (Instance == this) Instance = null;
+    }
+
+    private void OnNextTabPerformed(InputAction.CallbackContext ctx)
+    {
+        if (IsMenuOpen) ChangeTab(1);
+    }
+
+    private void OnPrevTabPerformed(InputAction.CallbackContext ctx)
+    {
+        if (IsMenuOpen) ChangeTab(-1);
     }
 
     // Input de UI geralmente funciona mesmo pausado, então Update é seguro aqui

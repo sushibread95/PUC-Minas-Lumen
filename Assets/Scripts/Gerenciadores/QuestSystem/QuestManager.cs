@@ -70,6 +70,8 @@ public class QuestManager : MonoBehaviour
 
         GameEvents.OnEnemyDeath += HandleEnemyDeath;
         GameEvents.OnItemObtained += HandleItemCollected;
+        GameEvents.OnNPCTalked += HandleNPCTalked;
+        GameEvents.OnLocationVisited += HandleLocationVisited;
         eventsRegistered = true;
     }
 
@@ -81,6 +83,8 @@ public class QuestManager : MonoBehaviour
 
         GameEvents.OnEnemyDeath -= HandleEnemyDeath;
         GameEvents.OnItemObtained -= HandleItemCollected;
+        GameEvents.OnNPCTalked -= HandleNPCTalked;
+        GameEvents.OnLocationVisited -= HandleLocationVisited;
         eventsRegistered = false;
     }
 
@@ -98,6 +102,18 @@ public class QuestManager : MonoBehaviour
     private void HandleItemCollected(string itemID, int quantity)
     {
         UpdateQuestProgress(ObjectiveType.Collect, itemID, quantity);
+    }
+
+    // Atualiza objetivos de conversar/examinar (Talk).
+    private void HandleNPCTalked(string npcID)
+    {
+        UpdateQuestProgress(ObjectiveType.Talk, npcID, 1);
+    }
+
+    // Atualiza objetivos de chegar a um local (Visit).
+    private void HandleLocationVisited(string locationID)
+    {
+        UpdateQuestProgress(ObjectiveType.Visit, locationID, 1);
     }
 
     #endregion
@@ -217,6 +233,75 @@ public class QuestManager : MonoBehaviour
             return null;
 
         return allQuestsDatabase.Find(q => q != null && q.questID == id);
+    }
+
+    #endregion
+
+    #region Objective Queries (para dicas/feedback)
+
+    // Status de um objetivo (tipo + alvo) em relação às quests do jogador.
+    // None  = não pertence a nenhuma quest ativa/concluída.
+    // Future = pertence a uma quest ativa, mas o player ainda não chegou nesse passo.
+    // Current = é exatamente o passo que o player precisa cumprir agora.
+    // Done  = já foi cumprido (passo anterior ao atual, ou quest concluída).
+    public enum ObjectiveProgress { None, Future, Current, Done }
+
+    // Descobre onde um objetivo se encaixa no progresso atual do player.
+    public ObjectiveProgress GetObjectiveProgress(ObjectiveType type, string targetID)
+    {
+        if (string.IsNullOrWhiteSpace(targetID))
+            return ObjectiveProgress.None;
+
+        foreach (QuestSaveData qData in activeQuests)
+        {
+            if (qData == null) continue;
+
+            QuestDefinition def = GetQuestDefinition(qData.questID);
+            if (def == null || def.steps == null) continue;
+
+            int idx = def.steps.FindIndex(s => s != null && s.type == type && s.targetID == targetID);
+            if (idx < 0) continue;
+
+            if (idx < qData.currentStepIndex) return ObjectiveProgress.Done;
+            if (idx == qData.currentStepIndex) return ObjectiveProgress.Current;
+            return ObjectiveProgress.Future;
+        }
+
+        foreach (string qid in completedQuestIDs)
+        {
+            QuestDefinition def = GetQuestDefinition(qid);
+            if (def == null || def.steps == null) continue;
+
+            if (def.steps.Exists(s => s != null && s.type == type && s.targetID == targetID))
+                return ObjectiveProgress.Done;
+        }
+
+        return ObjectiveProgress.None;
+    }
+
+    // Para um objetivo que ainda é FUTURO, devolve a descrição do passo que o
+    // player precisa cumprir ANTES dele (o passo atual da mesma quest).
+    // Usado para montar dicas tipo "Antes disso preciso: <descrição>".
+    public string GetBlockingStepDescription(ObjectiveType type, string targetID)
+    {
+        if (string.IsNullOrWhiteSpace(targetID))
+            return "";
+
+        foreach (QuestSaveData qData in activeQuests)
+        {
+            if (qData == null) continue;
+
+            QuestDefinition def = GetQuestDefinition(qData.questID);
+            if (def == null || def.steps == null) continue;
+
+            int idx = def.steps.FindIndex(s => s != null && s.type == type && s.targetID == targetID);
+            if (idx <= qData.currentStepIndex) continue; // só interessa se for passo futuro
+
+            if (qData.currentStepIndex >= 0 && qData.currentStepIndex < def.steps.Count)
+                return def.steps[qData.currentStepIndex].description;
+        }
+
+        return "";
     }
 
     #endregion

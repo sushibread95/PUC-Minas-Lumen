@@ -121,11 +121,9 @@ public class CorruptedNPC : MonoBehaviour
             }
             else if (input.Player.Kill.WasPressedThisFrame())
             {
-                 if (healthSystem != null)
-                 {
-                    healthSystem.canBeKilledNormally = true; 
-                    healthSystem.ApplyEffect(new Effect[] { new Effect { effectType = Effect.EffectType.physical, power = 9999 } });
-                 }
+                // CORREÇÃO: usa o caminho único de morte (SerMorto roteia pelo
+                // EnemyHealth quando ele existe), igual ao NPCInteraction.
+                SerMorto();
             }
         }
     }
@@ -144,6 +142,11 @@ public class CorruptedNPC : MonoBehaviour
 
     public void SerPurificado()
     {
+        // CORREÇÃO (reentrância): vários scripts (CorruptedNPC, NPCInteraction,
+        // FinishableNPC) podem chamar isto no mesmo frame. Sem esta guarda,
+        // o XP de purificação era concedido em dobro.
+        if (currentState == NPCState.Purificado || currentState == NPCState.Morto) return;
+
         currentState = NPCState.Purificado;
         HideAllUI();
 
@@ -166,15 +169,33 @@ public class CorruptedNPC : MonoBehaviour
 
     public void SerMorto()
     {
+        // CORREÇÃO (reentrância): impede dupla execução no mesmo frame.
+        if (currentState == NPCState.Morto || currentState == NPCState.Purificado) return;
+
+        // CORREÇÃO (caminho único de morte): se o inimigo ainda tem EnemyHealth
+        // vivo, a morte é roteada por ele. Assim o EnemyIdentity dispara o evento
+        // de quest UMA única vez e a animação/limpeza de morte rodam normalmente.
+        // O EnemyHealth.DeathRoutine chama SerMorto() de novo no fim, e aí (com
+        // isDead == true) caímos no bloco de "virar corpo" abaixo.
+        if (healthSystem != null && !healthSystem.isDead)
+        {
+            healthSystem.canBeKilledNormally = true;
+            healthSystem.ApplyEffect(new Effect[] { new Effect { effectType = Effect.EffectType.physical, power = 9999 } });
+            return;
+        }
+
         currentState = NPCState.Morto;
         HideAllUI();
 
-        if (!string.IsNullOrEmpty(enemyTypeID)) GameEvents.TriggerEnemyDeath(enemyTypeID);
+        // CORREÇÃO (evento duplicado de quest): o TriggerEnemyDeath foi REMOVIDO
+        // daqui. O evento de morte para quests agora é disparado apenas pelo
+        // EnemyIdentity.NotifyDeathForQuest (chamado pelo EnemyHealth.Kill),
+        // que tem trava de envio único. Antes, a mesma morte contava 2x.
         if (LevelingSystem.Instance != null) LevelingSystem.Instance.AddCombatXP(xpReward);
-        
+
         UpdateSaveState(NPCState.Morto); // Salva
-        
-        TransformToCorpse(false); 
+
+        TransformToCorpse(false);
     }
 
     // Chamado pelo EnemyHealth quando a vida zera

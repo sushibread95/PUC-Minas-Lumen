@@ -133,7 +133,12 @@ public class InteractableDoor : MonoBehaviour, IInteractable
     private void PlayLockedFeedback()
     {
         if (!string.IsNullOrEmpty(lockedMessage))
+        {
             Debug.Log(lockedMessage);
+            // Mostra a dica NA TELA (antes só ia para o console, invisível ao player).
+            if (UIFeedbackManager.Instance != null)
+                UIFeedbackManager.Instance.ShowNotification(lockedMessage, 2f);
+        }
 
         if (lockedSound != null)
             AudioSource.PlayClipAtPoint(lockedSound, transform.position);

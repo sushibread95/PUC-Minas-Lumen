@@ -885,10 +885,18 @@ public class EnemyAIController : MonoBehaviour
         meleeAttackWindowId++;
         damagedTargetsThisAttack.Clear();
 
-        if (meleeHitbox != null)
+        // CORREÇÃO (dano duplo): antes, o sistema legado (EnemyMeleeHitbox, que
+        // aplica dano sozinho) e o sistema novo (EnemyAttackHitbox →
+        // ProcessMeleeAttackHit) eram ativados JUNTOS. Prefab com os dois
+        // configurados dava dano em dobro por soco. Agora o legado só é usado
+        // quando NÃO há meleeAttackColliders configurados.
+        bool hasModernColliders = meleeAttackColliders != null && meleeAttackColliders.Length > 0;
+
+        if (meleeHitbox != null && !hasModernColliders)
             meleeHitbox.EnableHitbox(meleeDamage);
 
-        SetMeleeAttackCollidersActive(true);
+        if (hasModernColliders)
+            SetMeleeAttackCollidersActive(true);
 
         if (debugMeleeHitbox)
             Debug.Log($"[{nameof(EnemyAIController)}] Objeto de hitbox melee ativado: {gameObject.name}");

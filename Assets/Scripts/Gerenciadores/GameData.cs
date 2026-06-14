@@ -3,11 +3,11 @@ using System.Collections.Generic;
 [System.Serializable]
 public class GameData
 {
-    // --- AVISO DE MODIFICAÇÃO ---
-    // A linha 'public List<InventoryItemSaveData> inventoryItems;' foi
-    // substituída por 'public object inventoryItems;' para ser
-    // compatível com o NOVO InventoryManager.cs.
-    public object inventoryItems;
+    // --- CORREÇÃO (Save de Inventário) ---
+    // O campo era 'object', que o JsonUtility NÃO serializa — o inventário
+    // nunca chegava ao savegame.json. Agora usa o tipo concreto e serializável
+    // do InventoryManager.
+    public InventoryManager.InventorySaveData inventoryItems;
 
     public List<NPCStateSaveData> npcStates;
     public List<string> collectedItemIDs;
@@ -34,7 +34,7 @@ public class GameData
         
         npcStates = new List<NPCStateSaveData>();
         collectedItemIDs = new List<string>();
-        inventoryItems = null;
+        inventoryItems = new InventoryManager.InventorySaveData();
 
         unlockedDoorIDs = new List<string>();
         

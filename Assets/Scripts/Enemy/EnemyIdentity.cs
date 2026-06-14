@@ -33,7 +33,25 @@ public class EnemyIdentity : MonoBehaviour
     #region Public API
 
     public string UniqueID => uniqueID;
-    public string QuestKillID => !string.IsNullOrWhiteSpace(questKillID) ? questKillID : enemyTypeID;
+
+    // CORREÇÃO (compatibilidade): o TriggerEnemyDeath duplicado foi removido do
+    // CorruptedNPC.SerMorto. Para os prefabs antigos que só preencheram o
+    // 'enemyTypeID' do CorruptedNPC (e não o questKillID daqui), usamos aquele
+    // valor como fallback antes do default genérico.
+    public string QuestKillID
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(questKillID))
+                return questKillID;
+
+            CorruptedNPC npc = GetComponent<CorruptedNPC>();
+            if (npc != null && !string.IsNullOrWhiteSpace(npc.enemyTypeID))
+                return npc.enemyTypeID;
+
+            return enemyTypeID;
+        }
+    }
     public string EnemyTypeID => enemyTypeID;
     public string EncounterID => encounterID;
     public bool DeathEventSent => deathEventSent;

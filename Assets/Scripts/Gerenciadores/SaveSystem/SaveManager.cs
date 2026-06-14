@@ -29,6 +29,12 @@ public class SaveManager : MonoBehaviour
     private Coroutine saveRoutine;
     private Coroutine applyRoutine;
 
+    // CORREÇÃO (teleporte indevido): a reaplicação automática pós-carregamento
+    // de cena agora é "one-shot". Sem isso, TODA troca de cena reaplicava o save
+    // inteiro (inclusive a posição do player, que pertence à cena onde se salvou),
+    // revertendo progresso e teleportando o player para coordenadas erradas.
+    private bool pendingSceneApply;
+
     #endregion
 
     #region Unity Lifecycle
@@ -62,6 +68,8 @@ public class SaveManager : MonoBehaviour
 
     private void Update()
     {
+        // CORREÇÃO: hotkeys de debug não vão mais para a build final.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!enableDebugHotkeys || Keyboard.current == null)
             return;
 
@@ -70,6 +78,7 @@ public class SaveManager : MonoBehaviour
 
         if (Keyboard.current.f9Key.wasPressedThisFrame)
             LoadGame();
+#endif
     }
 
     #endregion
@@ -130,6 +139,10 @@ public class SaveManager : MonoBehaviour
             gameData = JsonUtility.FromJson<GameData>(json) ?? new GameData();
             HasLoadedData = true;
 
+            // CORREÇÃO: arma a reaplicação one-shot para a PRÓXIMA cena carregada
+            // (a cena de gameplay que vem depois do Continue/Respawn).
+            pendingSceneApply = true;
+
             ApplyLoadedDataToRuntime();
             Debug.Log("SaveManager: Jogo carregado de: " + saveFilePath);
         }
@@ -147,6 +160,7 @@ public class SaveManager : MonoBehaviour
         gameData = new GameData();
         registeredPlayerTransform = null;
         HasLoadedData = false;
+        pendingSceneApply = false; // CORREÇÃO: novo jogo não deve reaplicar save antigo
         Debug.Log("SaveManager: GameData em memória foi resetado.");
     }
 
@@ -338,10 +352,13 @@ public class SaveManager : MonoBehaviour
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (!autoApplyDataOnSceneLoaded || !HasLoadedData)
+        // CORREÇÃO: só reaplica UMA vez, na primeira cena carregada após LoadGame().
+        // Antes, isso rodava em TODA troca de cena enquanto HasLoadedData fosse true,
+        // teleportando o player para a posição do save e revertendo quests/inventário.
+        if (!autoApplyDataOnSceneLoaded || !pendingSceneApply)
             return;
 
-        // Reaplica inventário/quests/mundo quando novos managers de cena aparecerem.
+        pendingSceneApply = false;
         StartCoroutine(ApplyLoadedDataNextFrame());
     }
 

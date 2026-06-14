@@ -33,6 +33,12 @@ public class Projectile : MonoBehaviour
     // 3D
     private void OnCollisionEnter(Collision collision)
     {
+        // CORREÇÃO (autodano): o campo 'ignoredLayer' era preenchido pelo Cannon
+        // mas nunca lido. Agora o projétil ignora o impacto contra a layer de
+        // quem o disparou — não estoura nem solta shrapnel no corpo do dono.
+        if (ignoredLayer >= 0 && collision.gameObject.layer == ignoredLayer)
+            return;
+
         // Spawn de shrapnel, se configurado
         if (shrapnelSpawner != null)
         {

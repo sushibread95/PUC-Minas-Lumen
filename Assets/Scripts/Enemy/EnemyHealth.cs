@@ -309,8 +309,8 @@ public class EnemyHealth : MonoBehaviour
             return;
 
         questDeathNotified = true;
-        HealthSystem.TriggerEnemyKilled();
-
+        // CORREÇÃO: HealthSystem.TriggerEnemyKilled() removido (evento sem
+        // assinantes). O EnemyIdentity abaixo é o único notificador de quests.
         if (identity != null)
             identity.NotifyDeathForQuest();
     }
