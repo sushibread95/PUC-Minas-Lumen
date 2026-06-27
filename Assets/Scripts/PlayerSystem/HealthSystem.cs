@@ -13,8 +13,10 @@ public class HealthSystem : MonoBehaviour
     public static event Action OnPlayerDied; 
 
     [Header("UI References")]
-    private Slider healthBar;
-    private Slider manaBar;
+    private Image healthBar;
+    private Image manaBar;
+
+    
 
     [Header("Status")]
     public float currentHealth;
@@ -37,7 +39,7 @@ public class HealthSystem : MonoBehaviour
 
     [Header("Bleed Out / Morte")]
     public bool isDead = false;
-    [SerializeField] private Slider bleedOutSlider;
+    [SerializeField] private Image bleedOutBar;
     [SerializeField] private float bleedOutDuration = 5f;
     private float bleedOutTimer = 0f;
     private bool isInBleedOut = false;
@@ -72,7 +74,7 @@ public class HealthSystem : MonoBehaviour
 
         if (HUDManager.Instance != null && playerController != null)
         {
-            HUDManager.Instance.AssignSlidersTo(this);
+            HUDManager.Instance.AssignBarsTo(this);
         }
     }
 
@@ -130,7 +132,8 @@ public class HealthSystem : MonoBehaviour
             else if (playerController != null) 
             {
                 isInBleedOut = true;
-                if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(true);
+                if (bleedOutBar)
+                    bleedOutBar.gameObject.SetActive(true);
                 bleedOutTimer = bleedOutDuration;
             }
         }
@@ -138,7 +141,8 @@ public class HealthSystem : MonoBehaviour
         if (isInBleedOut)
         {
             bleedOutTimer -= Time.deltaTime;
-            if (bleedOutSlider) bleedOutSlider.value = bleedOutTimer / bleedOutDuration;
+            if (bleedOutBar)
+                bleedOutBar.fillAmount = bleedOutTimer / bleedOutDuration;
 
             if (bleedOutTimer <= 0f)
             {
@@ -156,7 +160,8 @@ public class HealthSystem : MonoBehaviour
         if (isInBleedOut && currentHealth > 0)
         {
             isInBleedOut = false;
-            if (bleedOutSlider) bleedOutSlider.gameObject.SetActive(false);
+            if (bleedOutBar)
+                bleedOutBar.gameObject.SetActive(false);
         }
         
         UpdateUIBars();
@@ -267,11 +272,11 @@ public class HealthSystem : MonoBehaviour
         }
     // ----------------------------------------------
 
-    public void SetSliders(Slider hp, Slider mana, Slider bleed)
+    public void SetBars(Image hp, Image mana, Image bleed)
     {
-        this.healthBar = hp;
-        this.manaBar = mana;
-        this.bleedOutSlider = bleed;
+        healthBar = hp;
+        manaBar = mana;
+        bleedOutBar = bleed;
         UpdateUIBars();
     }
 
@@ -289,8 +294,11 @@ public class HealthSystem : MonoBehaviour
         float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
         float maxM = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxMana : 50f;
 
-        if (healthBar) { healthBar.maxValue = maxH; healthBar.value = currentHealth; }
-        if (manaBar) { manaBar.maxValue = maxM; manaBar.value = currentMana; }
+        if (healthBar)
+            healthBar.fillAmount = currentHealth / maxH;
+
+        if (manaBar)
+            manaBar.fillAmount = currentMana / maxM;
     }
 
     public bool CheckEffect(Effect[] effectToApply)
