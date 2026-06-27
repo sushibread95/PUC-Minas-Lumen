@@ -83,6 +83,11 @@ public class PauseMenuManager : MonoBehaviour
         if (SaveManager.Instance != null && SaveManager.Instance.IsSaving) return;
         if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return;
 
+        // CORREÇÃO (conflito de UI): não abrir o pause por cima de um diálogo ativo.
+        // Sem isso, o pause e o diálogo brigavam por timeScale/cursor/input, e dar
+        // Resume deixava o painel de diálogo aberto com o controle de gameplay ligado.
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive) return;
+
         if (!IsPaused) Pause();
     }
 
