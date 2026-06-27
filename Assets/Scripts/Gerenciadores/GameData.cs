@@ -26,6 +26,11 @@ public class GameData
     public List<string> triggeredEvents = new List<string>();
     // -----------------------------------------------------------
 
+    // --- ADIÇÃO (#3 persistência): progressão do player (XP/nível e atributos/gold) ---
+    public LevelingSystem.LevelingSaveData levelingData;
+    public PlayerStats.PlayerStatsSaveData playerStats;
+    // ---------------------------------------------------------------------------------
+
     public GameData()
     {
         playerPosX = 0; 
@@ -40,6 +45,9 @@ public class GameData
         
         // --- INICIALIZAÇÃO ---
         triggeredEvents = new List<string>();
+
+        levelingData = new LevelingSystem.LevelingSaveData();
+        playerStats = new PlayerStats.PlayerStatsSaveData();
     }
 }
 

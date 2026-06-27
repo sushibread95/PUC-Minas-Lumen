@@ -50,7 +50,57 @@ public class PlayerStats : MonoBehaviour
     {
         currentGold += amount;
         Debug.Log($"Recebeu {amount} de Ouro! Total: {currentGold}");
-        
+
     }
+
+    #region Save / Load
+
+    // Estado serializável dos atributos/economia do player (usado pelo SaveManager).
+    [System.Serializable]
+    public class PlayerStatsSaveData
+    {
+        public int level = 1;
+        public float physicalAttack = 10f;
+        public float magicAttack = 10f;
+        public float defense = 5f;
+        public float maxHealth = 100f;
+        public float maxMana = 50f;
+        public float spellCastSpeedMod = 1f;
+        public int currentGold = 0;
+    }
+
+    public PlayerStatsSaveData GetSaveData()
+    {
+        return new PlayerStatsSaveData
+        {
+            level = level,
+            physicalAttack = physicalAttack,
+            magicAttack = magicAttack,
+            defense = defense,
+            maxHealth = maxHealth,
+            maxMana = maxMana,
+            spellCastSpeedMod = spellCastSpeedMod,
+            currentGold = currentGold
+        };
+    }
+
+    public void LoadSaveData(PlayerStatsSaveData data)
+    {
+        if (data == null) return;
+        level = data.level;
+        physicalAttack = data.physicalAttack;
+        magicAttack = data.magicAttack;
+        defense = data.defense;
+        maxHealth = data.maxHealth;
+        maxMana = data.maxMana;
+        spellCastSpeedMod = data.spellCastSpeedMod;
+        currentGold = data.currentGold;
+
+        // Atualiza HUD e máximos no HealthSystem com os valores carregados.
+        if (HealthSystem.Instance != null)
+            HealthSystem.Instance.UpdateMaxStats(maxHealth, maxMana);
+    }
+
+    #endregion
 
 }

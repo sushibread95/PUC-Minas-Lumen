@@ -108,6 +108,7 @@ public class SaveManager : MonoBehaviour
         CaptureWorldState();
         CaptureQuestState();
         CaptureInventoryState();
+        CaptureProgressionState();
         CapturePlayerState();
     }
 
@@ -256,6 +257,16 @@ public class SaveManager : MonoBehaviour
         gameData.inventoryItems = InventoryManager.Instance.GetSaveData();
     }
 
+    // Captura a progressão do player: XP/nível (LevelingSystem) e atributos/gold (PlayerStats).
+    private void CaptureProgressionState()
+    {
+        if (LevelingSystem.Instance != null)
+            gameData.levelingData = LevelingSystem.Instance.GetSaveData();
+
+        if (PlayerStats.Instance != null)
+            gameData.playerStats = PlayerStats.Instance.GetSaveData();
+    }
+
     // Captura posição do player atual.
     private void CapturePlayerState()
     {
@@ -285,6 +296,7 @@ public class SaveManager : MonoBehaviour
         ApplyWorldState();
         ApplyQuestState();
         ApplyInventoryState();
+        ApplyProgressionState();
 
         if (applyRoutine != null)
             StopCoroutine(applyRoutine);
@@ -317,6 +329,16 @@ public class SaveManager : MonoBehaviour
             return;
 
         InventoryManager.Instance.LoadSaveData(gameData.inventoryItems);
+    }
+
+    // Restaura XP/nível e atributos/gold do player.
+    private void ApplyProgressionState()
+    {
+        if (LevelingSystem.Instance != null)
+            LevelingSystem.Instance.LoadSaveData(gameData.levelingData);
+
+        if (PlayerStats.Instance != null)
+            PlayerStats.Instance.LoadSaveData(gameData.playerStats);
     }
 
     private IEnumerator ApplyPlayerPositionWhenReady()

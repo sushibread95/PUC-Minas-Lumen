@@ -64,7 +64,9 @@ public class EnemyAIController : MonoBehaviour
     [Tooltip("Define se este inimigo luta corpo a corpo, à distância ou tenta agarrar o player.")]
     [SerializeField] private EnemyCombatMode combatMode = EnemyCombatMode.Melee;
 
-    [HideInInspector] public bool isPurified = false;
+    // #1: isPurified deixou de ser uma cópia local. Agora é DERIVADO da fonte
+    // única (o estado narrativo do CorruptedNPC), eliminando a duplicação de estado.
+    public bool isPurified => npcData != null && npcData.currentState == NPCState.Purificado;
 
     #endregion
 
@@ -976,6 +978,14 @@ public class EnemyAIController : MonoBehaviour
     // Tenta aplicar dano usando os nomes de método já comuns no projeto sem duplicar chamadas.
     private bool TryApplyDamageToTarget(Collider other, Effect[] effects, float rawDamage)
     {
+        // CAMINHO TIPADO (#2): preferencial, sem reflection. EnemyHealth e
+        // HealthSystem implementam IDamageable.
+        IDamageable damageable = other.GetComponentInParent<IDamageable>();
+        if (damageable != null)
+            return damageable.ApplyEffect(effects);
+
+        // FALLBACK (compatibilidade): reflection para alvos que ainda não
+        // implementam IDamageable.
         Component[] components = other.GetComponentsInParent<Component>(true);
 
         if (TryInvokeMethod(components, "ApplyEffect", new object[] { effects }, typeof(Effect[])))
@@ -1581,7 +1591,7 @@ public class EnemyAIController : MonoBehaviour
 
     public void OnPurify()
     {
-        isPurified = true;
+        // #1: isPurified agora é derivado de npcData.currentState — sem atribuição local.
         AbortCombat();
         StopAllCoroutines();
 

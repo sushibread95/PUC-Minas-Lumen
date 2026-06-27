@@ -160,6 +160,9 @@ public class CorruptedNPC : MonoBehaviour
         
         if (rotaParaAbrir != null) rotaParaAbrir.SetActive(false);
         ApplyPurifiedState();
+
+        // #1: notifica o ciclo de vida pelo ponto único (EnemyHealth).
+        if (healthSystem != null) healthSystem.RaisePurified();
     }
 
     private void ApplyPurifiedState()

@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using System.Collections;
 
-[RequireComponent(typeof(CorruptedNPC))]
+// #6: o RequireComponent(CorruptedNPC) foi REMOVIDO — o CorruptedNPC agora é
+// OPCIONAL. Com ele, o inimigo tem a mecânica purificar/finalizar; sem ele,
+// é um inimigo de combate puro que morre normalmente.
 [DisallowMultipleComponent]
-public class EnemyHealth : MonoBehaviour
+public class EnemyHealth : MonoBehaviour, IDamageable
 {
     #region Inspector - Health
 
@@ -58,6 +61,28 @@ public class EnemyHealth : MonoBehaviour
     private LockOnTarget lockOnTarget;
     private EnemyAIController aiController;
     private bool questDeathNotified;
+
+    #endregion
+
+    #region Eventos de ciclo de vida (#1: fonte única de notificação)
+
+    [Header("EVENTOS DE CICLO DE VIDA")]
+    [Tooltip("Disparado quando o inimigo é derrubado (entra em nocaute).")]
+    public UnityEvent OnEnemyFallen = new UnityEvent();
+    [Tooltip("Disparado quando o inimigo se recupera do nocaute.")]
+    public UnityEvent OnEnemyRecovered = new UnityEvent();
+    [Tooltip("Disparado quando o inimigo morre.")]
+    public UnityEvent OnEnemyDied = new UnityEvent();
+    [Tooltip("Disparado quando o inimigo é purificado (chamado pelo CorruptedNPC).")]
+    public UnityEvent OnEnemyPurified = new UnityEvent();
+
+    #endregion
+
+    #region Recompensa de combate puro (#6)
+
+    [Header("RECOMPENSA (combate puro)")]
+    [Tooltip("XP concedido ao morrer quando NÃO há CorruptedNPC. Com CorruptedNPC, usa o xpReward dele.")]
+    [SerializeField] private float combatXpRewardIfNoFinisher = 50f;
 
     #endregion
 
@@ -186,9 +211,13 @@ public class EnemyHealth : MonoBehaviour
 
     private void EvaluateHealthState()
     {
+        // #6: o estágio "caído/finalizável" só existe se houver um finalizador
+        // (CorruptedNPC). Sem ele, o inimigo morre normalmente ao zerar a vida.
+        bool hasFinisher = corruptedNPC != null;
+
         if (currentHealth <= 0)
         {
-            if (canBeKilledNormally)
+            if (canBeKilledNormally || !hasFinisher)
             {
                 Kill();
             }
@@ -203,7 +232,7 @@ public class EnemyHealth : MonoBehaviour
         }
 
         int fallenThreshold = Mathf.CeilToInt(health * fallenThresholdPercent);
-        if (currentHealth <= fallenThreshold && !isFallen && !canBeKilledNormally)
+        if (hasFinisher && currentHealth <= fallenThreshold && !isFallen && !canBeKilledNormally)
             EnterFallenState();
     }
 
@@ -229,6 +258,8 @@ public class EnemyHealth : MonoBehaviour
 
         if (corruptedNPC != null)
             corruptedNPC.EntrarEmNocaute();
+
+        OnEnemyFallen.Invoke(); // #1: notifica ouvintes (VFX, áudio, IA externa, etc.)
     }
 
     public void ForceFallenStateOnLoad()
@@ -266,6 +297,15 @@ public class EnemyHealth : MonoBehaviour
 
         if (lockOnTarget != null)
             lockOnTarget.SetTargetable(true);
+
+        OnEnemyRecovered.Invoke(); // #1
+    }
+
+    // #1: ponto único para sinalizar purificação. Chamado pelo CorruptedNPC.SerPurificado,
+    // para que TODO evento de ciclo de vida saia sempre do EnemyHealth.
+    public void RaisePurified()
+    {
+        OnEnemyPurified.Invoke();
     }
 
     #endregion
@@ -281,6 +321,13 @@ public class EnemyHealth : MonoBehaviour
         isFallen = false;
 
         NotifyDeathEventsOnce();
+
+        // #6: inimigo de combate puro (sem CorruptedNPC) concede XP aqui mesmo,
+        // já que o caminho de XP normal passa pelo CorruptedNPC.SerMorto.
+        if (corruptedNPC == null && LevelingSystem.Instance != null)
+            LevelingSystem.Instance.AddCombatXP(combatXpRewardIfNoFinisher);
+
+        OnEnemyDied.Invoke(); // #1
 
         if (lockOnTarget != null)
             lockOnTarget.SetTargetable(false);

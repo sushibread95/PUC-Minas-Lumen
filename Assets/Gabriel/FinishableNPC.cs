@@ -106,24 +106,7 @@ public class FinishableNPC : MonoBehaviour
         }
     }
     
-    void Update()
-    {
-        if (!isPlayerClose || npcData == null) return;
-
-        // CORREÇÃO: sem este null-check, o script lança NullReferenceException
-        // quando não há teclado conectado (ex.: jogando só com gamepad).
-        if (Keyboard.current == null) return;
-
-        if (Keyboard.current.pKey.wasPressedThisFrame)
-        {
-            npcData.SerPurificado();
-            this.enabled = false; // Se desliga
-        }
-        
-        if (Keyboard.current.kKey.wasPressedThisFrame)
-        {
-            npcData.SerMorto();
-            this.enabled = false; // Se desliga
-        }
-    }
+    // CONSOLIDAÇÃO (#4): a leitura de input (P/K) foi REMOVIDA. O CorruptedNPC é
+    // o único leitor de Purify/Kill. Este componente (legado/órfão — WakeUp não é
+    // chamado por ninguém) fica apenas com prompt/highlight, sem disparar ações.
 }

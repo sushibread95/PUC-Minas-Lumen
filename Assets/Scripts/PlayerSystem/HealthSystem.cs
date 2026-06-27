@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System; 
 
-public class HealthSystem : MonoBehaviour
+public class HealthSystem : MonoBehaviour, IDamageable
 {
     public static HealthSystem Instance { get; private set; }
 

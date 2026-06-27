@@ -9,6 +9,11 @@ public enum EnemyShooterFireMode
     CannonFire
 }
 
+// LEGADO (#5): substituído pelo EnemyAIController em modo Ranged. Mantido só por
+// compatibilidade com prefabs antigos; auto-desativa quando há EnemyAIController.
+// [AddComponentMenu("")] o esconde do menu "Add Component" para não ser adicionado
+// por engano em inimigos novos (não afeta instâncias já existentes).
+[AddComponentMenu("")]
 [RequireComponent(typeof(EnemyHealth))]
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(CorruptedNPC))]

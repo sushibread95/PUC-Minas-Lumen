@@ -16,11 +16,6 @@ public class NPCInteraction : MonoBehaviour
 
     private bool isPlayerClose = false;
 
-    // --- INÍCIO DAS MUDANÇAS ---
-    private PlayerInputActions input;
-    private bool inputInitialized = false;
-    // --- FIM DAS MUDANÇAS ---
-
     void Awake()
     {
         npcData = GetComponent<CorruptedNPC>();
@@ -40,15 +35,6 @@ public class NPCInteraction : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // --- INÍCIO DAS MUDANÇAS ---
-            // Pega o InputManager na primeira vez que o player se aproxima
-            if (!inputInitialized && InputManager.Instance != null)
-            {
-                input = InputManager.Instance.InputActions;
-                inputInitialized = true;
-            }
-            // --- FIM DAS MUDANÇAS ---
-
             isPlayerClose = true;
 
             if (npcData.currentState == NPCState.Corrompido && meshToHighlight != null && highlightMaterial != null)
@@ -76,39 +62,8 @@ public class NPCInteraction : MonoBehaviour
         }
     }
 
-    // --- LÓGICA DE SIMULAÇÃO (INPUTS) ---
-
-    void Update()
-    {
-        // Cláusula de guarda: não faz nada se o player não estiver perto
-        // OU se o input não foi pego (porque o InputManager não existe)
-        if (!isPlayerClose || !inputInitialized) return;
-
-        // ESTADO 1: CORROMPIDO (Player pode Nocautear)
-        if (npcData.currentState == NPCState.Corrompido)
-        {
-            // (Input de Nocaute 'N' removido para focar no 'Fallen')
-            // (O dano normal agora vai derrubar o inimigo)
-        }
-
-        // ESTADO 2: NOCAUTEADO (Player pode Finalizar)
-        else if (npcData.currentState == NPCState.Nocauteado)
-        {
-            // --- INÍCIO DAS MUDANÇAS ---
-            // Checa o input de 'Purify' (P) do PlayerInputActions
-            if (input.Player.Purify.WasPressedThisFrame())
-            {
-                npcData.SerPurificado();
-                promptUI?.Hide();
-            }
-
-            // Checa o input de 'Kill' (K) do PlayerInputActions
-            if (input.Player.Kill.WasPressedThisFrame())
-            {
-                npcData.SerMorto();
-                promptUI?.Hide();
-            }
-            // --- FIM DAS MUDANÇAS ---
-        }
-    }
+    // CONSOLIDAÇÃO (#4): a leitura de Purify/Kill foi REMOVIDA daqui. Agora o
+    // CorruptedNPC é o ÚNICO responsável por ler o input e chamar
+    // SerPurificado()/SerMorto(), evitando dois scripts processando o mesmo frame.
+    // Este componente cuida apenas do highlight e do prompt de proximidade.
 }
