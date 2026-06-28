@@ -6,9 +6,9 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     [Header("Referências Reais")]
-    public Slider healthBar;
-    public Slider manaBar;
-    public Slider bleedOutSlider;
+    public Image healthBar;
+    public Image manaBar;
+    public Image bleedOutBar;
     // Removidos hurtHealthBar e oneShotProtectionSlider
 
     void Awake()
@@ -17,9 +17,8 @@ public class HUDManager : MonoBehaviour
         else Instance = this;
     }
 
-    public void AssignSlidersTo(HealthSystem playerHealth)
+    public void AssignBarsTo(HealthSystem playerHealth)
     {
-        // Passa apenas os que sobraram
-        playerHealth.SetSliders(healthBar, manaBar, bleedOutSlider);
+        playerHealth.SetBars(healthBar, manaBar, bleedOutBar);
     }
 }
