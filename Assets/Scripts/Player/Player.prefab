@@ -344,6 +344,7 @@ GameObject:
   - component: {fileID: 3074119812755964337}
   - component: {fileID: 4367274427437640667}
   - component: {fileID: 1577498953743658804}
+  - component: {fileID: 7803055346850903720}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -632,7 +633,155 @@ MonoBehaviour:
   m_ControlsChangedEvent:
     m_PersistentCalls:
       m_Calls: []
-  m_ActionEvents: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 4c271a90-7194-4d67-8abc-4abfe58bebcf
+    m_ActionName: 'Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: acc0d952-4538-4222-9d76-cd68d953e723
+    m_ActionName: 'Player/Look[/Mouse/delta]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: adc213bc-4f0e-46cb-8e00-522e915ded93
+    m_ActionName: 'Player/AttackB[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2e8533fd-7cc5-4df8-a95a-c91ebcfc28bd
+    m_ActionName: 'Player/DefendB[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: aa7a9da2-ebb4-4071-9689-ae7a67c9d748
+    m_ActionName: 'Player/Interact[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5cc47a7c-ea0f-4409-9f65-d6b38663cd74
+    m_ActionName: 'Player/Jump[/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 3d835372-fd34-4781-939f-860bceb665cb
+    m_ActionName: 'Player/Crouch[/Keyboard/ctrl]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 22a5a414-6d70-4373-a36f-2aa9e54021a0
+    m_ActionName: 'Player/SneakSlow[/Keyboard/capsLock]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 0ca8be5a-2957-442d-932b-db5f8e6ecae8
+    m_ActionName: Player/Map
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 4dc3c8f1-1998-4b5c-9e94-819f333edb56
+    m_ActionName: 'Player/Pause[/Keyboard/escape]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ceb3d209-bb9a-4d62-a617-3c947d07e2fa
+    m_ActionName: 'Player/Inventory[/Keyboard/tab]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: cd807964-5858-4a9b-8e01-5ee4553154cc
+    m_ActionName: Player/ResetView
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 450f2eaf-edab-4daa-ab82-06721223db73
+    m_ActionName: 'Player/Sprint[/Keyboard/shift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 4671c272-40de-47e3-b604-f35c39d35803
+    m_ActionName: 'Player/LockOn[/Mouse/middleButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c3f788b8-2074-48e6-a796-bae5059d2b2f
+    m_ActionName: Player/SwitchTarget
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 1a32a198-ec02-4ce4-8d52-f905ed38c5cd
+    m_ActionName: Player/Equipment
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d3536ef9-468d-4505-af33-d032f45fe1eb
+    m_ActionName: 'Player/QuickSlot1[/Keyboard/1]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: a166a6b2-b9cd-4093-8766-57f40766ae5b
+    m_ActionName: 'Player/QuickSlot2[/Keyboard/2]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 1da70799-85a6-4253-8026-043ab9936ca7
+    m_ActionName: 'Player/QuickSlot3[/Keyboard/3]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 3ffcb074-5886-43c0-ac0b-c75e24b8a048
+    m_ActionName: 'Player/QuickSlot4[/Keyboard/4]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8e681ea1-3d18-429f-91a2-32927e3cc1f8
+    m_ActionName: Player/ToggleQuickSlots
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c9d5d61f-ff43-4b50-b506-ac60a2ae63e5
+    m_ActionName: 'Player/Purify[/Keyboard/g]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: fddafe37-edcd-4ea7-a1cb-42204b5af413
+    m_ActionName: 'Player/Kill[/Keyboard/v]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 28d50425-65c3-4dc6-b572-9a07532421a9
+    m_ActionName: 'Player/CastQ[/Keyboard/q]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 363c2acb-091c-4573-835f-094322e34039
+    m_ActionName: 'Player/CastE[/Keyboard/e]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: fdc649a3-7c87-4283-9bd4-c97a2bfa1495
+    m_ActionName: 'Player/CastR[/Keyboard/r]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 45b5f276-7636-4e52-a977-0322850c8acf
+    m_ActionName: 'UI/Point[/Mouse/position,/Pen/position]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2d79b987-b31a-4dae-9ed2-1f77c94399ce
+    m_ActionName: 'UI/LeftClick[/Mouse/leftButton,/Pen/tip]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2ac0634a-ce62-46d9-a21b-d52a4f28f0a1
+    m_ActionName: 'UI/RightClick[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7c5c00f6-2d87-4cd7-a245-941d930c63d3
+    m_ActionName: 'UI/MiddleClick[/Mouse/middleButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9cf494af-62b8-4c67-8978-2f8ed3730ea9
+    m_ActionName: 'UI/ScrollWheel[/Mouse/scroll]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: cc24858c-25f3-4035-858a-31f8f28e0f13
+    m_ActionName: 'UI/Navigate[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 98dc17d6-a95d-4287-afbd-8523368cc202
+    m_ActionName: 'UI/Submit[/Keyboard/enter]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 03ccea3b-bd5c-4c19-a44e-c6b835f4e136
+    m_ActionName: 'UI/Cancel[/Keyboard/escape,/Keyboard/i]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: b6efdaa6-a04a-4be5-aca6-8870b4784116
+    m_ActionName: 'UI/NextTab[/Mouse/forwardButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7bec428a-ad8e-45ac-982d-ee159ebe9dc1
+    m_ActionName: 'UI/PrevTab[/Mouse/backButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 73a41cd8-7768-4b24-8e5a-8fdd3bc02459
+    m_ActionName: 'UI/Inventory[/Keyboard/tab]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: UI
@@ -781,6 +930,32 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &7803055346850903720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9095120032818360377}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7583eeed611e7a147a21ad64e436848d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatSFX
+  attackSounds:
+  - {fileID: 8300000, guid: e1db9979272739045ad7f18fe3bb999a, type: 3}
+  - {fileID: 8300000, guid: 1cf69a70c61a6c447a37d380bd9060a3, type: 3}
+  - {fileID: 8300000, guid: 24496a411af9b8943879cf993f9fb2f5, type: 3}
+  - {fileID: 8300000, guid: 80b5ec6da2f7fe74b87cbce27e1b4eba, type: 3}
+  attackVolume: 0.7
+  hurtSounds:
+  - {fileID: 8300000, guid: d01c6f3e56896794e8eb2d76186944df, type: 3}
+  - {fileID: 8300000, guid: 91a9a1cd3fba90c47b3fb44aa3c6dce7, type: 3}
+  - {fileID: 8300000, guid: 49343c12766f0014abe943f3dd04ff56, type: 3}
+  - {fileID: 8300000, guid: 5bdc8ce4615eb8d4ea841d1dba04c174, type: 3}
+  - {fileID: 8300000, guid: 56ec95d5baba05b4783ce9f8178d6fbc, type: 3}
+  - {fileID: 8300000, guid: b7de4781a855bfb4c8236aa2105fab99, type: 3}
+  hurtVolume: 0.7
 --- !u!1001 &3279986482565044057
 PrefabInstance:
   m_ObjectHideFlags: 0

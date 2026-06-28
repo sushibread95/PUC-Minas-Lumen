@@ -50,6 +50,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private EnemyDeathVisualCleanup deathVisualCleanup;
     [SerializeField] private float deathRoutineDelay = 3f;
 
+    [Header("ÁUDIO")]
+    [Tooltip("Sons tocados quando o inimigo TOMA dano (espacial, sorteados). O som de morte fica no EnemyDeathVisualCleanup.")]
+    [SerializeField] private AudioClip[] hitSounds;
+    [Range(0f, 1f)][SerializeField] private float hitVolume = 1f;
+
     [Header("ESTADO RUNTIME")]
     [HideInInspector] public bool isDead = false;
 
@@ -205,6 +210,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (tookDamage && !isDead && !isFallen && animator != null && !string.IsNullOrEmpty(hurtTrigger))
             animator.SetTrigger(hurtTrigger);
+
+        // Som de hit (espacial, sorteado), tocado no ponto do inimigo ao receber dano.
+        if (tookDamage && !isDead && hitSounds != null && hitSounds.Length > 0 && AudioManager.Instance != null)
+        {
+            AudioClip hitClip = hitSounds[Random.Range(0, hitSounds.Length)];
+            if (hitClip != null)
+                AudioManager.Instance.PlaySFX(hitClip, transform.position, hitVolume);
+        }
+
 
         return true;
     }

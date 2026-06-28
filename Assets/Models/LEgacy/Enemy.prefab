@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 9114502565216172472}
   - component: {fileID: 5645078577382264731}
   - component: {fileID: 6376576628400656235}
+  - component: {fileID: 3669851494444404345}
   m_Layer: 6
   m_Name: Enemy
   m_TagString: Enemy
@@ -579,6 +580,10 @@ MonoBehaviour:
   healthBarSlider: {fileID: 8516511307752784105}
   deathVisualCleanup: {fileID: 0}
   deathRoutineDelay: 3
+  hitSounds:
+  - {fileID: 8300000, guid: 782423de42fab21458a90a72c3e51b3c, type: 3}
+  - {fileID: 8300000, guid: 94d166fe0dc4d00489b4df2c147d7261, type: 3}
+  hitVolume: 0.7
   isDead: 0
   OnEnemyFallen:
     m_PersistentCalls:
@@ -636,6 +641,26 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3669851494444404345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 887129037511198414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afcf160e88a4b0146a033dd7a3d98b3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyFootsteps
+  footstepSounds:
+  - {fileID: 8300000, guid: 2a6868acc9548364d8dae4845e5f2604, type: 3}
+  - {fileID: 8300000, guid: e048f159a392c644abaed847e47c505d, type: 3}
+  - {fileID: 8300000, guid: b7db403f3ad015a4dba4421bea0b220f, type: 3}
+  - {fileID: 8300000, guid: cfc8cee4122edc74baab33359699c172, type: 3}
+  volume: 1
+  stepInterval: 0.5
+  minSpeedToStep: 0.3
 --- !u!1 &1875914179414185744
 GameObject:
   m_ObjectHideFlags: 0
