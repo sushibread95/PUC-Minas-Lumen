@@ -332,18 +332,17 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 887129037511198414}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.9961947, z: -0, w: -0.08715578}
-  m_LocalPosition: {x: -1.8, y: 0, z: 10.32}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7957042893189944945}
   - {fileID: 1990660458176074261}
   - {fileID: 7387487220939212355}
-  - {fileID: 6996274935035367943}
   - {fileID: 2976900149391523182}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 190, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &4928717048764485694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,7 +355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 881f12f51589441408a7125ae718498d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aimPoint: {fileID: 0}
+  aimPoint: {fileID: 1990660458176074261}
   priority: 0
   isTargetable: 1
 --- !u!136 &3922108648185917488
@@ -378,10 +377,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.23728752
+  m_Radius: 0.34811524
   m_Height: 1.7626559
   m_Direction: 1
-  m_Center: {x: 0, y: 0.8957285, z: 0}
+  m_Center: {x: 0, y: 0.8957285, z: 0.00878033}
 --- !u!54 &9158919814195097590
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -454,9 +453,8 @@ MonoBehaviour:
   useAlertBoolParam: 1
   meleeAttackTrigger: Punch
   combatMode: 0
-  isPurified: 0
-  sightRange: 9
-  hearingRange: 6
+  sightRange: 8
+  hearingRange: 5
   viewAngle: 90
   eyePoint: {fileID: 0}
   targetMask:
@@ -465,11 +463,11 @@ MonoBehaviour:
   obstructionMask:
     serializedVersion: 2
     m_Bits: 2048
-  perceptionInterval: 0.12
+  perceptionInterval: 1
   closeDetectionRadius: 2.25
   requireLineOfSight: 1
-  walkSpeed: 3.5
-  chaseSpeed: 5
+  walkSpeed: 2
+  chaseSpeed: 2
   rotationSpeed: 540
   repathInterval: 0.18
   faceMovementDirection: 1
@@ -491,7 +489,8 @@ MonoBehaviour:
   stopBuffer: 0.25
   keepFacingTargetInCombat: 1
   meleeHitbox: {fileID: 0}
-  meleeAttackColliders: []
+  meleeAttackColliders:
+  - {fileID: 4887656256199567585}
   activateMeleeHitboxObjects: 1
   autoSetupMeleeAttackColliders: 1
   autoSetMeleeCollidersAsTrigger: 1
@@ -499,16 +498,16 @@ MonoBehaviour:
   autoFindMeleeCollidersIfEmpty: 1
   meleeDamageMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 4096
   damagePlayerOnly: 1
-  debugMeleeHitbox: 0
+  debugMeleeHitbox: 1
   onePlayerHitPerAttackWindow: 1
   closeHitboxAfterSuccessfulHit: 1
   autoDisableMeleeCollidersOnStart: 1
   attackTrigger: 
   meleeDamage: 10
-  attackImpactDelay: 0
-  hitboxActiveDuration: 0
+  attackImpactDelay: 0.2
+  hitboxActiveDuration: 2
   grabberComponent: {fileID: 0}
   enemyAttacks: []
   cannon: {fileID: 0}
@@ -581,6 +580,19 @@ MonoBehaviour:
   deathVisualCleanup: {fileID: 0}
   deathRoutineDelay: 3
   isDead: 0
+  OnEnemyFallen:
+    m_PersistentCalls:
+      m_Calls: []
+  OnEnemyRecovered:
+    m_PersistentCalls:
+      m_Calls: []
+  OnEnemyDied:
+    m_PersistentCalls:
+      m_Calls: []
+  OnEnemyPurified:
+    m_PersistentCalls:
+      m_Calls: []
+  combatXpRewardIfNoFinisher: 50
 --- !u!114 &5645078577382264731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -705,6 +717,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6996274935035367943}
+  - component: {fileID: 4887656256199567585}
   m_Layer: 6
   m_Name: fire
   m_TagString: Untagged
@@ -720,13 +733,34 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2040267938933165870}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.321, y: 1.384, z: 0.01}
+  m_LocalRotation: {x: 0.62083673, y: 0.6351658, z: -0.31074402, w: -0.33847356}
+  m_LocalPosition: {x: -0.01798345, y: 0.2, z: 0.07857226}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9052856044335744377}
+  m_Father: {fileID: 8093546793254817362}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4887656256199567585
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040267938933165870}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.7, y: 0.7, z: 0.7}
+  m_Center: {x: 0.2, y: 0, z: 0}
 --- !u!1 &2668370525612851696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1309,7 +1343,7 @@ Transform:
   m_GameObject: {fileID: 8138693739860566451}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.05000019, y: 1.327, z: 0}
+  m_LocalPosition: {x: -0.01, y: 1.327, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1791,11 +1825,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1852576806548013000, guid: 98f2ee54dc89d8f49977d0ed01061e67, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6996274935035367943}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 98f2ee54dc89d8f49977d0ed01061e67, type: 3}
 --- !u!4 &7957042893189944945 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 98f2ee54dc89d8f49977d0ed01061e67, type: 3}
+  m_PrefabInstance: {fileID: 7631245282908271002}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8093546793254817362 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1852576806548013000, guid: 98f2ee54dc89d8f49977d0ed01061e67, type: 3}
   m_PrefabInstance: {fileID: 7631245282908271002}
   m_PrefabAsset: {fileID: 0}

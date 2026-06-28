@@ -14,6 +14,11 @@ public class HealthSystem : MonoBehaviour, IDamageable
     // passa por GameEvents.OnEnemyDeath (via EnemyIdentity).
     public static event Action OnPlayerDied;
 
+    // ADIÇÃO (expressão da personagem na HUD): eventos para a UI reagir à vida,
+    // sem o HealthSystem conhecer a UI.
+    public static event Action OnPlayerDamaged;                     // disparado ao TOMAR dano
+    public static event Action<float, float> OnPlayerHealthChanged; // (vidaAtual, vidaMax)
+
     [Header("UI References")]
     private Image healthBar;
     private Image manaBar;
@@ -84,6 +89,13 @@ public class HealthSystem : MonoBehaviour, IDamageable
         if (HUDManager.Instance != null && playerController != null)
         {
             HUDManager.Instance.AssignBarsTo(this);
+        }
+
+        // ADIÇÃO: estado inicial da expressão (reseta para "normal" no (re)spawn).
+        if (playerController != null)
+        {
+            float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
+            OnPlayerHealthChanged?.Invoke(currentHealth, maxH);
         }
     }
 
@@ -172,8 +184,12 @@ public class HealthSystem : MonoBehaviour, IDamageable
             if (bleedOutBar)
                 bleedOutBar.gameObject.SetActive(false);
         }
-        
+
         UpdateUIBars();
+
+        // ADIÇÃO: cura também atualiza a expressão (ex.: sair do estado "vida baixa").
+        if (playerController != null)
+            OnPlayerHealthChanged?.Invoke(currentHealth, maxH);
     }
 
     public void RestoreMana(float amount)
@@ -221,6 +237,14 @@ public class HealthSystem : MonoBehaviour, IDamageable
         if (tookDamage && !isDead && !isInBleedOut && animator != null)
         {
             animator.SetTrigger(hurtTrigger);
+        }
+
+        // ADIÇÃO: avisa a UI de expressão que o player se machucou e que a vida mudou.
+        if (tookDamage && playerController != null)
+        {
+            OnPlayerDamaged?.Invoke();
+            float maxH = (PlayerStats.Instance != null) ? PlayerStats.Instance.maxHealth : 100f;
+            OnPlayerHealthChanged?.Invoke(currentHealth, maxH);
         }
 
         return true;

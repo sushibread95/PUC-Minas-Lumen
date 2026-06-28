@@ -259,13 +259,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9029005616772790298}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.70710576, y: -0, z: -0, w: 0.70710784}
-  m_LocalPosition: {x: -0.00088009, y: -0.0063712, z: 0.101}
+  m_LocalRotation: {x: 0.7020921, y: -0.042509597, z: 0.04039794, w: 0.7096672}
+  m_LocalPosition: {x: -0.025, y: -0.005, z: 0.145}
   m_LocalScale: {x: 0.9423765, y: 0.9423765, z: 0.9423765}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4615400765802340072}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 89.362, y: -18.937, z: -12.216}
 --- !u!33 &5479164930693654922
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -562,7 +562,7 @@ MonoBehaviour:
   deathDelay: 2.5
   sceneAfterDeath: Death
   isDead: 0
-  bleedOutSlider: {fileID: 0}
+  bleedOutBar: {fileID: 0}
   bleedOutDuration: 10
 --- !u!114 &2540019410918217532
 MonoBehaviour:

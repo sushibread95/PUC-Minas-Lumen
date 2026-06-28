@@ -7,6 +7,10 @@ using UnityEngine.InputSystem.Controls;
 [RequireComponent(typeof(HealthSystem))]
 public class PlayerControllerSystem : MonoBehaviour
 {
+    // ADIÇÃO (expressão de ataque na HUD): disparado quando a personagem ATACA
+    // (melee, backstab ou magia). A UI escuta sem o controller conhecê-la.
+    public static event System.Action OnPlayerAttacked;
+
     #region Inspector - References
 
     [Header("REFERÊNCIAS PRINCIPAIS")]
@@ -392,10 +396,12 @@ public class PlayerControllerSystem : MonoBehaviour
             if (_crouchToggled && TryBackstab())
             {
                 // Backstab executado
+                OnPlayerAttacked?.Invoke();
             }
             else if (currentWeaponData != null)
             {
                 spellRoutine = StartCoroutine(MeleeAttackRoutine());
+                OnPlayerAttacked?.Invoke();
             }
         }
 
@@ -563,6 +569,7 @@ public class PlayerControllerSystem : MonoBehaviour
             }
 
             spellRoutine = StartCoroutine(CastSpellRoutine(slotIndex));
+            OnPlayerAttacked?.Invoke();
         }
     }
 
